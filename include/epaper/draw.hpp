@@ -4,9 +4,19 @@
 #include "epaper/screen.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <expected>
+#include <span>
 #include <string_view>
 
 namespace epaper {
+
+// Bitmap error types
+enum class BitmapError {
+  FileNotFound,
+  InvalidFormat,
+  LoadFailed,
+  InvalidDimensions
+};
 
 // Drawing styles
 enum class DotPixel : std::uint8_t {
@@ -58,7 +68,16 @@ public:
   auto draw_decimal(std::size_t x, std::size_t y, double number, std::uint8_t decimal_places, const Font &font,
                     Color foreground, Color background) -> void;
 
+  // Bitmap drawing
+  auto draw_bitmap(std::size_t x, std::size_t y, std::span<const Color> pixels, std::size_t bitmap_width,
+                   std::size_t bitmap_height, std::size_t target_width = 0, std::size_t target_height = 0) -> void;
+
+  auto draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path, std::size_t target_width = 0,
+                              std::size_t target_height = 0) -> std::expected<void, BitmapError>;
+
 private:
+  // Helper: convert RGB/RGBA to Color enum
+  auto rgb_to_color(std::uint8_t r, std::uint8_t g, std::uint8_t b, DisplayMode mode) -> Color;
   // Helper: draw horizontal line
   auto draw_horizontal_line(std::size_t x_start, std::size_t x_end, std::size_t y, Color color, DotPixel width) -> void;
 

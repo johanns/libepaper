@@ -61,6 +61,7 @@ target_include_directories(epaper
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/fonts
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party
 )
 
 target_link_libraries(epaper

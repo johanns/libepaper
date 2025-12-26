@@ -1,7 +1,12 @@
 #include "epaper/draw.hpp"
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <string>
+#include <vector>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 namespace epaper {
 
@@ -228,6 +233,138 @@ auto Draw::draw_decimal(std::size_t x, std::size_t y, double number, std::uint8_
 
   text += fraction_str;
   draw_string(x, y, text, font, foreground, background);
+}
+
+auto Draw::rgb_to_color(std::uint8_t r, std::uint8_t g, std::uint8_t b, DisplayMode mode) -> Color {
+  // Convert RGB to grayscale using standard luminance formula
+  const auto gray = static_cast<std::uint8_t>(0.299 * static_cast<double>(r) + 0.587 * static_cast<double>(g) +
+                                               0.114 * static_cast<double>(b));
+
+  if (mode == DisplayMode::BlackWhite) {
+    // Simple threshold for black/white mode
+    return gray >= 128 ? Color::White : Color::Black;
+  } else {
+    // 4-level grayscale mode
+    if (gray >= 192) {
+      return Color::White;
+    } else if (gray >= 128) {
+      return Color::Gray1;
+    } else if (gray >= 64) {
+      return Color::Gray2;
+    } else {
+      return Color::Black;
+    }
+  }
+}
+
+auto Draw::draw_bitmap(std::size_t x, std::size_t y, std::span<const Color> pixels, std::size_t bitmap_width,
+                       std::size_t bitmap_height, std::size_t target_width, std::size_t target_height) -> void {
+  // Validate input dimensions
+  if (bitmap_width == 0 || bitmap_height == 0) {
+    return;
+  }
+
+  if (pixels.size() < bitmap_width * bitmap_height) {
+    return; // Not enough pixel data
+  }
+
+  // If target dimensions are 0, use original dimensions (no scaling)
+  if (target_width == 0) {
+    target_width = bitmap_width;
+  }
+  if (target_height == 0) {
+    target_height = bitmap_height;
+  }
+
+  // Draw with nearest-neighbor interpolation
+  for (std::size_t dst_y = 0; dst_y < target_height; ++dst_y) {
+    for (std::size_t dst_x = 0; dst_x < target_width; ++dst_x) {
+      // Calculate source pixel coordinates using nearest-neighbor
+      const auto src_x = (dst_x * bitmap_width) / target_width;
+      const auto src_y = (dst_y * bitmap_height) / target_height;
+
+      // Bounds check for source coordinates
+      if (src_x >= bitmap_width || src_y >= bitmap_height) {
+        continue;
+      }
+
+      // Get pixel from source bitmap
+      const auto pixel_index = src_y * bitmap_width + src_x;
+      if (pixel_index >= pixels.size()) {
+        continue;
+      }
+
+      const auto color = pixels[pixel_index];
+
+      // Draw pixel at destination coordinates (with automatic bounds checking in set_pixel)
+      screen_.set_pixel(x + dst_x, y + dst_y, color);
+    }
+  }
+}
+
+auto Draw::draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path, std::size_t target_width,
+                                  std::size_t target_height) -> std::expected<void, BitmapError> {
+  // Load image using stb_image
+  int width = 0;
+  int height = 0;
+  int channels = 0;
+
+  // Convert string_view to null-terminated string for stb_image
+  const std::string path_str(file_path);
+
+  // Load image with automatic channel detection
+  std::unique_ptr<unsigned char, decltype(&stbi_image_free)> image_data(
+      stbi_load(path_str.c_str(), &width, &height, &channels, 0), stbi_image_free);
+
+  if (!image_data) {
+    // Check if file exists or if it's a format error
+    return std::unexpected(BitmapError::LoadFailed);
+  }
+
+  if (width <= 0 || height <= 0) {
+    return std::unexpected(BitmapError::InvalidDimensions);
+  }
+
+  // Convert image data to Color array
+  std::vector<Color> pixels;
+  pixels.reserve(static_cast<std::size_t>(width) * static_cast<std::size_t>(height));
+
+  const auto display_mode = screen_.mode();
+  const auto pixel_count = static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
+
+  for (std::size_t i = 0; i < pixel_count; ++i) {
+    std::uint8_t r = 0;
+    std::uint8_t g = 0;
+    std::uint8_t b = 0;
+
+    const auto base_index = i * static_cast<std::size_t>(channels);
+
+    if (channels == 1) {
+      // Grayscale
+      r = g = b = image_data.get()[base_index];
+    } else if (channels == 2) {
+      // Grayscale + Alpha (ignore alpha)
+      r = g = b = image_data.get()[base_index];
+    } else if (channels == 3) {
+      // RGB
+      r = image_data.get()[base_index];
+      g = image_data.get()[base_index + 1];
+      b = image_data.get()[base_index + 2];
+    } else if (channels == 4) {
+      // RGBA (ignore alpha)
+      r = image_data.get()[base_index];
+      g = image_data.get()[base_index + 1];
+      b = image_data.get()[base_index + 2];
+    }
+
+    pixels.push_back(rgb_to_color(r, g, b, display_mode));
+  }
+
+  // Draw the bitmap
+  draw_bitmap(x, y, pixels, static_cast<std::size_t>(width), static_cast<std::size_t>(height), target_width,
+              target_height);
+
+  return {};
 }
 
 } // namespace epaper
