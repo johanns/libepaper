@@ -238,7 +238,7 @@ auto Draw::draw_decimal(std::size_t x, std::size_t y, double number, std::uint8_
 auto Draw::rgb_to_color(std::uint8_t r, std::uint8_t g, std::uint8_t b, DisplayMode mode) -> Color {
   // Convert RGB to grayscale using standard luminance formula
   const auto gray = static_cast<std::uint8_t>(0.299 * static_cast<double>(r) + 0.587 * static_cast<double>(g) +
-                                               0.114 * static_cast<double>(b));
+                                              0.114 * static_cast<double>(b));
 
   if (mode == DisplayMode::BlackWhite) {
     // Simple threshold for black/white mode
@@ -303,7 +303,7 @@ auto Draw::draw_bitmap(std::size_t x, std::size_t y, std::span<const Color> pixe
 }
 
 auto Draw::draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path, std::size_t target_width,
-                                  std::size_t target_height) -> std::expected<void, BitmapError> {
+                                 std::size_t target_height) -> std::expected<void, BitmapError> {
   // Load image using stb_image
   int width = 0;
   int height = 0;

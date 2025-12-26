@@ -113,4 +113,3 @@ int main() {
   std::cout << "Bitmap drawing demo completed successfully!\n";
   return 0;
 }
-

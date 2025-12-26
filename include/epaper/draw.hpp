@@ -11,12 +11,7 @@
 namespace epaper {
 
 // Bitmap error types
-enum class BitmapError {
-  FileNotFound,
-  InvalidFormat,
-  LoadFailed,
-  InvalidDimensions
-};
+enum class BitmapError { FileNotFound, InvalidFormat, LoadFailed, InvalidDimensions };
 
 // Drawing styles
 enum class DotPixel : std::uint8_t {
@@ -73,7 +68,7 @@ public:
                    std::size_t bitmap_height, std::size_t target_width = 0, std::size_t target_height = 0) -> void;
 
   auto draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path, std::size_t target_width = 0,
-                              std::size_t target_height = 0) -> std::expected<void, BitmapError>;
+                             std::size_t target_height = 0) -> std::expected<void, BitmapError>;
 
 private:
   // Helper: convert RGB/RGBA to Color enum
