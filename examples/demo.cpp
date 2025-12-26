@@ -155,7 +155,7 @@ auto main() -> int {
         std::cout << "Display cleared.\n\n";
 
         // Create screen and drawing interface
-        Screen screen_bw(epd27);
+        Screen screen_bw(epd27, Orientation::Landscape90);
         Draw draw_bw(screen_bw);
 
         // Run black & white demo

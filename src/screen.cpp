@@ -4,11 +4,40 @@
 
 namespace epaper {
 
-Screen::Screen(Driver &driver)
-    : driver_(driver), width_(driver.width()), height_(driver.height()), mode_(driver.mode()) {
+Screen::Screen(Driver &driver, Orientation orientation)
+    : driver_(driver), width_(driver.width()), height_(driver.height()), mode_(driver.mode()),
+      orientation_(orientation) {
 
   buffer_.resize(driver_.buffer_size());
   clear(Color::White);
+}
+
+auto Screen::transform_coordinates(std::size_t x, std::size_t y) const -> std::pair<std::size_t, std::size_t> {
+  switch (orientation_) {
+  case Orientation::Portrait0:
+    // No transformation
+    return {x, y};
+
+  case Orientation::Landscape90:
+    // Clockwise 90°: logical top-left -> physical top-right
+    // As x increases (right in rotated), y increases physically (down)
+    // As y increases (down in rotated), x decreases physically (left)
+    return {width_ - 1 - y, x};
+
+  case Orientation::Portrait180:
+    // 180°: logical top-left -> physical bottom-right
+    return {width_ - 1 - x, height_ - 1 - y};
+
+  case Orientation::Landscape270:
+    // Counter-clockwise 90°: logical top-left -> physical bottom-left
+    // As x increases (right in rotated), y decreases physically (up)
+    // As y increases (down in rotated), x increases physically (right)
+    return {y, height_ - 1 - x};
+
+  default:
+    // Should never happen, but fallback to no transformation
+    return {x, y};
+  }
 }
 
 auto Screen::calculate_bw_position(std::size_t x, std::size_t y) const -> std::pair<std::size_t, std::uint8_t> {
@@ -26,12 +55,18 @@ auto Screen::calculate_gray_position(std::size_t x, std::size_t y) const -> std:
 }
 
 auto Screen::set_pixel(std::size_t x, std::size_t y, Color color) -> void {
-  if (x >= width_ || y >= height_) {
+  // Check bounds against effective dimensions
+  const auto eff_width = effective_width();
+  const auto eff_height = effective_height();
+  if (x >= eff_width || y >= eff_height) {
     return; // Silently ignore out-of-bounds
   }
 
+  // Transform coordinates based on orientation
+  auto [phys_x, phys_y] = transform_coordinates(x, y);
+
   if (mode_ == DisplayMode::BlackWhite) {
-    auto [byte_index, bit_offset] = calculate_bw_position(x, y);
+    auto [byte_index, bit_offset] = calculate_bw_position(phys_x, phys_y);
 
     if (byte_index >= buffer_.size()) {
       return;
@@ -47,7 +82,7 @@ auto Screen::set_pixel(std::size_t x, std::size_t y, Color color) -> void {
     }
   } else {
     // Grayscale mode
-    auto [byte_index, pixel_offset] = calculate_gray_position(x, y);
+    auto [byte_index, pixel_offset] = calculate_gray_position(phys_x, phys_y);
 
     if (byte_index >= buffer_.size()) {
       return;
@@ -63,12 +98,18 @@ auto Screen::set_pixel(std::size_t x, std::size_t y, Color color) -> void {
 }
 
 auto Screen::get_pixel(std::size_t x, std::size_t y) const -> Color {
-  if (x >= width_ || y >= height_) {
+  // Check bounds against effective dimensions
+  const auto eff_width = effective_width();
+  const auto eff_height = effective_height();
+  if (x >= eff_width || y >= eff_height) {
     return Color::White;
   }
 
+  // Transform coordinates based on orientation
+  auto [phys_x, phys_y] = transform_coordinates(x, y);
+
   if (mode_ == DisplayMode::BlackWhite) {
-    auto [byte_index, bit_offset] = calculate_bw_position(x, y);
+    auto [byte_index, bit_offset] = calculate_bw_position(phys_x, phys_y);
 
     if (byte_index >= buffer_.size()) {
       return Color::White;
@@ -80,7 +121,7 @@ auto Screen::get_pixel(std::size_t x, std::size_t y) const -> Color {
     return (byte_val & mask) ? Color::White : Color::Black;
   } else {
     // Grayscale mode
-    auto [byte_index, pixel_offset] = calculate_gray_position(x, y);
+    auto [byte_index, pixel_offset] = calculate_gray_position(phys_x, phys_y);
 
     if (byte_index >= buffer_.size()) {
       return Color::White;
@@ -114,12 +155,15 @@ auto Screen::clear(Color color) -> void {
 
 auto Screen::clear_region(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color)
     -> void {
-  // Clamp to screen bounds
-  x_start = std::min(x_start, width_);
-  y_start = std::min(y_start, height_);
-  x_end = std::min(x_end, width_);
-  y_end = std::min(y_end, height_);
+  // Clamp to effective screen bounds (accounting for rotation)
+  const auto eff_width = effective_width();
+  const auto eff_height = effective_height();
+  x_start = std::min(x_start, eff_width);
+  y_start = std::min(y_start, eff_height);
+  x_end = std::min(x_end, eff_width);
+  y_end = std::min(y_end, eff_height);
 
+  // Iterate through user coordinate space; set_pixel handles transformation
   for (std::size_t y = y_start; y < y_end; ++y) {
     for (std::size_t x = x_start; x < x_end; ++x) {
       set_pixel(x, y, color);
@@ -135,6 +179,22 @@ auto Screen::set_mode(DisplayMode mode) -> void {
     buffer_.resize(driver_.buffer_size());
     clear(Color::White);
   }
+}
+
+auto Screen::effective_width() const noexcept -> std::size_t {
+  // For 90° and 270° rotations, width and height are swapped
+  if (orientation_ == Orientation::Landscape90 || orientation_ == Orientation::Landscape270) {
+    return height_;
+  }
+  return width_;
+}
+
+auto Screen::effective_height() const noexcept -> std::size_t {
+  // For 90° and 270° rotations, width and height are swapped
+  if (orientation_ == Orientation::Landscape90 || orientation_ == Orientation::Landscape270) {
+    return width_;
+  }
+  return height_;
 }
 
 } // namespace epaper

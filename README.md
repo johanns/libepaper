@@ -11,6 +11,7 @@ A modern C++23 library for controlling Waveshare e-paper displays on Raspberry P
 - **Composition Over Inheritance**: Simple, maintainable design
 - **Full Drawing API**: Points, lines, rectangles, circles, text, numbers, and bitmaps
 - **Multiple Display Modes**: Both black/white and 4-level grayscale support
+- **Display Orientation Support**: Rotate display 0°, 90°, 180°, or 270° with automatic coordinate transformation
 - **Type Safety**: Strong typing with enums and type-safe wrappers
 - **Zero-Cost Abstractions**: Modern C++ with no runtime overhead
 
@@ -155,7 +156,8 @@ int main() {
     epd27.clear();
 
     // Create screen and drawing interface
-    Screen screen(epd27);
+    // Optional: specify orientation (Portrait0, Landscape90, Portrait180, Landscape270)
+    Screen screen(epd27);  // Default: Portrait0
     Draw draw(screen);
 
     // Draw shapes
@@ -287,6 +289,36 @@ screen.clear_region(x1, y1, x2, y2, Color::Black);
 // Refresh display
 screen.refresh();
 ```
+
+### Display Orientation
+
+The library supports rotating the display in 90° increments. The coordinate system is automatically transformed, so (0, 0) always represents the top-left corner in the rotated coordinate space.
+
+```cpp
+// Portrait orientation (default, 0°)
+Screen screen_portrait(epd27, Orientation::Portrait0);
+
+// Landscape orientation (90° clockwise)
+Screen screen_landscape(epd27, Orientation::Landscape90);
+
+// Upside down (180°)
+Screen screen_inverted(epd27, Orientation::Portrait180);
+
+// Landscape orientation (270° = 90° counter-clockwise)
+Screen screen_landscape_ccw(epd27, Orientation::Landscape270);
+
+// Get effective dimensions (accounting for rotation)
+auto width = screen_landscape.effective_width();   // Returns height for 90°/270°
+auto height = screen_landscape.effective_height(); // Returns width for 90°/270°
+```
+
+**Orientation Behavior:**
+- **Portrait0** (default): No rotation, (0,0) at top-left
+- **Landscape90**: 90° clockwise rotation, display width becomes 264×176 pixels
+- **Portrait180**: 180° rotation, upside down
+- **Landscape270**: 270° rotation (90° counter-clockwise), display width becomes 264×176 pixels
+
+All drawing operations automatically work with the rotated coordinate system. The physical framebuffer remains in the original orientation, with transformations applied transparently during pixel operations.
 
 ## Project Structure
 

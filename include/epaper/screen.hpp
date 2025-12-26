@@ -16,15 +16,30 @@ enum class Color : std::uint8_t {
   Gray2 = 0x40  // Second gray level (darker)
 };
 
+// Display orientation
+enum class Orientation : std::uint8_t {
+  Portrait0 = 0,   // Default portrait (0°)
+  Landscape90 = 1, // Clockwise 90° (landscape)
+  Portrait180 = 2, // Upside down (180°)
+  Landscape270 = 3 // Counter-clockwise 90° (270°)
+};
+
 // Screen framebuffer management
 class Screen {
 public:
-  explicit Screen(Driver &driver);
+  explicit Screen(Driver &driver, Orientation orientation = Orientation::Portrait0);
 
-  // Get screen dimensions
+  // Get screen dimensions (physical buffer dimensions)
   [[nodiscard]] auto width() const noexcept -> std::size_t { return width_; }
   [[nodiscard]] auto height() const noexcept -> std::size_t { return height_; }
   [[nodiscard]] auto mode() const noexcept -> DisplayMode { return mode_; }
+
+  // Get effective dimensions (accounting for rotation)
+  [[nodiscard]] auto effective_width() const noexcept -> std::size_t;
+  [[nodiscard]] auto effective_height() const noexcept -> std::size_t;
+
+  // Get current orientation
+  [[nodiscard]] auto orientation() const noexcept -> Orientation { return orientation_; }
 
   // Pixel operations with bounds checking
   auto set_pixel(std::size_t x, std::size_t y, Color color) -> void;
@@ -47,6 +62,9 @@ public:
   auto set_mode(DisplayMode mode) -> void;
 
 private:
+  // Helper: transform coordinates based on orientation
+  [[nodiscard]] auto transform_coordinates(std::size_t x, std::size_t y) const -> std::pair<std::size_t, std::size_t>;
+
   // Helper: calculate bit position in buffer for B/W mode
   [[nodiscard]] auto calculate_bw_position(std::size_t x, std::size_t y) const -> std::pair<std::size_t, std::uint8_t>;
 
@@ -59,6 +77,7 @@ private:
   std::size_t width_;
   std::size_t height_;
   DisplayMode mode_;
+  Orientation orientation_;
 };
 
 } // namespace epaper
