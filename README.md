@@ -107,6 +107,9 @@ sudo apt-get install cmake
 
 # Install a modern compiler
 sudo apt-get install g++-14  # or clang-18
+
+# Optional: For crypto dashboard example
+sudo apt-get install libcurl4-openssl-dev nlohmann-json3-dev
 ```
 
 ### Build the Library
