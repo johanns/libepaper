@@ -455,6 +455,8 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake,c++,visualstudio
 
+build/
 CMakeCache.txt
-epaper_demo
-libpaper.a
+examples/images/*.bmp
+examples/images/*.jpg
+examples/images/*.png
