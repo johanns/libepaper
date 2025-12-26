@@ -9,7 +9,7 @@ A modern C++23 library for controlling Waveshare e-paper displays on Raspberry P
 - **Extensible Design**: Abstract driver interface for easy addition of new displays
 - **RAII Throughout**: Automatic resource management with no manual memory handling
 - **Composition Over Inheritance**: Simple, maintainable design
-- **Full Drawing API**: Points, lines, rectangles, circles, text, and numbers
+- **Full Drawing API**: Points, lines, rectangles, circles, text, numbers, and bitmaps
 - **Multiple Display Modes**: Both black/white and 4-level grayscale support
 - **Type Safety**: Strong typing with enums and type-safe wrappers
 - **Zero-Cost Abstractions**: Modern C++ with no runtime overhead
@@ -60,7 +60,7 @@ The library's clean driver architecture makes it straightforward to add support 
 
 Note: The current architecture focuses on monochrome and grayscale displays. Adding color support would require extending the `Color` enum and potentially modifying the display protocol implementation.
 
-> **Documentation Available**: This README provides a quick overview. For detailed architecture diagrams, design patterns, deployment guides, and more, see the [Documentation](#documentation) section below or visit [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md).
+> **Documentation Available**: This README provides a quick overview. For detailed architecture diagrams, design patterns, deployment guides, and more, see the [Documentation](#documentation) section below or visit [DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md).
 
 ## Components
 
@@ -81,6 +81,9 @@ High-level drawing primitives: points, lines, rectangles, circles, text, and num
 
 ### Font (`font.hpp`)
 Font rendering system supporting Font8, Font12, Font16, Font20, and Font24.
+
+### Bitmap Drawing
+Bitmap/image drawing functionality supporting both raw pixel data and image file loading (PNG, JPEG, BMP, etc.) with scaling capabilities. Uses [stb_image](https://github.com/nothings/stb) for file loading.
 
 ## Requirements
 
@@ -215,7 +218,46 @@ draw.draw_number(x, y, 42, Font::font12(),
 // Decimals
 draw.draw_decimal(x, y, 3.14159, 3, Font::font12(),
                  Color::Black, Color::White);
+
+// Bitmaps (raw pixel data)
+std::vector<Color> pixels = { /* ... */ };
+draw.draw_bitmap(x, y, pixels, width, height);
+
+// Bitmaps (from image files - PNG, JPEG, BMP, etc.)
+if (auto result = draw.draw_bitmap_from_file(x, y, "image.png",
+                                             target_width, target_height);
+    !result) {
+    // Handle error
+}
 ```
+
+### Bitmap Drawing
+
+The library supports drawing bitmaps from both raw pixel data and image files (PNG, JPEG, BMP, etc.) with optional scaling:
+
+```cpp
+// Draw from raw pixel data
+std::vector<Color> checkerboard;
+for (std::size_t y = 0; y < 32; ++y) {
+    for (std::size_t x = 0; x < 32; ++x) {
+        bool is_white = ((x / 4) + (y / 4)) % 2 == 0;
+        checkerboard.push_back(is_white ? Color::White : Color::Black);
+    }
+}
+draw.draw_bitmap(10, 10, checkerboard, 32, 32);
+
+// Draw from image file with scaling
+draw.draw_bitmap_from_file(10, 50, "logo.png", 100, 100);
+```
+
+For detailed information on bitmap drawing, including supported formats, color conversion, and scaling, see [BITMAP_DRAWING.md](docs/BITMAP_DRAWING.md).
+
+**Test Images:** A collection of 30+ test images in various formats is included. Generate them with:
+```bash
+python3 generate_test_images.py
+```
+
+See [TEST_IMAGES_GUIDE.md](docs/TEST_IMAGES_GUIDE.md) for a complete visual guide to all test images.
 
 ### Display Modes
 
@@ -374,7 +416,7 @@ Draw draw(screen);     // All drawing APIs work!
 - **Interface Segregation**: Minimal, focused interface contract
 - **No Coupling**: `Screen` and `Draw` don't know about specific drivers
 
-See [ARCHITECTURE.md](ARCHITECTURE.md#adding-new-display-drivers) for detailed information about the extension architecture.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md#adding-new-display-drivers) for detailed information about the extension architecture.
 
 ## License
 
@@ -412,34 +454,33 @@ This project includes comprehensive architecture documentation with 46+ diagrams
 | Document | Description | Best For |
 |----------|-------------|----------|
 | **[README.md](README.md)** | Getting started guide (this file) | Installation, basic usage, quick reference |
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Complete architecture guide (850+ lines, 15+ diagrams) | Understanding system design, design patterns, deep dive |
-| **[ARCHITECTURE_QUICK_REFERENCE.md](ARCHITECTURE_QUICK_REFERENCE.md)** | Developer cheat sheet (650+ lines, 12+ diagrams) | API lookup, common patterns, troubleshooting |
-| **[ARCHITECTURE_VISUAL_SUMMARY.md](ARCHITECTURE_VISUAL_SUMMARY.md)** | High-level visual overview (520+ lines, 15+ diagrams) | Big picture understanding, visual learners |
-| **[DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md)** | System integration guide (750+ lines, 18+ diagrams) | Production deployment, system integration |
-| **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** | Navigation guide for all docs | Finding specific topics, learning paths |
-| **[DOCUMENTATION_OVERVIEW.md](DOCUMENTATION_OVERVIEW.md)** | Documentation summary with statistics | Understanding what's available |
+| **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Complete architecture guide (850+ lines, 15+ diagrams) | Understanding system design, design patterns, deep dive |
+| **[ARCHITECTURE_QUICK_REFERENCE.md](docs/ARCHITECTURE_QUICK_REFERENCE.md)** | Developer cheat sheet (650+ lines, 12+ diagrams) | API lookup, common patterns, troubleshooting |
+| **[ARCHITECTURE_VISUAL_SUMMARY.md](docs/ARCHITECTURE_VISUAL_SUMMARY.md)** | High-level visual overview (520+ lines, 15+ diagrams) | Big picture understanding, visual learners |
+| **[DEPLOYMENT_ARCHITECTURE.md](docs/DEPLOYMENT_ARCHITECTURE.md)** | System integration guide (750+ lines, 18+ diagrams) | Production deployment, system integration |
+| **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** | Navigation guide for all docs | Finding specific topics, learning paths |
 
 ### Quick Links by Purpose
 
 **Getting Started?**
 1. Start here: [README.md](README.md)
-2. See the big picture: [ARCHITECTURE_VISUAL_SUMMARY.md](ARCHITECTURE_VISUAL_SUMMARY.md)
+2. See the big picture: [ARCHITECTURE_VISUAL_SUMMARY.md](docs/ARCHITECTURE_VISUAL_SUMMARY.md)
 3. Try the examples: [examples/demo.cpp](examples/demo.cpp)
 
 **Developing Code?**
-- Keep open: [ARCHITECTURE_QUICK_REFERENCE.md](ARCHITECTURE_QUICK_REFERENCE.md)
+- Keep open: [ARCHITECTURE_QUICK_REFERENCE.md](docs/ARCHITECTURE_QUICK_REFERENCE.md)
 - API reference, wiring diagrams, common patterns
 
 **Understanding Design?**
-- Read: [ARCHITECTURE.md](ARCHITECTURE.md)
+- Read: [ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Complete system architecture with class diagrams, sequence diagrams, design patterns
 
 **Deploying to Production?**
-- Follow: [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md)
+- Follow: [DEPLOYMENT_ARCHITECTURE.md](docs/DEPLOYMENT_ARCHITECTURE.md)
 - System integration, deployment scenarios, security considerations
 
 **Need Navigation Help?**
-- Use: [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
+- Use: [DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)
 - Find any topic quickly with learning paths and feature matrix
 
 ## Contributing

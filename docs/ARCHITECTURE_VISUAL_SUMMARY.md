@@ -754,7 +754,7 @@ This library demonstrates modern C++ embedded programming at its best:
 - 🔍 [Quick Reference](ARCHITECTURE_QUICK_REFERENCE.md)
 - 🚀 [Deployment Guide](DEPLOYMENT_ARCHITECTURE.md)
 - 📑 [Documentation Index](DOCUMENTATION_INDEX.md)
-- 📘 [User Guide](README.md)
+- 📘 [User Guide](../README.md)
 
 ---
 

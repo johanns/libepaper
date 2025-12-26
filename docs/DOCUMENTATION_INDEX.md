@@ -24,7 +24,7 @@ This project includes comprehensive architecture and deployment documentation wi
 - API overview
 - Hardware connections
 
-📄 [View README.md](README.md)
+📄 [View README.md](../README.md)
 
 ---
 
