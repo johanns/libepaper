@@ -4,9 +4,9 @@
 
 namespace epaper {
 
-Screen::Screen(Driver &driver, Orientation orientation)
+Screen::Screen(Driver &driver, Orientation orientation, bool auto_sleep)
     : driver_(driver), width_(driver.width()), height_(driver.height()), mode_(driver.mode()),
-      orientation_(orientation) {
+      orientation_(orientation), auto_sleep_enabled_(auto_sleep) {
 
   buffer_.resize(driver_.buffer_size());
   clear(Color::White);
@@ -171,7 +171,12 @@ auto Screen::clear_region(std::size_t x_start, std::size_t y_start, std::size_t 
   }
 }
 
-auto Screen::refresh() -> void { driver_.display(buffer_); }
+auto Screen::refresh() -> void {
+  driver_.display(buffer_);
+  if (auto_sleep_enabled_) {
+    driver_.sleep();
+  }
+}
 
 auto Screen::set_mode(DisplayMode mode) -> void {
   if (mode != mode_) {

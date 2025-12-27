@@ -101,15 +101,10 @@ int main() {
   // Add some text
   draw.draw_string(10, 200, "Bitmap Drawing Demo", Font::font16(), Color::Black, Color::White);
 
-  // Refresh display
+  // Refresh display (automatically enters sleep mode after refresh)
   screen.refresh();
 
-  // Wait a bit
-  device.delay_ms(5000);
-
-  // Put display to sleep
-  epd27.sleep();
-
   std::cout << "Bitmap drawing demo completed successfully!\n";
+  std::cout << "Display automatically put to sleep after refresh.\n";
   return 0;
 }

@@ -12,6 +12,7 @@ A modern C++23 library for controlling Waveshare e-paper displays on Raspberry P
 - **Full Drawing API**: Points, lines, rectangles, circles, text, numbers, and bitmaps
 - **Multiple Display Modes**: Both black/white and 4-level grayscale support
 - **Display Orientation Support**: Rotate display 0°, 90°, 180°, or 270° with automatic coordinate transformation
+- **Auto-Sleep Mode**: Automatic sleep after refresh to prevent screen burn-in (per WaveShare recommendation)
 - **Type Safety**: Strong typing with enums and type-safe wrappers
 - **Zero-Cost Abstractions**: Modern C++ with no runtime overhead
 
@@ -160,7 +161,8 @@ int main() {
 
     // Create screen and drawing interface
     // Optional: specify orientation (Portrait0, Landscape90, Portrait180, Landscape270)
-    Screen screen(epd27);  // Default: Portrait0
+    // Auto-sleep is enabled by default to prevent screen burn-in
+    Screen screen(epd27);  // Default: Portrait0, auto-sleep enabled
     Draw draw(screen);
 
     // Draw shapes
@@ -171,11 +173,8 @@ int main() {
     draw.draw_string(10, 110, "Hello World!", Font::font16(),
                     Color::Black, Color::White);
 
-    // Refresh display
+    // Refresh display (automatically enters sleep mode after refresh)
     screen.refresh();
-
-    // Put display to sleep
-    epd27.sleep();
 
     return 0;
 }
@@ -289,9 +288,37 @@ auto color = screen.get_pixel(x, y);
 screen.clear(Color::White);
 screen.clear_region(x1, y1, x2, y2, Color::Black);
 
-// Refresh display
+// Refresh display (automatically enters sleep mode after refresh)
 screen.refresh();
 ```
+
+### Auto-Sleep Mode (Screen Burn-In Prevention)
+
+**Important:** Following WaveShare's recommendation, the library automatically puts the display into sleep mode after each `refresh()` operation. This prevents screen burn-in that can occur when the display remains in a high voltage state for extended periods.
+
+**Default Behavior:**
+```cpp
+Screen screen(driver);  // Auto-sleep enabled by default
+screen.refresh();       // Automatically calls driver.sleep() after display update
+```
+
+**Disabling Auto-Sleep:**
+If you need to perform multiple rapid refreshes or have a specific use case, you can disable auto-sleep:
+
+```cpp
+// Disable auto-sleep at construction
+Screen screen(driver, Orientation::Portrait0, false);
+
+// Or disable it later
+screen.set_auto_sleep(false);
+screen.refresh();  // Will not sleep
+
+// Re-enable when done
+screen.set_auto_sleep(true);
+screen.refresh();  // Will sleep after this refresh
+```
+
+**Best Practice:** Keep auto-sleep enabled unless you have a specific reason to disable it. The display hardware can be damaged by prolonged exposure to high voltage states.
 
 ### Display Orientation
 

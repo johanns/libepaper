@@ -155,15 +155,9 @@ auto main() -> int {
     // Run grayscale demo
     demo_grayscale(screen_gray, draw_gray);
 
-    // Wait before sleep
-    std::cout << "\nWaiting 3 seconds before sleep...\n";
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-
-    // Put display to sleep
-    std::cout << "\nPutting display to sleep...\n";
-    epd27.sleep();
-
+    // Note: Display automatically enters sleep mode after refresh (auto-sleep enabled by default)
     std::cout << "\nDemo completed successfully!\n";
+    std::cout << "Display automatically put to sleep after each refresh.\n";
     return EXIT_SUCCESS;
 
   } catch (const std::exception &e) {

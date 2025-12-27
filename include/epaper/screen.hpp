@@ -27,7 +27,7 @@ enum class Orientation : std::uint8_t {
 // Screen framebuffer management
 class Screen {
 public:
-  explicit Screen(Driver &driver, Orientation orientation = Orientation::Portrait0);
+  explicit Screen(Driver &driver, Orientation orientation = Orientation::Portrait0, bool auto_sleep = true);
 
   // Get screen dimensions (physical buffer dimensions)
   [[nodiscard]] auto width() const noexcept -> std::size_t { return width_; }
@@ -41,6 +41,10 @@ public:
   // Get current orientation
   [[nodiscard]] auto orientation() const noexcept -> Orientation { return orientation_; }
 
+  // Auto-sleep configuration (prevents screen burn-in per WaveShare recommendation)
+  [[nodiscard]] auto auto_sleep_enabled() const noexcept -> bool { return auto_sleep_enabled_; }
+  auto set_auto_sleep(bool enabled) noexcept -> void { auto_sleep_enabled_ = enabled; }
+
   // Pixel operations with bounds checking
   auto set_pixel(std::size_t x, std::size_t y, Color color) -> void;
   [[nodiscard]] auto get_pixel(std::size_t x, std::size_t y) const -> Color;
@@ -52,7 +56,7 @@ public:
   auto clear_region(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color)
       -> void;
 
-  // Send buffer to display and refresh
+  // Send buffer to display and refresh (automatically sleeps if auto_sleep_enabled)
   auto refresh() -> void;
 
   // Direct buffer access (const)
@@ -78,6 +82,7 @@ private:
   std::size_t height_;
   DisplayMode mode_;
   Orientation orientation_;
+  bool auto_sleep_enabled_;
 };
 
 } // namespace epaper

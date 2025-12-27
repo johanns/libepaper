@@ -203,14 +203,12 @@ auto main(int argc, char *argv[]) -> int {
       }
     }
 
-    // Clean shutdown (same as legacy version)
+    // Clean shutdown
     std::cout << "Performing clean shutdown...\n";
     std::cout << "Clearing display...\n";
     screen.clear();
     screen.refresh(); // This takes 30-60 seconds but ensures clean display state
-
-    std::cout << "Putting display to sleep...\n";
-    epd27.sleep();
+                      // Display automatically enters sleep mode after refresh
 
     std::cout << "Shutdown complete. Goodbye!\n";
     return EXIT_SUCCESS;
