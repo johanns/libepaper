@@ -1,11 +1,9 @@
 {
   "bitcoin": [
     "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
-    "your_bitcoin_address_here"
   ],
   "ethereum": [
     "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
-    "your_ethereum_address_here"
   ]
 }
 
