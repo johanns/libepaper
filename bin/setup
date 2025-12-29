@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -e
+
+echo "==================================="
+echo "E-Paper Library Setup"
+echo "==================================="
+echo ""
+
+# Check if running on Raspberry Pi
+if [ ! -f /proc/device-tree/model ] || ! grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
+    echo "Warning: This doesn't appear to be a Raspberry Pi"
+    echo "Press Ctrl+C to cancel, or Enter to continue anyway..."
+    read
+fi
+
+# Update package list
+echo "Updating package list..."
+sudo apt update
+
+# Install dependencies
+echo ""
+echo "Installing dependencies..."
+sudo apt install -y \
+    cmake \
+    g++-14 \
+    clang \
+    clangd \
+    libbcm2835-dev \
+    libcurl4-openssl-dev \
+    nlohmann-json3-dev
+
+# Check compiler versions
+echo ""
+echo "Checking compiler versions..."
+g++-14 --version | head -n 1
+echo ""
+
+# Clean and build
+echo ""
+echo "Removing old build directory..."
+if [ -d "build" ]; then
+    rm -rf build
+fi
+
+echo "Configuring build..."
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER=g++-14
+
+echo ""
+echo "Checking if SPI is enabled..."
+if [ -e /dev/spidev0.0 ]; then
+    echo "SPI is enabled"
+else
+    echo "SPI is not enabled... enabling now"
+    sudo raspi-config nonint do_spi 0
+    echo "SPI enabled. Rebooting system before continuing..."
+fi
+
+echo ""
+echo "==================================="
+echo "Setup Complete!"
+echo "==================================="
+echo ""
+

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+echo "Remember to run this command from the root directory of the project."
+
+echo "Configuring build..."
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER=g++-14
+
+echo "Building library..."
+cmake --build build -j$(nproc)
