@@ -2,7 +2,6 @@
 #include "dashboard_renderer.hpp"
 #include "http_client.hpp"
 #include "types.hpp"
-#include "wallet_config.hpp"
 
 #include <epaper/device.hpp>
 #include <epaper/display.hpp>
@@ -22,23 +21,21 @@ std::atomic<bool> g_running{true};
 
 void signal_handler(int signal) {
   std::cout << "\nReceived signal " << signal << ", shutting down gracefully...\n";
+  std::cout << "Note: May take a few seconds to exit if display is refreshing...\n";
   g_running = false;
-  // Note: Display cleanup happens in main after loop exits
+  // Note: If stuck in display refresh or HTTP request, will exit after operation completes
 }
 
 void print_usage(const char *program_name) {
   std::cout << "Usage: " << program_name << " [options]\n\n";
   std::cout << "Options:\n";
-  std::cout << "  --etherscan-api-key=KEY    Etherscan API key for ETH balance fetching\n";
-  std::cout << "  --config=PATH              Path to wallets.json config file (default: ./wallets.json)\n";
-  std::cout << "  --interval=SECONDS         Update interval in seconds (default: 30)\n";
-  std::cout << "  --help, -h                 Show this help message\n\n";
-  std::cout << "Get a free Etherscan API key at: https://etherscan.io/apis\n";
+  std::cout << "  --screen-flip-interval=SECONDS  Interval between screen rotations (default: 60)\n";
+  std::cout << "  --data-fetch-interval=SECONDS   Interval between data fetches (default: 900)\n";
+  std::cout << "  --help, -h                       Show this help message\n\n";
 }
 
 auto parse_arguments(int argc, char *argv[]) -> AppConfig {
   AppConfig config;
-  std::string config_path = "wallets.json";
 
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
@@ -46,15 +43,27 @@ auto parse_arguments(int argc, char *argv[]) -> AppConfig {
     if (arg == "--help" || arg == "-h") {
       print_usage(argv[0]);
       std::exit(EXIT_SUCCESS);
-    } else if (arg.rfind("--etherscan-api-key=", 0) == 0) {
-      config.etherscan_api_key = arg.substr(20);
-    } else if (arg.rfind("--config=", 0) == 0) {
-      config_path = arg.substr(9);
-    } else if (arg.rfind("--interval=", 0) == 0) {
+    } else if (arg.rfind("--screen-flip-interval=", 0) == 0) {
       try {
-        config.update_interval_seconds = std::stoi(arg.substr(11));
+        config.screen_flip_interval_seconds = std::stoi(arg.substr(23));
+        if (config.screen_flip_interval_seconds <= 0) {
+          std::cerr << "Screen flip interval must be positive\n";
+          std::exit(EXIT_FAILURE);
+        }
       } catch (...) {
-        std::cerr << "Invalid interval value\n";
+        std::cerr << "Invalid screen flip interval value\n";
+        std::exit(EXIT_FAILURE);
+      }
+    } else if (arg.rfind("--data-fetch-interval=", 0) == 0) {
+      try {
+        config.data_fetch_interval_seconds = std::stoi(arg.substr(22));
+        if (config.data_fetch_interval_seconds <= 0) {
+          std::cerr << "Data fetch interval must be positive\n";
+          std::exit(EXIT_FAILURE);
+        }
+      } catch (...) {
+        std::cerr << "Invalid data fetch interval value\n";
+        std::exit(EXIT_FAILURE);
       }
     } else {
       std::cerr << "Unknown option: " << arg << "\n";
@@ -62,20 +71,6 @@ auto parse_arguments(int argc, char *argv[]) -> AppConfig {
       std::exit(EXIT_FAILURE);
     }
   }
-
-  // Load wallet configuration
-  auto wallet_config = WalletConfigLoader::load(config_path);
-  if (!wallet_config) {
-    std::cerr << "Error: " << wallet_config.error() << "\n";
-    std::cerr << "Creating example configuration file...\n";
-    if (WalletConfigLoader::create_example(config_path + ".example")) {
-      std::cerr << "Example created at: " << config_path << ".example\n";
-      std::cerr << "Please edit and rename to: " << config_path << "\n";
-    }
-    std::exit(EXIT_FAILURE);
-  }
-
-  config.wallets = *wallet_config;
 
   return config;
 }
@@ -90,16 +85,9 @@ auto main(int argc, char *argv[]) -> int {
     auto config = parse_arguments(argc, argv);
 
     // Display configuration
-    if (config.has_etherscan_key()) {
-      std::cout << "Etherscan API key: " << config.etherscan_api_key.substr(0, 8) << "...\n";
-    } else {
-      std::cout << "No Etherscan API key provided. ETH balances will not be fetched.\n";
-      std::cout << "Use --etherscan-api-key=YOUR_KEY to enable ETH balance tracking.\n";
-    }
-
-    std::cout << "BTC addresses: " << config.wallets.btc_addresses.size() << "\n";
-    std::cout << "ETH addresses: " << config.wallets.eth_addresses.size() << "\n";
-    std::cout << "Update interval: " << config.update_interval_seconds << " seconds\n\n";
+    std::cout << "Screen flip interval: " << config.screen_flip_interval_seconds << " seconds\n";
+    std::cout << "Data fetch interval: " << config.data_fetch_interval_seconds << " seconds ("
+              << (config.data_fetch_interval_seconds / 60) << " minutes)\n\n";
 
     // Register signal handlers
     std::signal(SIGINT, signal_handler);
@@ -109,14 +97,15 @@ auto main(int argc, char *argv[]) -> int {
     std::cout << "Initializing device...\n";
     Device device;
     if (auto result = device.init(); !result) {
-      std::cerr << "Failed to initialize device\n";
+      std::cerr << "Failed to initialize device: " << result.error().what() << "\n";
       return EXIT_FAILURE;
     }
 
     // Create display using factory function in landscape mode
-    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape90);
+    // Auto-sleep enabled - transparent wake management handles multiple refreshes automatically
+    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape90, true);
     if (!display) {
-      std::cerr << "Failed to initialize display\n";
+      std::cerr << "Failed to initialize display: " << display.error().what() << "\n";
       return EXIT_FAILURE;
     }
 
@@ -125,80 +114,255 @@ auto main(int argc, char *argv[]) -> int {
 
     // Create API clients using composition
     HTTPClient http_client;
-    CryptoDataFetcher data_fetcher(http_client, config.etherscan_api_key);
+    CryptoDataFetcher data_fetcher(http_client);
 
     // Create renderer
     DashboardRenderer renderer(*display);
 
-    // Main update loop
-    int update_count = 0;
+    // Cached data (updated periodically, used for all screen rotations)
+    CryptoPrice btc_price, eth_price;
+    PriceHistory btc_30d, eth_30d, btc_6mo, eth_6mo;
+    bool data_valid = false;
+
+    // Screen rotation state
+    ScreenType current_screen = ScreenType::Combined;
+    auto last_data_fetch = std::chrono::steady_clock::now();
+    auto last_screen_flip = std::chrono::steady_clock::now();
+
+    // Fetch initial data BEFORE rendering first screen (prevents "Error" message)
+    std::cout << "Fetching initial data...\n";
+    constexpr auto api_delay = std::chrono::milliseconds(5000);
+
+    auto prices_result = data_fetcher.fetch_crypto_prices();
+    if (prices_result) {
+      auto [btc, eth] = *prices_result;
+      btc_price = btc;
+      eth_price = eth;
+
+      // Fetch histories with delays to respect API rate limits
+      if (g_running) {
+        std::this_thread::sleep_for(api_delay);
+        auto btc_30d_result = data_fetcher.fetch_price_history("BTC", 30);
+        if (btc_30d_result) {
+          btc_30d = *btc_30d_result;
+        }
+      }
+
+      if (g_running) {
+        std::this_thread::sleep_for(api_delay);
+        auto eth_30d_result = data_fetcher.fetch_price_history("ETH", 30);
+        if (eth_30d_result) {
+          eth_30d = *eth_30d_result;
+        }
+      }
+
+      if (g_running) {
+        std::this_thread::sleep_for(api_delay);
+        auto btc_6mo_result = data_fetcher.fetch_price_history("BTC", 180);
+        if (btc_6mo_result) {
+          btc_6mo = *btc_6mo_result;
+        }
+      }
+
+      if (g_running) {
+        std::this_thread::sleep_for(api_delay);
+        auto eth_6mo_result = data_fetcher.fetch_price_history("ETH", 180);
+        if (eth_6mo_result) {
+          eth_6mo = *eth_6mo_result;
+        }
+      }
+
+      data_valid = true;
+      last_data_fetch = std::chrono::steady_clock::now(); // Update fetch time
+      std::cout << "Initial data fetch complete.\n\n";
+    } else {
+      std::cerr << "Failed to fetch initial prices: " << prices_result.error() << "\n";
+    }
+
+    // Render initial screen with data (or error if fetch failed)
+    std::cout << "Rendering initial screen...\n";
+    if (data_valid && g_running) {
+      renderer.render(current_screen, btc_price, eth_price, btc_30d, eth_30d, btc_6mo, eth_6mo);
+      std::cout << "Initial screen rendered successfully.\n";
+    } else if (g_running) {
+      renderer.render_error("Failed to fetch initial data");
+    }
+
+    // Main loop
+    int fetch_count = 0;
+    int screen_flip_count = 0;
+
+    std::cout << "\nStarting main loop...\n";
+    std::cout << "Screen rotation: Combined -> BTC -> ETH -> Combined...\n\n";
 
     while (g_running) {
-      ++update_count;
-      std::cout << "Fetching data (update " << update_count << ")...\n";
+      const auto now = std::chrono::steady_clock::now();
 
-      // Fetch crypto prices
-      auto prices_result = data_fetcher.fetch_crypto_prices();
-      if (!prices_result) {
-        std::cerr << "Failed to fetch prices: " << prices_result.error() << "\n";
-        renderer.render_error(prices_result.error());
+      // Check if we need to fetch new data
+      const auto time_since_fetch = std::chrono::duration_cast<std::chrono::seconds>(now - last_data_fetch).count();
+      if (g_running && (!data_valid || time_since_fetch >= config.data_fetch_interval_seconds)) {
+        ++fetch_count;
+        std::cout << "Fetching data (fetch " << fetch_count << ")...\n";
 
-        std::cout << "Waiting " << config.update_interval_seconds << " seconds before retry...\n\n";
-        std::this_thread::sleep_for(std::chrono::seconds(config.update_interval_seconds));
-        continue;
-      }
-
-      auto [btc, eth] = *prices_result;
-
-      // Fetch price histories
-      PriceHistory btc_history, eth_history;
-
-      if (g_running) {
-        auto btc_hist_result = data_fetcher.fetch_price_history("BTC", 30);
-        if (btc_hist_result) {
-          btc_history = *btc_hist_result;
+        // Fetch crypto prices (check g_running first)
+        if (!g_running) {
+          break;
         }
-      }
-
-      if (g_running) {
-        auto eth_hist_result = data_fetcher.fetch_price_history("ETH", 30);
-        if (eth_hist_result) {
-          eth_history = *eth_hist_result;
-        }
-      }
-
-      // Fetch wallet balances
-      WalletBalance wallet;
-      if (g_running) {
-        wallet = data_fetcher.fetch_wallet_balances(config.wallets.btc_addresses, config.wallets.eth_addresses);
-        std::cout << "  BTC balance: " << wallet.btc_balance << " BTC\n";
-        if (wallet.has_eth_balance()) {
-          std::cout << "  ETH balance: " << wallet.eth_balance << " ETH\n";
+        auto prices_result = data_fetcher.fetch_crypto_prices();
+        if (!prices_result) {
+          std::cerr << "Failed to fetch prices: " << prices_result.error() << "\n";
+          if (g_running) {
+            renderer.render_error(prices_result.error());
+          }
+          last_data_fetch = now;
+          // Continue to screen rotation even if fetch failed
         } else {
-          std::cout << "  ETH balance: API key required\n";
+          auto [btc, eth] = *prices_result;
+          btc_price = btc;
+          eth_price = eth;
+
+          // Add delays between API calls to respect CoinGecko rate limits (free tier)
+          // CoinGecko free API: ~10-50 requests/minute, so 5-second delay is safer
+          constexpr auto api_delay = std::chrono::milliseconds(5000);
+
+          // Fetch 30-day histories (check g_running before each)
+          if (g_running) {
+            std::this_thread::sleep_for(api_delay);
+          }
+          if (g_running) {
+            auto btc_30d_result = data_fetcher.fetch_price_history("BTC", 30);
+            if (btc_30d_result) {
+              btc_30d = *btc_30d_result;
+            } else {
+              std::cerr << "    Warning: BTC 30d fetch failed: " << btc_30d_result.error() << "\n";
+            }
+          }
+
+          if (g_running) {
+            std::this_thread::sleep_for(api_delay);
+          }
+          if (g_running) {
+            auto eth_30d_result = data_fetcher.fetch_price_history("ETH", 30);
+            if (eth_30d_result) {
+              eth_30d = *eth_30d_result;
+            } else {
+              std::cerr << "    Warning: ETH 30d fetch failed: " << eth_30d_result.error() << "\n";
+            }
+          }
+
+          // Fetch 6-month histories (check g_running before each)
+          if (g_running) {
+            std::this_thread::sleep_for(api_delay);
+          }
+          if (g_running) {
+            auto btc_6mo_result = data_fetcher.fetch_price_history("BTC", 180);
+            if (btc_6mo_result) {
+              btc_6mo = *btc_6mo_result;
+            } else {
+              std::cerr << "    Warning: BTC 6mo fetch failed: " << btc_6mo_result.error() << "\n";
+            }
+          }
+
+          if (g_running) {
+            std::this_thread::sleep_for(api_delay);
+          }
+          if (g_running) {
+            auto eth_6mo_result = data_fetcher.fetch_price_history("ETH", 180);
+            if (eth_6mo_result) {
+              eth_6mo = *eth_6mo_result;
+            } else {
+              std::cerr << "    Warning: ETH 6mo fetch failed: " << eth_6mo_result.error() << "\n";
+            }
+          }
+
+          // Only update and render if still running
+          if (g_running) {
+            data_valid = true;
+            last_data_fetch = now;
+            std::cout << "Data fetch complete.\n";
+            std::cout << "  BTC valid: " << (btc_price.is_valid() ? "yes" : "no")
+                      << ", ETH valid: " << (eth_price.is_valid() ? "yes" : "no") << "\n";
+
+            // Re-render current screen immediately with new data
+            std::cout << "Rendering screen with new data...\n";
+            std::cout.flush(); // Ensure output is visible
+
+            try {
+              renderer.render(current_screen, btc_price, eth_price, btc_30d, eth_30d, btc_6mo, eth_6mo);
+              std::cout << "Screen updated with new data.\n";
+              std::cout.flush();
+            } catch (const std::exception &e) {
+              std::cerr << "Error during render: " << e.what() << "\n";
+              if (g_running) {
+                renderer.render_error("Render error: " + std::string(e.what()));
+              }
+            }
+
+            // Exit immediately if shutdown was requested during render
+            if (!g_running) {
+              break;
+            }
+          }
         }
       }
 
-      // Render dashboard
+      // Check if we need to rotate screen
       if (g_running) {
-        std::cout << "  Rendering dashboard...\n";
-        renderer.render(btc, eth, btc_history, eth_history, wallet);
-        std::cout << "  Dashboard updated successfully!\n\n";
+        const auto time_since_flip = std::chrono::duration_cast<std::chrono::seconds>(now - last_screen_flip).count();
+
+        if (time_since_flip >= config.screen_flip_interval_seconds) {
+          ++screen_flip_count;
+
+          // Rotate to next screen
+          switch (current_screen) {
+          case ScreenType::Combined:
+            current_screen = ScreenType::BTCDedicated;
+            std::cout << "Rotating to BTC dedicated screen (flip " << screen_flip_count << ")...\n";
+            break;
+          case ScreenType::BTCDedicated:
+            current_screen = ScreenType::ETHDedicated;
+            std::cout << "Rotating to ETH dedicated screen (flip " << screen_flip_count << ")...\n";
+            break;
+          case ScreenType::ETHDedicated:
+            current_screen = ScreenType::Combined;
+            std::cout << "Rotating to combined screen (flip " << screen_flip_count << ")...\n";
+            break;
+          }
+
+          // Render current screen with cached data
+          if (g_running && data_valid) {
+            renderer.render(current_screen, btc_price, eth_price, btc_30d, eth_30d, btc_6mo, eth_6mo);
+            std::cout << "Screen rendered successfully.\n";
+          } else if (g_running) {
+            renderer.render_error("Waiting for data...");
+          }
+
+          // Exit immediately if shutdown was requested during render
+          if (!g_running) {
+            break;
+          }
+
+          last_screen_flip = now;
+        }
       }
 
-      // Wait for next update
-      std::cout << "Waiting " << config.update_interval_seconds << " seconds before next update...\n\n";
-      for (int i = 0; i < config.update_interval_seconds && g_running; ++i) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+      // Sleep for 1 second before checking again (break early if shutdown requested)
+      // Check g_running multiple times during sleep for faster exit
+      for (int i = 0; i < 10 && g_running; ++i) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
     }
 
     // Clean shutdown
     std::cout << "Performing clean shutdown...\n";
     std::cout << "Clearing display...\n";
+
     display->clear();
-    display->refresh(); // This takes 30-60 seconds but ensures clean display state
-                        // Display automatically enters sleep mode after refresh
+
+    if (auto result = display->refresh(); !result) {
+      std::cerr << "Failed to refresh display during shutdown: " << result.error().what() << "\n";
+    }
+    // Auto-sleep handles putting display to sleep after refresh
 
     std::cout << "Shutdown complete. Goodbye!\n";
     return EXIT_SUCCESS;

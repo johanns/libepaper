@@ -1,12 +1,13 @@
-# Crypto Dashboard - Modular Design
+# Crypto Dashboard - Multi-Screen Price Display
 
-A modern, modular cryptocurrency dashboard application for e-Paper displays, built with C++23 and following best practices.
+A modern cryptocurrency price dashboard application for e-Paper displays, built with C++23. Displays BTC and ETH prices with rotating screens showing 30-day and 6-month price graphs.
 
 ## 🏗️ Architecture
 
-This is a **refactored version** of the original `crypto_dashboard.cpp` example, designed with:
+This application demonstrates:
 
 - ✅ **Modern C++23** patterns and features
+- ✅ **Transparent sleep/wake** - auto-sleep enabled, no manual management needed
 - ✅ **Composition over inheritance** design
 - ✅ **Separation of concerns** with clear module boundaries
 - ✅ **RAII** resource management
@@ -19,22 +20,36 @@ This is a **refactored version** of the original `crypto_dashboard.cpp` example,
 ```
 crypto_dashboard/
 ├── include/              # Public headers
-│   ├── types.hpp        # Data structures (CryptoPrice, WalletBalance, etc.)
+│   ├── types.hpp        # Data structures (CryptoPrice, PriceHistory, etc.)
 │   ├── http_client.hpp  # HTTP client (cURL wrapper)
-│   ├── crypto_api.hpp   # API clients (CoinGecko, Etherscan, etc.)
-│   ├── wallet_config.hpp # Configuration loader
+│   ├── crypto_api.hpp   # API clients (CoinGecko)
 │   └── dashboard_renderer.hpp  # Display rendering
 ├── src/                 # Implementation files
 │   ├── main.cpp         # Application entry point
 │   ├── types.cpp
 │   ├── http_client.cpp
 │   ├── crypto_api.cpp
-│   ├── wallet_config.cpp
 │   └── dashboard_renderer.cpp
 ├── CMakeLists.txt       # Build configuration
-├── wallets.json.example # Example configuration
 └── README.md            # This file
 ```
+
+## 🎯 Features
+
+### Multi-Screen Display
+
+The dashboard rotates through 3 screens automatically:
+
+1. **Combined Screen**: Shows BTC and ETH current prices with two 30-day graphs side-by-side
+2. **BTC Dedicated Screen**: Shows BTC price with stacked 30-day (top) and 6-month (bottom) graphs
+3. **ETH Dedicated Screen**: Shows ETH price with stacked 30-day (top) and 6-month (bottom) graphs
+
+### Configurable Intervals
+
+- **Screen Flip Interval**: How often screens rotate (default: 60 seconds)
+- **Data Fetch Interval**: How often price data is fetched from APIs (default: 900 seconds = 15 minutes)
+
+Data fetching and screen rotation operate independently - screens rotate using cached data until new data is fetched.
 
 ## 🎯 Design Principles
 
@@ -48,8 +63,6 @@ class CryptoDataFetcher {
 private:
   const HTTPClient& client_;          // Composed HTTP client
   CoinGeckoAPI coingecko_api_;        // Composed API client
-  BitcoinBlockchainAPI bitcoin_api_;  // Composed API client
-  EtherscanAPI etherscan_api_;        // Composed API client
 };
 ```
 
@@ -98,8 +111,7 @@ Each module has a single, well-defined responsibility:
 |--------|---------------|
 | `types.hpp` | Data structures and domain types |
 | `http_client.hpp` | HTTP communication (cURL wrapper) |
-| `crypto_api.hpp` | External API interactions |
-| `wallet_config.hpp` | Configuration file loading |
+| `crypto_api.hpp` | External API interactions (CoinGecko) |
 | `dashboard_renderer.hpp` | Display rendering logic |
 | `main.cpp` | Application lifecycle and orchestration |
 
@@ -137,102 +149,27 @@ The executable will be at: `build/examples/crypto_dashboard/crypto_dashboard`
 ### Basic Usage
 
 ```bash
-# Run without Etherscan API key (BTC only)
+# Run with default settings (60s screen flip, 15min data fetch)
 sudo ./crypto_dashboard
 
-# Run with Etherscan API key (BTC + ETH)
-sudo ./crypto_dashboard --etherscan-api-key=YOUR_KEY_HERE
+# Custom screen flip interval (30 seconds)
+sudo ./crypto_dashboard --screen-flip-interval=30
 
-# Custom configuration file
-sudo ./crypto_dashboard --config=my_wallets.json
+# Custom data fetch interval (10 minutes)
+sudo ./crypto_dashboard --data-fetch-interval=600
 
-# Custom update interval
-sudo ./crypto_dashboard --interval=60
+# Both custom intervals
+sudo ./crypto_dashboard --screen-flip-interval=45 --data-fetch-interval=1200
 
 # Show help
 ./crypto_dashboard --help
 ```
 
-### Configuration File
+### Command-Line Options
 
-Create `wallets.json` in the same directory:
-
-```json
-{
-  "bitcoin_addresses": [
-    "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
-    "3J98t1WpEZ73CNmYviecrnyiWrnqRhWNLy"
-  ],
-  "ethereum_addresses": [
-    "0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe",
-    "0x00000000219ab540356cBB839Cbe05303d7705Fa"
-  ]
-}
-```
-
-See `wallets.json.example` for a template.
-
-## 🔑 API Keys
-
-### Etherscan API Key
-
-Required for Ethereum balance fetching:
-
-1. Visit: https://etherscan.io/apis
-2. Create a free account
-3. Generate an API key
-4. Pass it via `--etherscan-api-key=YOUR_KEY`
-
-**Free tier:** 100,000 requests/day, 5 requests/second
-
-## 🧪 Testing
-
-```bash
-# Test build
-cmake --build build --target crypto_dashboard
-
-# Test with dry run (checks config without display)
-./build/examples/crypto_dashboard/crypto_dashboard --help
-
-# Full test
-sudo ./build/examples/crypto_dashboard/crypto_dashboard
-```
-
-## 📚 Code Examples
-
-### Adding a New API Client
-
-```cpp
-// In crypto_api.hpp
-class MyCustomAPI {
-public:
-  explicit MyCustomAPI(const HTTPClient& client) : client_(client) {}
-
-  [[nodiscard]] auto fetch_data() const
-      -> std::expected<MyData, std::string>;
-
-private:
-  const HTTPClient& client_;
-};
-
-// In CryptoDataFetcher, compose it
-class CryptoDataFetcher {
-private:
-  MyCustomAPI my_custom_api_;  // Add as member
-};
-```
-
-### Custom Rendering
-
-```cpp
-// Extend DashboardRenderer
-class MyCustomRenderer : public DashboardRenderer {
-public:
-  void render_custom_section() {
-    draw_.draw_string(10, 10, "Custom!", Font::font16());
-  }
-};
-```
+- `--screen-flip-interval=SECONDS`: Interval between screen rotations (default: 60)
+- `--data-fetch-interval=SECONDS`: Interval between data fetches (default: 900 = 15 minutes)
+- `--help, -h`: Show help message
 
 ## 🔧 Module Details
 
@@ -245,47 +182,71 @@ public:
 
 ### CryptoAPI
 
-- **CoinGeckoAPI**: Fetches prices and history
-- **BitcoinBlockchainAPI**: Fetches BTC balances
-- **EtherscanAPI**: Fetches ETH balances
+- **CoinGeckoAPI**: Fetches prices and historical data
 - **CryptoDataFetcher**: High-level aggregator
 
 All use composition instead of inheritance.
 
-### WalletConfigLoader
-
-- Static methods for loading JSON config
-- Uses nlohmann/json library
-- Returns `std::expected` for error handling
-- Can create example configuration files
-
 ### DashboardRenderer
 
 - Handles all e-Paper display rendering
+- Supports 3 screen types: Combined, BTC Dedicated, ETH Dedicated
 - Modular drawing methods
 - Clean separation from data fetching
 
+## 🎨 Screen Layouts
+
+### Combined Screen (264x176 landscape)
+
+```
+┌─────────────────────────────────────┐
+│ CRYPTO DASHBOARD                    │
+├─────────────────────────────────────┤
+│ BTC  $XX,XXX  ^ +X.XX%              │
+│ ETH  $X,XXX   ^ +X.XX%              │
+│                                     │
+│ BTC 30d          ETH 30d            │
+│ ┌─────┐          ┌─────┐            │
+│ │     │          │     │            │
+│ │     │          │     │            │
+│ └─────┘          └─────┘            │
+└─────────────────────────────────────┘
+```
+
+### BTC/ETH Dedicated Screen (264x176 landscape)
+
+```
+┌─────────────────────────────────────┐
+│ CRYPTO DASHBOARD                    │
+├─────────────────────────────────────┤
+│ BTC  $XX,XXX  ^ +X.XX%              │
+│                                     │
+│ BTC 30d                             │
+│ ┌─────────────────────────────────┐ │
+│ │                                 │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ BTC 6mo                             │
+│ ┌─────────────────────────────────┐ │
+│ │                                 │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+```
+
+## 🧪 Testing
+
+```bash
+# Test build
+cmake --build build --target crypto_dashboard
+
+# Test with help
+./build/examples/crypto_dashboard/crypto_dashboard --help
+
+# Full test
+sudo ./build/examples/crypto_dashboard/crypto_dashboard
+```
+
 ## 🎨 Benefits of This Design
-
-### Original Monolithic Design
-
-```cpp
-// 722 lines in one file
-// - HTTP code mixed with display code
-// - Hard to test individual components
-// - Difficult to understand flow
-// - No clear module boundaries
-```
-
-### New Modular Design
-
-```cpp
-// Clear separation:
-// - 6 focused header files (~50 lines each)
-// - 6 implementation files (~100-200 lines each)
-// - Easy to test, understand, and extend
-// - Clear dependencies and ownership
-```
 
 ### Advantages
 
@@ -295,32 +256,13 @@ All use composition instead of inheritance.
 4. **Readability**: Each file has a clear, focused purpose
 5. **Extensibility**: Easy to add new features or APIs
 6. **Type Safety**: `std::expected` catches errors at compile time
-
-## 🔄 Migration from Old Version
-
-If you're using the old `crypto_dashboard.cpp`:
-
-```bash
-# Old way
-cd examples
-./run_crypto_dashboard.sh --etherscan-api-key=KEY
-
-# New way (after building)
-cd build/examples/crypto_dashboard
-sudo ./crypto_dashboard --etherscan-api-key=KEY
-```
-
-The functionality is identical, but the code is much cleaner!
+7. **Efficient**: Data fetching and screen rotation are independent, reducing API calls
 
 ## 📝 TODO / Future Improvements
 
-- [ ] Add unit tests for each module
 - [ ] Support for more cryptocurrencies
 - [ ] Configurable display layouts
 - [ ] Historical data persistence
-- [ ] Web interface for configuration
-- [ ] Docker support
-- [ ] Continuous Integration
 
 ## 🤝 Contributing
 
@@ -339,8 +281,5 @@ Same as the parent e-Paper project.
 
 - Original monolithic implementation
 - CoinGecko API for crypto data
-- Etherscan API for Ethereum data
-- Blockchain.info for Bitcoin data
 - nlohmann/json library
 - libcurl library
-

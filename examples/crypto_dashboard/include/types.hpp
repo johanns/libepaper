@@ -29,39 +29,10 @@ struct PriceHistory {
   [[nodiscard]] auto max_price() const -> double;
 };
 
-/// Represents wallet balance information
-struct WalletBalance {
-  double btc_balance = 0.0;          // Bitcoin balance
-  double eth_balance = 0.0;          // Ethereum balance
-  bool eth_api_key_required = false; // Whether ETH API key was missing
-
-  [[nodiscard]] constexpr auto has_eth_balance() const noexcept -> bool { return !eth_api_key_required; }
-
-  [[nodiscard]] constexpr auto total_value(double btc_price, double eth_price) const noexcept -> double {
-    double total = btc_balance * btc_price;
-    if (has_eth_balance()) {
-      total += eth_balance * eth_price;
-    }
-    return total;
-  }
-};
-
-/// Configuration for cryptocurrency wallets
-struct WalletConfig {
-  std::vector<std::string> btc_addresses;
-  std::vector<std::string> eth_addresses;
-
-  [[nodiscard]] auto has_btc_addresses() const noexcept -> bool { return !btc_addresses.empty(); }
-  [[nodiscard]] auto has_eth_addresses() const noexcept -> bool { return !eth_addresses.empty(); }
-};
-
 /// Application configuration
 struct AppConfig {
-  WalletConfig wallets;
-  std::string etherscan_api_key;
-  int update_interval_seconds = 30;
-
-  [[nodiscard]] auto has_etherscan_key() const noexcept -> bool { return !etherscan_api_key.empty(); }
+  int screen_flip_interval_seconds = 60; // Interval between screen rotations
+  int data_fetch_interval_seconds = 900; // Interval between data fetches (15 minutes)
 };
 
 } // namespace crypto_dashboard
