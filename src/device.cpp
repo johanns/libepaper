@@ -82,7 +82,6 @@ auto Device::spi_transfer(std::uint8_t value) -> std::uint8_t { return bcm2835_s
 
 auto Device::spi_write(std::span<const std::byte> data) -> void {
   // BCM2835 library expects char*, so we need to cast
-  const auto *ptr = reinterpret_cast<const char *>(data.data());
   for (const auto byte : data) {
     bcm2835_spi_transfer(static_cast<std::uint8_t>(byte));
   }
