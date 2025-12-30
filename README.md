@@ -217,13 +217,13 @@ libepaper2/
 
 - **Waveshare** for the e-Paper hardware and original library
 - **BCM2835 library authors** for Raspberry Pi GPIO access
-- **Contributors** who have helped improve this library
+- **stb_image library authors** for image loading
 
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-Copyright (c) 2024 Johanns Gregorian
+Copyright (c) 2025 Johanns Gregorian
 
 ---
 
