@@ -1,6 +1,6 @@
 # Examples & Tutorials
 
-A collection of example applications demonstrating libepaper2 features and best practices.
+A collection of example applications demonstrating libepaper features and best practices.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ A collection of example applications demonstrating libepaper2 features and best 
 
 ## Overview
 
-This directory contains complete, working examples that demonstrate various features of the libepaper2 library. Each example is self-contained and can serve as a starting point for your own projects.
+This directory contains complete, working examples that demonstrate various features of the libepaper library. Each example is self-contained and can serve as a starting point for your own projects.
 
 **All examples require:**
 - Raspberry Pi with SPI enabled
@@ -59,13 +59,13 @@ int main() {
 
     // 3. Draw something
     display->clear(Color::White);
-    
-    display->draw_rectangle(0, 0, 
-        display->effective_width() - 1, 
-        display->effective_height() - 1, 
+
+    display->draw_rectangle(0, 0,
+        display->effective_width() - 1,
+        display->effective_height() - 1,
         Color::Black, DrawFill::Empty);
-    
-    display->draw_string(20, 70, "Hello, libepaper2!", 
+
+    display->draw_string(20, 70, "Hello, libepaper!",
         Font::font24(), Color::Black, Color::White);
 
     // 4. Refresh to show
@@ -126,7 +126,43 @@ sudo ./build/examples/crypto_dashboard/crypto_dashboard
 - Error display: Fallback screens when API fails
 ```
 
-### 2. Basic Drawing Demo (`demo.cpp`)
+### 2. BMP Debug Export (`bmp_debug_example/`)
+
+A demonstration of exporting framebuffer contents to BMP files for debugging.
+
+**Features Demonstrated:**
+- BMP export for instant visual feedback
+- Layout debugging without display hardware
+- All drawing primitives (text, shapes, numbers)
+- Multiple test scenarios
+
+**What it creates:**
+- `test1_text.bmp`: Text layout example
+- `test2_shapes.bmp`: Rectangles, circles, lines
+- `test3_fonts.bmp`: All font sizes
+- `test4_numbers.bmp`: Number formatting
+
+**Run it:**
+```bash
+./build/examples/bmp_debug_example/bmp_debug_example
+```
+
+**Learn more:** [bmp_debug_example/README.md](bmp_debug_example/README.md)
+
+**Key usage:**
+```cpp
+// Draw content
+display.clear(Color::White);
+display.draw_string(10, 10, "Test", Font::font16(), Color::Black, Color::White);
+
+// Export to BMP (instant!)
+display.save_framebuffer_to_bmp("debug.bmp");
+
+// Optional: refresh to display (slow)
+display.refresh();
+```
+
+### 3. Basic Drawing Demo (`demo.cpp`)
 
 **Status:** _TODO - To be created_
 
@@ -140,7 +176,7 @@ A comprehensive demonstration of all drawing primitives.
 - Different orientations
 - Color modes
 
-### 3. Image Gallery (`image_gallery/`)
+### 4. Image Gallery (`image_gallery/`)
 
 **Status:** _TODO - To be created_
 
@@ -153,7 +189,7 @@ A slideshow application displaying images from a directory.
 - Slideshow timing
 - Directory scanning
 
-### 4. Weather Station (`weather_station/`)
+### 5. Weather Station (`weather_station/`)
 
 **Status:** _TODO - To be created_
 
@@ -166,7 +202,7 @@ A weather display fetching data from an API.
 - Temperature graphs
 - Forecast display
 
-### 5. System Monitor (`system_monitor/`)
+### 6. System Monitor (`system_monitor/`)
 
 **Status:** _TODO - To be created_
 
@@ -183,7 +219,7 @@ A Raspberry Pi system monitor showing CPU, memory, and temperature.
 
 ### Beginner
 
-Start here if you're new to libepaper2:
+Start here if you're new to libepaper:
 
 1. **Read the Quick Start** (above)
 2. **Try the Crypto Dashboard**: `sudo ./build/examples/crypto_dashboard/crypto_dashboard`
@@ -314,19 +350,19 @@ auto last_update = std::chrono::steady_clock::now();
 
 while (running) {
     auto now = std::chrono::steady_clock::now();
-    
+
     if (now - last_update >= update_interval) {
         // Fetch fresh data
         auto data = get_data();
-        
+
         // Update display
         display->clear(Color::White);
         render_data(display, data);
         display->refresh();
-        
+
         last_update = now;
     }
-    
+
     // Sleep briefly to avoid busy-waiting
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
@@ -345,12 +381,12 @@ auto last_flip = std::chrono::steady_clock::now();
 
 while (running) {
     auto now = std::chrono::steady_clock::now();
-    
+
     if (now - last_flip >= flip_interval) {
         // Advance to next screen
         int screen_num = static_cast<int>(current);
         current = static_cast<Screen>((screen_num + 1) % 3);
-        
+
         // Render new screen
         display->clear(Color::White);
         switch (current) {
@@ -359,10 +395,10 @@ while (running) {
             case Screen::Settings:  render_settings(display); break;
         }
         display->refresh();
-        
+
         last_flip = now;
     }
-    
+
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 ```
@@ -374,22 +410,22 @@ Show errors on display when operations fail:
 ```cpp
 void render_error(Display& display, const std::string& message) {
     display->clear(Color::White);
-    
+
     // Error border
-    display->draw_rectangle(5, 5, 
-        display->effective_width() - 6, 
-        display->effective_height() - 6, 
+    display->draw_rectangle(5, 5,
+        display->effective_width() - 6,
+        display->effective_height() - 6,
         Color::Black, DrawFill::Empty);
-    
+
     // Error title
-    display->draw_string(20, 20, "Error", 
+    display->draw_string(20, 20, "Error",
         Font::font20(), Color::Black, Color::White);
-    
+
     // Error message (word-wrap manually)
     size_t y = 50;
-    display->draw_string(20, y, message.substr(0, 30), 
+    display->draw_string(20, y, message.substr(0, 30),
         Font::font12(), Color::Black, Color::White);
-    
+
     display->refresh();
 }
 
@@ -422,17 +458,17 @@ int main() {
     // Install signal handlers
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
-    
+
     // Main loop
     while (g_running) {
         // ... do work ...
-        
+
         // Check g_running frequently for fast exit
         if (!g_running) break;
-        
+
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    
+
     std::cout << "Clean shutdown complete.\n";
     return 0;
 }
@@ -445,14 +481,14 @@ Show progress while loading:
 ```cpp
 void show_loading(Display& display, const std::string& message) {
     display->clear(Color::White);
-    
+
     // Center text
     size_t x = (display->effective_width() - message.length() * 7) / 2;
     size_t y = display->effective_height() / 2;
-    
-    display->draw_string(x, y, message, 
+
+    display->draw_string(x, y, message,
         Font::font12(), Color::Black, Color::White);
-    
+
     display->refresh();
 }
 
@@ -493,6 +529,17 @@ display->draw_string(10, 60, "Detail text", Font::font12(), ...); // Small
 ```
 
 ### Debugging Examples
+
+**BMP Export (NEW!):**
+```cpp
+// Save framebuffer to BMP for instant visual inspection
+display->draw_string(10, 10, "Test Layout", Font::font16(), ...);
+display->save_framebuffer_to_bmp("debug_layout.bmp");
+
+// Review BMP on your computer - no display hardware needed!
+// Then deploy to hardware when layout is perfect
+display->refresh();
+```
 
 **Console Logging:**
 ```cpp
@@ -624,6 +671,6 @@ Examples should follow project standards:
 
 ---
 
-**For API reference, see [docs/API.md](../docs/API.md).**  
-**For architecture details, see [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).**  
+**For API reference, see [docs/API.md](../docs/API.md).**
+**For architecture details, see [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).**
 **For driver development, see [docs/DRIVER.md](../docs/DRIVER.md).**

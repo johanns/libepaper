@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# run_all_tests.sh - Run all libepaper2 manual tests sequentially
-# 
+# run_all_tests.sh - Run all libepaper manual tests sequentially
+#
 # This script runs all test programs in sequence with optional pauses between tests.
 # Tests must be run with sudo for GPIO/SPI access.
 #
@@ -100,7 +100,7 @@ print_header() {
 print_status() {
     local status=$1
     local message=$2
-    
+
     case $status in
         "pass")
             echo -e "${GREEN}✓ PASSED${NC}: $message"
@@ -134,27 +134,27 @@ pause_between_tests() {
 run_test() {
     local test_name=$1
     local test_path="./$test_name"
-    
+
     # Check if test should be skipped
     if [[ "$test_name" == "$SKIP_TEST" ]]; then
         print_status "skip" "$test_name"
         return 0
     fi
-    
+
     # Check if test executable exists
     if [[ ! -f "$test_path" ]]; then
         print_status "fail" "$test_name - Executable not found"
         return 1
     fi
-    
+
     # Check if test is executable
     if [[ ! -x "$test_path" ]]; then
         print_status "fail" "$test_name - Not executable (run: chmod +x $test_path)"
         return 1
     fi
-    
+
     print_header "Running: $test_name"
-    
+
     # Run the test
     if $test_path; then
         print_status "pass" "$test_name"
@@ -167,32 +167,32 @@ run_test() {
 
 # Main execution
 main() {
-    print_header "libepaper2 Manual Test Suite"
-    
+    print_header "libepaper Manual Test Suite"
+
     echo "Test suite version: 1.0"
     echo "Date: $(date)"
     echo ""
-    
+
     if [[ "$AUTO_MODE" == true ]]; then
         echo -e "${YELLOW}Running in AUTO mode (no manual pauses)${NC}"
     fi
-    
+
     if [[ -n "$SKIP_TEST" ]]; then
         echo -e "${YELLOW}Skipping test: $SKIP_TEST${NC}"
     fi
-    
+
     if [[ -n "$SINGLE_TEST" ]]; then
         echo -e "${YELLOW}Running single test: $SINGLE_TEST${NC}"
     fi
-    
+
     echo ""
-    
+
     # Statistics
     local total_tests=0
     local passed_tests=0
     local failed_tests=0
     local skipped_tests=0
-    
+
     # Determine which tests to run
     local tests_to_run=()
     if [[ -n "$SINGLE_TEST" ]]; then
@@ -200,22 +200,22 @@ main() {
     else
         tests_to_run=("${TESTS[@]}")
     fi
-    
+
     # Run tests
     for test in "${tests_to_run[@]}"; do
         ((total_tests++))
-        
+
         if [[ "$test" == "$SKIP_TEST" ]]; then
             ((skipped_tests++))
             print_status "skip" "$test"
             continue
         fi
-        
+
         if run_test "$test"; then
             ((passed_tests++))
         else
             ((failed_tests++))
-            
+
             # Ask if user wants to continue after failure
             if [[ "$AUTO_MODE" == false ]]; then
                 echo ""
@@ -227,16 +227,16 @@ main() {
                 fi
             fi
         fi
-        
+
         # Pause between tests (except after last test)
         if [[ "$test" != "${tests_to_run[-1]}" ]]; then
             pause_between_tests
         fi
     done
-    
+
     # Print summary
     print_header "Test Suite Summary"
-    
+
     echo "Total tests:   $total_tests"
     echo -e "Passed tests:  ${GREEN}$passed_tests${NC}"
     if [[ $failed_tests -gt 0 ]]; then
@@ -249,9 +249,9 @@ main() {
     else
         echo "Skipped tests: 0"
     fi
-    
+
     echo ""
-    
+
     if [[ $failed_tests -eq 0 ]]; then
         echo -e "${GREEN}✓ All tests passed!${NC}"
         exit 0

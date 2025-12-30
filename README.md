@@ -199,7 +199,7 @@ The abstract driver interface makes it straightforward to add support for other 
 ### Project Structure
 
 ```
-libepaper2/
+libepaper/
 ├── include/epaper/        # Public API headers
 │   ├── device.hpp         # Hardware abstraction
 │   ├── display.hpp        # High-level display API
@@ -207,6 +207,7 @@ libepaper2/
 │   └── font.hpp           # Font rendering
 ├── src/                   # Implementation files
 ├── examples/              # Example applications
+│   ├── bmp_debug_example/ # BMP export for debugging
 │   └── crypto_dashboard/  # Real-time crypto price dashboard
 ├── tests/                 # Test suite
 ├── docs/                  # Comprehensive documentation

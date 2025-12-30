@@ -2,6 +2,20 @@
 
 A modern cryptocurrency price dashboard application for e-Paper displays, built with C++23. Displays BTC and ETH prices with rotating screens showing 30-day and 6-month price graphs.
 
+## 📸 Screenshots
+
+### Screen 1: Combined View (264x176 landscape)
+
+BTC and ETH prices with 30-day charts side-by-side:
+
+![Crypto Dashboard Screen 1 - Combined View](docs/images/crypto_dashboard1.png)
+
+### Screen 2: Dedicated View (264x176 landscape)
+
+Individual cryptocurrency with 30-day and 6-month charts stacked:
+
+![Crypto Dashboard Screen 2 - Dedicated View](docs/images/crypto_dashboard2.png)
+
 ## 🏗️ Architecture
 
 This application demonstrates:
@@ -196,17 +210,11 @@ All use composition instead of inheritance.
 
 ## 🎨 Screen Layouts
 
-### Screen 1: Combined View (264x176 landscape)
+The dashboard rotates through 3 screens (see [Screenshots](#-screenshots) above):
 
-BTC and ETH prices with 30-day charts side-by-side:
-
-![Crypto Dashboard Screen 1 - Combined View](docs/images/crypto_dashboard1.png)
-
-### Screen 2: Dedicated View (264x176 landscape)
-
-Individual cryptocurrency with 30-day and 6-month charts stacked:
-
-![Crypto Dashboard Screen 2 - Dedicated View](docs/images/crypto_dashboard2.png)
+1. **Combined View**: BTC and ETH prices with 30-day charts side-by-side
+2. **BTC Dedicated**: BTC price with 30-day and 6-month charts stacked
+3. **ETH Dedicated**: ETH price with 30-day and 6-month charts stacked
 
 ## 🧪 Testing
 
