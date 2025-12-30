@@ -1,6 +1,6 @@
 # Architecture Guide
 
-A comprehensive technical guide to the libepaper2 architecture, design decisions, and implementation details.
+A comprehensive technical guide to the libepaper architecture, design decisions, and implementation details.
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@ A comprehensive technical guide to the libepaper2 architecture, design decisions
 
 ## Design Philosophy
 
-The libepaper2 library is built on modern C++23 principles prioritizing safety, simplicity, and extensibility.
+The libepaper library is built on modern C++23 principles prioritizing safety, simplicity, and extensibility.
 
 ### Core Principles
 
@@ -59,7 +59,7 @@ graph TD
     D --> E[EPD27 Driver]
     E --> F[Hardware Device Layer]
     F --> G[BCM2835/SPI/GPIO]
-    
+
     style A fill:#e1f5ff
     style B fill:#b3e5fc
     style C fill:#81d4fa
@@ -124,12 +124,12 @@ classDiagram
         +spi_transfer(data) void
         +delay_ms(ms) void
     }
-    
+
     class Impl {
         <<Private Implementation>>
         -BCM2835 library calls
     }
-    
+
     Device *-- Impl : contains
 ```
 
@@ -166,7 +166,7 @@ classDiagram
         +supports_partial_refresh() bool*
         +supports_power_control() bool*
     }
-    
+
     class EPD27 {
         -Device& device_
         -DisplayMode current_mode_
@@ -181,7 +181,7 @@ classDiagram
         -wait_busy() void
         -set_lut() void
     }
-    
+
     Driver <|.. EPD27 : implements
 ```
 
@@ -220,7 +220,7 @@ classDiagram
         +effective_width() size_t
         +effective_height() size_t
     }
-    
+
     class Framebuffer {
         -std::vector~std::byte~ buffer_
         -size_t width_
@@ -231,7 +231,7 @@ classDiagram
         +clear(color) void
         +data() span~byte~
     }
-    
+
     class Orientation {
         <<enumeration>>
         Portrait0
@@ -239,7 +239,7 @@ classDiagram
         Portrait180
         Landscape270
     }
-    
+
     Display o-- Framebuffer : contains
     Display --> Orientation : uses
     Display --> Driver : uses
@@ -272,7 +272,7 @@ stateDiagram-v2
     Awake --> Awake: refresh() without auto-sleep
     Awake --> [*]: destructor
     Asleep --> [*]: destructor
-    
+
     note right of Asleep
         Driver tracks state internally
         Next refresh() auto-wakes
@@ -295,11 +295,11 @@ graph LR
     A[Application Color] --> B{Display Mode}
     B -->|BlackWhite| C[1-bit: 0=white, 1=black]
     B -->|Grayscale4| D[2-bit: 00=white, 01=gray1, 10=gray2, 11=black]
-    
+
     C --> E[Framebuffer Encoding]
     D --> E
     E --> F[Hardware Buffer]
-    
+
     style A fill:#e1f5ff
     style C fill:#81d4fa
     style D fill:#81d4fa
@@ -330,25 +330,25 @@ sequenceDiagram
     participant Display
     participant Driver
     participant Hardware
-    
+
     App->>Display: refresh()
     Display->>Driver: display(framebuffer)
-    
+
     alt Driver is asleep
         Driver->>Driver: wake() [re-init hardware]
         Note over Driver: EPD27: ~2s re-initialization
     end
-    
+
     Driver->>Hardware: SPI transfer (command)
     Driver->>Hardware: SPI transfer (data)
     Driver->>Hardware: Wait BUSY pin
     Hardware-->>Driver: Transfer complete
-    
+
     alt Auto-sleep enabled
         Driver->>Driver: sleep() [deep sleep]
         Driver->>Driver: Set is_asleep_ = true
     end
-    
+
     Driver-->>Display: Success
     Display-->>App: Success
 ```
@@ -360,7 +360,7 @@ sequenceDiagram
     participant App
     participant Display
     participant Framebuffer
-    
+
     App->>Display: draw_line(x1, y1, x2, y2, color)
     Display->>Display: Transform coordinates (orientation)
     Display->>Display: Bresenham line algorithm
@@ -381,12 +381,12 @@ sequenceDiagram
     participant Device
     participant Driver
     participant Display
-    
+
     App->>Device: init()
     Device->>Device: BCM2835 initialization
     Device->>Device: SPI setup
     Device-->>App: expected<void, Error>
-    
+
     App->>Driver: new EPD27(device)
     App->>Driver: init(DisplayMode)
     Driver->>Driver: Hardware reset
@@ -394,7 +394,7 @@ sequenceDiagram
     Driver->>Driver: Load LUT
     Driver->>Driver: Set is_asleep_ = false
     Driver-->>App: expected<void, Error>
-    
+
     App->>Display: create_display(...)
     Display->>Display: Allocate framebuffer
     Display->>Display: Setup orientation
@@ -518,19 +518,19 @@ sequenceDiagram
     participant GPIO
     participant SPI
     participant Display
-    
+
     CPU->>GPIO: Set DC = LOW (command mode)
     CPU->>GPIO: Set CS = LOW (select device)
     CPU->>SPI: Transfer command byte
     SPI-->>Display: Command byte
     CPU->>GPIO: Set CS = HIGH (deselect)
-    
+
     CPU->>GPIO: Set DC = HIGH (data mode)
     CPU->>GPIO: Set CS = LOW (select device)
     CPU->>SPI: Transfer data bytes
     SPI-->>Display: Data bytes
     CPU->>GPIO: Set CS = HIGH (deselect)
-    
+
     CPU->>GPIO: Read BUSY pin
     alt BUSY == HIGH
         CPU->>CPU: Wait (polling)
@@ -583,7 +583,7 @@ graph TD
     K --> L[Master Activation]
     L --> M[Wait BUSY]
     M --> N[Ready]
-    
+
     style A fill:#e1f5ff
     style N fill:#4caf50
 ```
@@ -604,7 +604,7 @@ graph LR
         GND[GND]
         VCC[3.3V]
     end
-    
+
     subgraph "E-Paper Display"
         ERST[RST]
         EDC[DC]
@@ -615,7 +615,7 @@ graph LR
         EGND[GND]
         EVCC[VCC]
     end
-    
+
     RST --> ERST
     DC --> EDC
     CS --> ECS
@@ -624,7 +624,7 @@ graph LR
     SCLK --> ESCLK
     GND --> EGND
     VCC --> EVCC
-    
+
     style RST fill:#4fc3f7
     style DC fill:#4fc3f7
     style CS fill:#4fc3f7
@@ -682,17 +682,17 @@ enum class ErrorCode {
   SPIInitFailed,
   InvalidPin,
   TransferFailed,
-  
+
   // Driver errors (display layer)
   DriverNotInitialized,
   DriverInitFailed,
   InvalidDisplayMode,
   HardwareTimeout,
-  
+
   // Display errors (API layer)
   DisplayNotReady,
   RefreshFailed,
-  
+
   // File I/O errors
   FileNotFound,
   InvalidFormat,
@@ -763,12 +763,12 @@ class MockDevice : public Device {
   auto init() -> std::expected<void, Error> override {
     return {};  // Always succeed
   }
-  
+
   auto spi_transfer(std::span<const std::byte> data) -> void override {
     // Record call for verification
     spi_calls_.push_back({data.begin(), data.end()});
   }
-  
+
   std::vector<std::vector<std::byte>> spi_calls_;  // For assertions
 };
 ```

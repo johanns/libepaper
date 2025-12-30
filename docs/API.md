@@ -1,6 +1,6 @@
 # API Reference
 
-A comprehensive guide to using the libepaper2 API for e-paper display control.
+A comprehensive guide to using the libepaper API for e-paper display control.
 
 ## Table of Contents
 
@@ -57,7 +57,7 @@ int main() {
 
     // 3. Draw something
     display->clear(Color::White);
-    display->draw_string(10, 10, "Hello World!", Font::font16(), 
+    display->draw_string(10, 10, "Hello World!", Font::font16(),
                         Color::Black, Color::White);
 
     // 4. Refresh display (will auto-sleep after)
@@ -92,8 +92,8 @@ int main() {
 
     // Create display in landscape orientation
     auto display = create_display<EPD27>(
-        device, 
-        DisplayMode::BlackWhite, 
+        device,
+        DisplayMode::BlackWhite,
         Orientation::Landscape90
     );
 
@@ -105,22 +105,22 @@ int main() {
     display->clear(Color::White);
 
     // Draw a border rectangle
-    display->draw_rectangle(0, 0, 
-        display->effective_width() - 1, 
-        display->effective_height() - 1, 
-        Color::Black, 
+    display->draw_rectangle(0, 0,
+        display->effective_width() - 1,
+        display->effective_height() - 1,
+        Color::Black,
         DrawFill::Empty);
 
     // Draw title
-    display->draw_string(10, 10, "My First E-Paper App", 
+    display->draw_string(10, 10, "My First E-Paper App",
         Font::font20(), Color::Black, Color::White);
 
     // Draw a filled rectangle
-    display->draw_rectangle(10, 40, 100, 80, 
+    display->draw_rectangle(10, 40, 100, 80,
         Color::Black, DrawFill::Full);
 
     // Draw text on black background
-    display->draw_string(15, 50, "libepaper2", 
+    display->draw_string(15, 50, "libepaper",
         Font::font12(), Color::White, Color::Black);
 
     // Refresh display
@@ -180,7 +180,7 @@ Pure binary output - only black and white pixels.
 
 ```cpp
 auto display = create_display<EPD27>(
-    device, 
+    device,
     DisplayMode::BlackWhite,
     Orientation::Portrait0
 );
@@ -206,7 +206,7 @@ Four-level grayscale output.
 
 ```cpp
 auto display = create_display<EPD27>(
-    device, 
+    device,
     DisplayMode::Grayscale4,
     Orientation::Portrait0
 );
@@ -235,19 +235,19 @@ The library supports four orientations with automatic coordinate transformation:
 
 ```cpp
 // Portrait (default) - 176x264 pixels
-auto display1 = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display1 = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Portrait0);
 
 // Landscape (90° clockwise) - 264x176 pixels
-auto display2 = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display2 = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Landscape90);
 
 // Upside-down portrait (180°) - 176x264 pixels
-auto display3 = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display3 = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Portrait180);
 
 // Landscape counter-clockwise (270°) - 264x176 pixels
-auto display4 = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display4 = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Landscape270);
 ```
 
@@ -256,7 +256,7 @@ auto display4 = create_display<EPD27>(device, DisplayMode::BlackWhite,
 The coordinate system is automatically transformed. Point (0, 0) is always the top-left corner in the *rotated* coordinate space.
 
 ```cpp
-auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Landscape90);
 
 // Get effective dimensions (accounts for rotation)
@@ -313,10 +313,10 @@ display->draw_line(x1, y1, x2, y2, Color::Black);
 display->draw_line(x1, y1, x2, y2, Color::Black, DotPixel::Pixel2x2);
 
 // Dotted or dashed lines
-display->draw_line(x1, y1, x2, y2, Color::Black, 
+display->draw_line(x1, y1, x2, y2, Color::Black,
                   DotPixel::Pixel1x1, LineStyle::Dotted);
 
-display->draw_line(x1, y1, x2, y2, Color::Black, 
+display->draw_line(x1, y1, x2, y2, Color::Black,
                   DotPixel::Pixel1x1, LineStyle::Dashed);
 ```
 
@@ -346,7 +346,7 @@ display->draw_rectangle(x, y, width, height, Color::Black, DrawFill::Empty);
 display->draw_rectangle(x, y, width, height, Color::Black, DrawFill::Full);
 
 // Thicker borders
-display->draw_rectangle(x, y, width, height, Color::Black, 
+display->draw_rectangle(x, y, width, height, Color::Black,
                        DrawFill::Empty, DotPixel::Pixel2x2);
 ```
 
@@ -364,9 +364,9 @@ display->draw_rectangle(10, 10, 100, 40, Color::Black, DrawFill::Empty);
 display->draw_string(30, 20, "OK", Font::font16(), Color::Black, Color::White);
 
 // Draw a filled header bar
-display->draw_rectangle(0, 0, display->effective_width(), 30, 
+display->draw_rectangle(0, 0, display->effective_width(), 30,
                        Color::Black, DrawFill::Full);
-display->draw_string(10, 8, "Dashboard", Font::font16(), 
+display->draw_string(10, 8, "Dashboard", Font::font16(),
                     Color::White, Color::Black);
 ```
 
@@ -380,7 +380,7 @@ display->draw_circle(center_x, center_y, radius, Color::Black, DrawFill::Empty);
 display->draw_circle(center_x, center_y, radius, Color::Black, DrawFill::Full);
 
 // Thicker outline
-display->draw_circle(center_x, center_y, radius, Color::Black, 
+display->draw_circle(center_x, center_y, radius, Color::Black,
                     DrawFill::Empty, DotPixel::Pixel2x2);
 ```
 
@@ -402,19 +402,19 @@ if (connected) {
 
 ```cpp
 // Draw text
-display->draw_string(x, y, "Hello World!", Font::font16(), 
+display->draw_string(x, y, "Hello World!", Font::font16(),
                     Color::Black, Color::White);
 
 // Different font sizes
-display->draw_string(10, 10, "Tiny", Font::font8(), 
+display->draw_string(10, 10, "Tiny", Font::font8(),
                     Color::Black, Color::White);
-display->draw_string(10, 30, "Small", Font::font12(), 
+display->draw_string(10, 30, "Small", Font::font12(),
                     Color::Black, Color::White);
-display->draw_string(10, 50, "Medium", Font::font16(), 
+display->draw_string(10, 50, "Medium", Font::font16(),
                     Color::Black, Color::White);
-display->draw_string(10, 80, "Large", Font::font20(), 
+display->draw_string(10, 80, "Large", Font::font20(),
                     Color::Black, Color::White);
-display->draw_string(10, 110, "XLarge", Font::font24(), 
+display->draw_string(10, 110, "XLarge", Font::font24(),
                     Color::Black, Color::White);
 ```
 
@@ -428,15 +428,15 @@ display->draw_string(10, 110, "XLarge", Font::font24(),
 **Foreground/Background Colors:**
 ```cpp
 // Black text on white background
-display->draw_string(10, 10, "Normal", Font::font16(), 
+display->draw_string(10, 10, "Normal", Font::font16(),
                     Color::Black, Color::White);
 
 // White text on black background (inverse)
-display->draw_string(10, 30, "Inverse", Font::font16(), 
+display->draw_string(10, 30, "Inverse", Font::font16(),
                     Color::White, Color::Black);
 
 // Gray text (in grayscale mode)
-display->draw_string(10, 50, "Gray", Font::font16(), 
+display->draw_string(10, 50, "Gray", Font::font16(),
                     Color::Gray2, Color::White);
 ```
 
@@ -459,7 +459,7 @@ display->draw_string(x, y, "Line 3", Font::font16(), Color::Black, Color::White)
 ```cpp
 // Draw an integer
 int value = 42;
-display->draw_number(x, y, value, Font::font16(), 
+display->draw_number(x, y, value, Font::font16(),
                     Color::Black, Color::White);
 
 // Draw a decimal with precision
@@ -470,24 +470,24 @@ display->draw_decimal(x, y, pi, 3, Font::font16(),  // 3 decimal places
 
 // Right-aligned numbers (for tables)
 int price = 199;
-display->draw_number(200, y, price, Font::font12(), 
+display->draw_number(200, y, price, Font::font12(),
                     Color::Black, Color::White);
 ```
 
 **Formatting Examples:**
 ```cpp
 // Display sensor readings
-display->draw_string(10, 10, "Temperature:", Font::font12(), 
+display->draw_string(10, 10, "Temperature:", Font::font12(),
                     Color::Black, Color::White);
-display->draw_decimal(110, 10, temperature, 1, Font::font12(), 
+display->draw_decimal(110, 10, temperature, 1, Font::font12(),
                      Color::Black, Color::White);
-display->draw_string(150, 10, "C", Font::font12(), 
+display->draw_string(150, 10, "C", Font::font12(),
                     Color::Black, Color::White);
 
 // Display prices
-display->draw_string(10, 30, "$", Font::font16(), 
+display->draw_string(10, 30, "$", Font::font16(),
                     Color::Black, Color::White);
-display->draw_decimal(20, 30, price, 2, Font::font16(), 
+display->draw_decimal(20, 30, price, 2, Font::font16(),
                      Color::Black, Color::White);
 ```
 
@@ -552,7 +552,7 @@ enum class Color {
 ### Working with Grayscale
 
 ```cpp
-auto display = create_display<EPD27>(device, DisplayMode::Grayscale4, 
+auto display = create_display<EPD27>(device, DisplayMode::Grayscale4,
                                      Orientation::Portrait0);
 
 // Draw a grayscale gradient
@@ -562,7 +562,7 @@ for (size_t x = 0; x < display->effective_width(); x++) {
     else if (x < 88) shade = Color::Gray1;
     else if (x < 132) shade = Color::Gray2;
     else shade = Color::Black;
-    
+
     display->draw_line(x, 0, x, display->effective_height() - 1, shade);
 }
 
@@ -600,7 +600,7 @@ if (!result) {
 
 ```cpp
 // Create display with auto-sleep enabled (default and recommended)
-auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Portrait0, true);
 
 // First render
@@ -640,7 +640,7 @@ For special use cases where you need manual control:
 
 ```cpp
 // Disable auto-sleep
-auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Portrait0, false);  // false = disabled
 
 // Now you must manually manage sleep
@@ -729,7 +729,7 @@ auto retry_refresh = [&](int max_attempts = 3) -> std::expected<void, Error> {
         if (result) {
             return {};  // Success
         }
-        
+
         if (attempt < max_attempts) {
             std::cerr << "Attempt " << attempt << " failed, retrying...\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(100 * attempt));
@@ -747,9 +747,9 @@ auto result = display->refresh();
 if (!result) {
     // Clear and show error
     display->clear(Color::White);
-    display->draw_string(10, 10, "Error:", Font::font16(), 
+    display->draw_string(10, 10, "Error:", Font::font16(),
                         Color::Black, Color::White);
-    display->draw_string(10, 30, result.error().what(), Font::font12(), 
+    display->draw_string(10, 30, result.error().what(), Font::font12(),
                         Color::Black, Color::White);
     display->refresh();  // Try again with error message
 }
@@ -760,7 +760,7 @@ if (!result) {
 auto result = display->draw_bitmap_from_file(10, 10, "logo.png");
 if (!result) {
     // Fall back to text
-    display->draw_string(10, 10, "LOGO", Font::font24(), 
+    display->draw_string(10, 10, "LOGO", Font::font24(),
                         Color::Black, Color::White);
 }
 ```
@@ -795,7 +795,7 @@ Build your own drawing primitives on top of `set_pixel()`:
 
 ```cpp
 // Draw a triangle
-void draw_triangle(Display& display, size_t x1, size_t y1, 
+void draw_triangle(Display& display, size_t x1, size_t y1,
                   size_t x2, size_t y2, size_t x3, size_t y3, Color color) {
     display.draw_line(x1, y1, x2, y2, color);
     display.draw_line(x2, y2, x3, y3, color);
@@ -816,14 +816,14 @@ void draw_star(Display& display, size_t cx, size_t cy, size_t r, Color color) {
 // Good: Batch all drawing, then refresh once
 display->clear(Color::White);
 for (const auto& item : items) {
-    display->draw_string(10, item.y, item.text, Font::font12(), 
+    display->draw_string(10, item.y, item.text, Font::font12(),
                         Color::Black, Color::White);
 }
 display->refresh();  // Single refresh
 
 // Bad: Refresh after each draw (very slow!)
 for (const auto& item : items) {
-    display->draw_string(10, item.y, item.text, Font::font12(), 
+    display->draw_string(10, item.y, item.text, Font::font12(),
                         Color::Black, Color::White);
     display->refresh();  // ❌ Don't do this! ~2s each!
 }
@@ -840,15 +840,15 @@ while (running) {
     if (now - last_refresh >= refresh_interval) {
         // Fetch new data
         auto data = fetch_data();
-        
+
         // Update display
         display->clear(Color::White);
         render_data(display, data);
         display->refresh();
-        
+
         last_refresh = now;
     }
-    
+
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 ```
@@ -859,11 +859,11 @@ while (running) {
 
 ```cpp
 // ✅ Good: Auto-sleep enabled (default)
-auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Portrait0, true);
 
 // ❌ Bad: Disabled without good reason
-auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Portrait0, false);
 ```
 
@@ -931,31 +931,31 @@ display->draw_bitmap_from_file(10, 10, "icon.png").value();  // May throw!
 ```cpp
 void render_dashboard(Display& display, const SystemStatus& status) {
     display->clear(Color::White);
-    
+
     // Title bar
-    display->draw_rectangle(0, 0, display->effective_width(), 30, 
+    display->draw_rectangle(0, 0, display->effective_width(), 30,
                            Color::Black, DrawFill::Full);
-    display->draw_string(10, 8, "System Status", Font::font16(), 
+    display->draw_string(10, 8, "System Status", Font::font16(),
                         Color::White, Color::Black);
-    
+
     // Status indicators
     size_t y = 40;
     display->draw_string(10, y, "CPU:", Font::font12(), Color::Black, Color::White);
-    display->draw_decimal(80, y, status.cpu_usage, 1, Font::font12(), 
+    display->draw_decimal(80, y, status.cpu_usage, 1, Font::font12(),
                          Color::Black, Color::White);
     display->draw_string(120, y, "%", Font::font12(), Color::Black, Color::White);
-    
+
     y += 20;
     display->draw_string(10, y, "Temp:", Font::font12(), Color::Black, Color::White);
-    display->draw_decimal(80, y, status.temperature, 1, Font::font12(), 
+    display->draw_decimal(80, y, status.temperature, 1, Font::font12(),
                          Color::Black, Color::White);
     display->draw_string(120, y, "C", Font::font12(), Color::Black, Color::White);
-    
+
     // Connection indicator
     if (status.connected) {
         display->draw_circle(250, 10, 5, Color::White, DrawFill::Full);
     }
-    
+
     display->refresh();
 }
 ```
@@ -967,7 +967,7 @@ enum class Screen { Overview, Details, Settings };
 
 void render_current_screen(Display& display, Screen current, const AppState& state) {
     display->clear(Color::White);
-    
+
     switch (current) {
         case Screen::Overview:
             render_overview(display, state);
@@ -979,7 +979,7 @@ void render_current_screen(Display& display, Screen current, const AppState& sta
             render_settings(display, state);
             break;
     }
-    
+
     display->refresh();
 }
 
@@ -996,7 +996,7 @@ while (running) {
         render_current_screen(display, current_screen, state);
         last_flip = now;
     }
-    
+
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 ```
@@ -1014,7 +1014,7 @@ See the [crypto dashboard example](../examples/crypto_dashboard/) for a complete
 ```cpp
 // Draw your content
 display->clear(Color::White);
-display->draw_string(10, 10, "Layout Test", Font::font16(), 
+display->draw_string(10, 10, "Layout Test", Font::font16(),
                     Color::Black, Color::White);
 display->draw_rectangle(5, 5, 250, 170, Color::Black, DrawFill::Empty);
 
@@ -1044,7 +1044,7 @@ display->refresh();
 for (int layout = 0; layout < 5; ++layout) {
     display->clear(Color::White);
     render_layout(display, layout);
-    
+
     // Save each layout variant
     display->save_framebuffer_to_bmp("layout_" + std::to_string(layout) + ".bmp");
 }
@@ -1109,6 +1109,6 @@ See `examples/bmp_debug_example.cpp` for a complete demonstration.
 
 ---
 
-**For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).**  
-**For driver development, see [DRIVER.md](DRIVER.md).**  
+**For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).**
+**For driver development, see [DRIVER.md](DRIVER.md).**
 **For examples, see [examples/README.md](../examples/README.md).**

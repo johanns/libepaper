@@ -1,6 +1,6 @@
-# Manual Test Suite for libepaper2
+# Manual Test Suite for libepaper
 
-This directory contains a comprehensive manual test suite for the libepaper2 library. Since e-paper displays require physical verification of correct operation, these tests are designed to be run manually with visual inspection.
+This directory contains a comprehensive manual test suite for the libepaper library. Since e-paper displays require physical verification of correct operation, these tests are designed to be run manually with visual inspection.
 
 ## Overview
 
@@ -265,4 +265,4 @@ If you find issues or want to add more tests:
 
 ## License
 
-This test suite is part of the libepaper2 project and follows the same license.
+This test suite is part of the libepaper project and follows the same license.

@@ -1,6 +1,6 @@
 # Driver Development Guide
 
-A comprehensive guide to writing custom display drivers for libepaper2.
+A comprehensive guide to writing custom display drivers for libepaper.
 
 ## Table of Contents
 
@@ -67,13 +67,13 @@ public:
   virtual auto init(DisplayMode mode) -> std::expected<void, Error> = 0;
   virtual auto clear() -> std::expected<void, Error> = 0;
   virtual auto display(std::span<const std::byte> buffer) -> std::expected<void, Error> = 0;
-  
+
   // Power management
   virtual auto sleep() -> std::expected<void, Error> = 0;
   virtual auto wake() -> std::expected<void, Error> = 0;
   virtual auto power_off() -> std::expected<void, Error> = 0;
   virtual auto power_on() -> std::expected<void, Error> = 0;
-  
+
   // Capabilities
   [[nodiscard]] virtual auto width() const noexcept -> std::size_t = 0;
   [[nodiscard]] virtual auto height() const noexcept -> std::size_t = 0;
@@ -286,7 +286,7 @@ auto EPD42::init(DisplayMode mode) -> std::expected<void, Error> {
 
   initialized_ = true;
   is_asleep_ = false;  // Awake after init
-  
+
   return {};
 }
 
@@ -300,7 +300,7 @@ Implement the `display()` method with **transparent wake support**:
 ```cpp
 auto EPD42::display(std::span<const std::byte> buffer) -> std::expected<void, Error> {
   if (!initialized_) {
-    return std::unexpected(Error{ErrorCode::DriverNotInitialized, 
+    return std::unexpected(Error{ErrorCode::DriverNotInitialized,
                                  "EPD42 not initialized"});
   }
 
@@ -324,13 +324,13 @@ auto EPD42::display(std::span<const std::byte> buffer) -> std::expected<void, Er
   // Write buffer to display RAM
   constexpr std::uint8_t WRITE_RAM = 0x24;
   send_command(WRITE_RAM);
-  
+
   // Transfer buffer in chunks (SPI limitation)
   constexpr std::size_t CHUNK_SIZE = 4096;
   for (std::size_t i = 0; i < buffer.size(); i += CHUNK_SIZE) {
     std::size_t chunk_size = std::min(CHUNK_SIZE, buffer.size() - i);
     auto chunk = buffer.subspan(i, chunk_size);
-    
+
     // Convert std::byte to uint8_t for send_data
     std::vector<std::uint8_t> data(chunk_size);
     std::transform(chunk.begin(), chunk.end(), data.begin(),
@@ -622,7 +622,7 @@ auto YourDriver::sleep() -> std::expected<void, Error> {
   if (is_asleep_) {
     return {};  // Already asleep, nothing to do
   }
-  
+
   // Send sleep command
   send_command(DEEP_SLEEP);
   is_asleep_ = true;
@@ -633,13 +633,13 @@ auto YourDriver::wake() -> std::expected<void, Error> {
   if (!is_asleep_) {
     return {};  // Already awake, nothing to do
   }
-  
+
   // Re-initialize (or send wake command if supported)
   auto result = init(current_mode_);
   if (!result) {
     return result;
   }
-  
+
   is_asleep_ = false;
   return {};
 }
@@ -659,7 +659,7 @@ Return `std::unexpected(Error{...})` for:
 
 ```cpp
 // Initialization errors
-return std::unexpected(Error{ErrorCode::DriverInitFailed, 
+return std::unexpected(Error{ErrorCode::DriverInitFailed,
                              "Hardware not responding"});
 
 // State errors
@@ -687,7 +687,7 @@ auto YourDriver::some_operation() -> std::expected<void, Error> {
   if (!result) {
     return result;  // Propagate error
   }
-  
+
   // Continue with success path
   return {};
 }
@@ -702,7 +702,7 @@ auto YourDriver::some_operation() -> std::expected<void, Error> {
 TEST(YourDriverTest, InitializeSuccessfully) {
   MockDevice device;
   YourDriver driver(device);
-  
+
   auto result = driver.init(DisplayMode::BlackWhite);
   EXPECT_TRUE(result.has_value());
   EXPECT_EQ(driver.width(), EXPECTED_WIDTH);
@@ -715,7 +715,7 @@ TEST(YourDriverTest, InitializeSuccessfully) {
 TEST(YourDriverTest, SupportsBothModes) {
   MockDevice device;
   YourDriver driver(device);
-  
+
   EXPECT_TRUE(driver.init(DisplayMode::BlackWhite).has_value());
   EXPECT_TRUE(driver.init(DisplayMode::Grayscale4).has_value());
 }
@@ -727,15 +727,15 @@ TEST(YourDriverTest, TransparentWakeWorks) {
   MockDevice device;
   YourDriver driver(device);
   driver.init(DisplayMode::BlackWhite);
-  
+
   std::vector<std::byte> buffer(driver.buffer_size(), std::byte{0});
-  
+
   // First display
   EXPECT_TRUE(driver.display(buffer).has_value());
-  
+
   // Sleep
   EXPECT_TRUE(driver.sleep().has_value());
-  
+
   // Second display (should auto-wake)
   EXPECT_TRUE(driver.display(buffer).has_value());
 }
@@ -746,10 +746,10 @@ TEST(YourDriverTest, TransparentWakeWorks) {
 TEST(YourDriverTest, RejectsOperationsBeforeInit) {
   MockDevice device;
   YourDriver driver(device);
-  
+
   std::vector<std::byte> buffer(1000);
   auto result = driver.display(buffer);
-  
+
   EXPECT_FALSE(result.has_value());
   EXPECT_EQ(result.error().code, ErrorCode::DriverNotInitialized);
 }
@@ -998,6 +998,6 @@ As a driver contributor, you're expected to:
 
 ---
 
-**For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).**  
-**For API usage, see [API.md](API.md).**  
+**For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).**
+**For API usage, see [API.md](API.md).**
 **For examples, see [examples/README.md](../examples/README.md).**
