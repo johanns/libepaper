@@ -1,4 +1,27 @@
 #!/bin/bash
+#
+# E-Paper Library Setup Script
+# 
+# Installs all dependencies and configures the development environment
+# for libepaper2 on Raspberry Pi.
+#
+# Usage:
+#   ./bin/setup
+#
+# What it does:
+#   - Checks if running on Raspberry Pi
+#   - Updates package lists
+#   - Installs build tools (CMake, GCC 14, Clang)
+#   - Installs libraries (BCM2835, cURL, nlohmann-json)
+#   - Enables SPI interface
+#   - Configures Git settings (optional)
+#
+# Requirements:
+#   - Raspberry Pi OS
+#   - Internet connection
+#   - sudo privileges
+#
+# Documentation: README.md#quick-start
 
 set -e
 
@@ -28,7 +51,8 @@ sudo apt install -y \
     clangd \
     libbcm2835-dev \
     libcurl4-openssl-dev \
-    nlohmann-json3-dev
+    nlohmann-json3-dev \
+    ninja-build
 
 # Check compiler versions
 echo ""

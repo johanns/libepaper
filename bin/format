@@ -1,7 +1,37 @@
 #!/usr/bin/env bash
-
-# Script to format all C++ files in the directory structure using clang-format
-# Usage: ./format_cpp.sh [--check] [--dry-run]
+#
+# E-Paper Library Code Formatting Script
+#
+# Formats all C++ source files using clang-format according to project style.
+#
+# Usage:
+#   ./bin/format              # Format all files
+#   ./bin/format --check      # Check formatting without modifying
+#   ./bin/format --dry-run    # Show what would be formatted
+#
+# What it does:
+#   - Finds all .cpp, .hpp, .h, .cc, .cxx files
+#   - Excludes build/, .git/, third_party/ directories
+#   - Applies .clang-format style configuration
+#
+# Options:
+#   --check    Check if files need formatting (exit 1 if any do)
+#   --dry-run  Show which files would be formatted
+#
+# Examples:
+#   ./bin/format                    # Format everything
+#   ./bin/format --check            # Check in CI
+#   ./bin/format --dry-run          # Preview changes
+#
+# Requirements:
+#   - clang-format (any recent version)
+#   - .clang-format file in project root
+#
+# Exit codes:
+#   0 - Success (or all files already formatted in --check mode)
+#   1 - Error or files need formatting (in --check mode)
+#
+# Documentation: README.md#contributing
 
 set -euo pipefail
 
