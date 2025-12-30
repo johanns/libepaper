@@ -1,9 +1,9 @@
+#include <chrono>
+#include <cstdlib>
 #include <epaper/device.hpp>
 #include <epaper/display.hpp>
 #include <epaper/drivers/epd27.hpp>
 #include <epaper/font.hpp>
-#include <chrono>
-#include <cstdlib>
 #include <iostream>
 #include <thread>
 #include <vector>

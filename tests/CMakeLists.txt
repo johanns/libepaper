@@ -29,3 +29,13 @@ foreach(TEST_PROGRAM ${TEST_PROGRAMS})
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/tests
     )
 endforeach()
+
+# Install test script
+install(PROGRAMS run_all_tests.sh
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/tests
+)
+
+# Install test documentation
+install(FILES README.md
+    DESTINATION ${CMAKE_INSTALL_DOCDIR}/tests
+)

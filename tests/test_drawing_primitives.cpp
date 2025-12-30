@@ -1,8 +1,8 @@
+#include <cstdlib>
 #include <epaper/device.hpp>
 #include <epaper/display.hpp>
 #include <epaper/drivers/epd27.hpp>
 #include <epaper/font.hpp>
-#include <cstdlib>
 #include <iostream>
 
 using namespace epaper;
