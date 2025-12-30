@@ -187,7 +187,6 @@ public:
   [[nodiscard]] auto mode() const noexcept -> DisplayMode override { return current_mode_; }
   [[nodiscard]] auto buffer_size() const noexcept -> std::size_t override;
   [[nodiscard]] auto supports_partial_refresh() const noexcept -> bool override { return false; }
-  [[nodiscard]] auto supports_wake() const noexcept -> bool override { return false; }
   [[nodiscard]] auto supports_power_control() const noexcept -> bool override { return true; }
 
 private:
@@ -208,6 +207,7 @@ private:
   Device &device_;
   DisplayMode current_mode_ = DisplayMode::BlackWhite;
   bool initialized_ = false;
+  bool is_asleep_ = false;  // Track sleep state for transparent wake management
 
   // LUT tables for black/white mode
   static constexpr std::array<std::uint8_t, 44> LUT_VCOM_DC = {
@@ -274,8 +274,8 @@ template <> struct driver_capabilities<EPD27> {
   static constexpr bool supports_partial_refresh = true;       ///< Partial refresh capable
   static constexpr bool supports_power_control = true;         ///< Power control capable
   static constexpr bool supports_wake_from_sleep = false;      ///< Requires re-init after sleep
-  static constexpr std::size_t max_width = 176;                 ///< Maximum width in pixels
-  static constexpr std::size_t max_height = 264;                ///< Maximum height in pixels
+  static constexpr std::size_t max_width = 176;                ///< Maximum width in pixels
+  static constexpr std::size_t max_height = 264;               ///< Maximum height in pixels
 };
 
 } // namespace epaper

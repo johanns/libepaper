@@ -40,7 +40,6 @@ enum class Orientation : std::uint8_t {
   Landscape270 = 3 ///< Counter-clockwise 90° (270°)
 };
 
-
 /**
  * @brief Drawing styles for points and lines.
  */
@@ -127,7 +126,7 @@ public:
   // Non-copyable, movable
   Display(const Display &) = delete;
   Display &operator=(const Display &) = delete;
-  
+
   /**
    * @brief Move constructor.
    *
@@ -135,7 +134,7 @@ public:
    * @note Exception Safety: Nothrow guarantee.
    */
   Display(Display &&) noexcept = default;
-  
+
   /**
    * @brief Move assignment operator.
    *
@@ -318,9 +317,12 @@ public:
   /**
    * @brief Check if wake from sleep is supported.
    *
-   * @return true if the driver supports waking from sleep without re-initialization
+   * Note: With transparent sleep/wake management, all displays effectively
+   * support wake (the library handles re-initialization if needed).
+   *
+   * @return true (always - transparent wake is handled internally)
    */
-  [[nodiscard]] auto supports_wake() const noexcept -> bool;
+  [[nodiscard]] auto supports_wake() const noexcept -> bool { return true; }
 
   /**
    * @brief Check if power control is supported.
@@ -485,8 +487,9 @@ public:
    * @return void on success, Error on failure
    * @note Exception Safety: Strong guarantee - framebuffer unchanged on failure.
    */
-  [[nodiscard]] auto draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path, std::size_t target_width = 0,
-                             std::size_t target_height = 0) -> std::expected<void, Error>;
+  [[nodiscard]] auto draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path,
+                                           std::size_t target_width = 0, std::size_t target_height = 0)
+      -> std::expected<void, Error>;
 
   /**
    * @brief Get direct read-only access to the framebuffer.
@@ -564,7 +567,7 @@ private:
  */
 template <typename DriverType>
 [[nodiscard]] auto create_display(Device &device, DisplayMode mode, Orientation orientation = Orientation::Portrait0,
-                    bool auto_sleep = true) -> std::expected<Display, Error> {
+                                  bool auto_sleep = true) -> std::expected<Display, Error> {
   auto driver = std::make_unique<DriverType>(device);
   if (auto result = driver->init(mode); !result) {
     return std::unexpected(result.error());

@@ -204,29 +204,17 @@ auto Display::refresh() -> std::expected<void, Error> {
   return {};
 }
 
-auto Display::sleep() -> void {
-  driver_->sleep();
-}
+auto Display::sleep() -> void { driver_->sleep(); }
 
-auto Display::wake() -> std::expected<void, Error> {
-  return driver_->wake();
-}
+auto Display::wake() -> std::expected<void, Error> { return driver_->wake(); }
 
-auto Display::power_off() -> std::expected<void, Error> {
-  return driver_->power_off();
-}
+auto Display::power_off() -> std::expected<void, Error> { return driver_->power_off(); }
 
-auto Display::power_on() -> std::expected<void, Error> {
-  return driver_->power_on();
-}
+auto Display::power_on() -> std::expected<void, Error> { return driver_->power_on(); }
 
-auto Display::supports_wake() const noexcept -> bool {
-  return driver_->supports_wake();
-}
+// Moved to inline implementation in header (always returns true now)
 
-auto Display::supports_power_control() const noexcept -> bool {
-  return driver_->supports_power_control();
-}
+auto Display::supports_power_control() const noexcept -> bool { return driver_->supports_power_control(); }
 
 auto Display::draw_horizontal_line(std::size_t x_start, std::size_t x_end, std::size_t y, Color color, DotPixel width)
     -> void {

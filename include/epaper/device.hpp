@@ -44,7 +44,7 @@ constexpr Pin PWR{18};  // GPIO 18 (optional power control)
 class Device {
 public:
   Device() = default;
-  
+
   /**
    * @brief Destructor. Cleans up BCM2835 and SPI resources.
    *
@@ -55,7 +55,7 @@ public:
   // Non-copyable, movable
   Device(const Device &) = delete;
   Device &operator=(const Device &) = delete;
-  
+
   /**
    * @brief Move constructor.
    *
@@ -63,7 +63,7 @@ public:
    * @note Exception Safety: Nothrow guarantee.
    */
   Device(Device &&other) noexcept;
-  
+
   /**
    * @brief Move assignment operator.
    *
