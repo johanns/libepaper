@@ -1,8 +1,7 @@
 #pragma once
 
 #include "types.hpp"
-#include <epaper/draw.hpp>
-#include <epaper/screen.hpp>
+#include <epaper/display.hpp>
 #include <string>
 
 namespace crypto_dashboard {
@@ -11,7 +10,7 @@ namespace crypto_dashboard {
 /// Uses composition to hold drawing context
 class DashboardRenderer {
 public:
-  DashboardRenderer(epaper::Screen &screen, epaper::Draw &draw);
+  DashboardRenderer(epaper::Display &display);
 
   /// Render the complete dashboard
   void render(const CryptoPrice &btc, const CryptoPrice &eth, const PriceHistory &btc_history,
@@ -37,8 +36,7 @@ private:
   [[nodiscard]] static auto format_price(double price) -> std::string;
   [[nodiscard]] static auto format_change(double change) -> std::string;
 
-  epaper::Screen &screen_;
-  epaper::Draw &draw_;
+  epaper::Display &display_;
 };
 
 } // namespace crypto_dashboard

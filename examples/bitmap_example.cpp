@@ -1,8 +1,9 @@
 #include <epaper/device.hpp>
-#include <epaper/draw.hpp>
+#include <epaper/display.hpp>
 #include <epaper/drivers/epd27.hpp>
-#include <epaper/screen.hpp>
+#include <epaper/font.hpp>
 #include <iostream>
+#include <vector>
 
 using namespace epaper;
 
@@ -14,20 +15,12 @@ int main() {
     return 1;
   }
 
-  // Create driver for 2.7" display
-  EPD27 epd27(device);
-
-  // Initialize in black/white mode
-  if (auto result = epd27.init(DisplayMode::BlackWhite); !result) {
+  // Create display using factory function
+  auto display = create_display<EPD27>(device, DisplayMode::BlackWhite);
+  if (!display) {
     std::cerr << "Failed to initialize display\n";
     return 1;
   }
-
-  epd27.clear();
-
-  // Create screen and drawing interface
-  Screen screen(epd27);
-  Draw draw(screen);
 
   // Example 1: Draw a simple checkerboard pattern using raw pixel data
   constexpr std::size_t pattern_size = 32;
@@ -43,10 +36,10 @@ int main() {
   }
 
   // Draw checkerboard at original size
-  draw.draw_bitmap(10, 10, checkerboard, pattern_size, pattern_size);
+  display->draw_bitmap(10, 10, checkerboard, pattern_size, pattern_size);
 
   // Draw checkerboard scaled 2x
-  draw.draw_bitmap(50, 10, checkerboard, pattern_size, pattern_size, pattern_size * 2, pattern_size * 2);
+  display->draw_bitmap(50, 10, checkerboard, pattern_size, pattern_size, pattern_size * 2, pattern_size * 2);
 
   // Example 2: Draw a gradient pattern
   std::vector<Color> gradient;
@@ -67,42 +60,42 @@ int main() {
     }
   }
 
-  draw.draw_bitmap(10, 120, gradient, 64, 16);
+  display->draw_bitmap(10, 120, gradient, 64, 16);
 
   // Example 3: Draw from PNG file
   std::cout << "Loading test images...\n";
-  if (auto result = draw.draw_bitmap_from_file(10, 150, "images/logo.png"); result) {
+  if (auto result = display->draw_bitmap_from_file(10, 150, "images/logo.png"); result) {
     std::cout << "  ✓ Loaded logo.png\n";
   } else {
     std::cerr << "  ✗ Failed to load logo.png\n";
   }
 
   // Example 4: Draw scaled icon
-  if (auto result = draw.draw_bitmap_from_file(100, 150, "images/icon_battery.png", 48, 24); result) {
+  if (auto result = display->draw_bitmap_from_file(100, 150, "images/icon_battery.png", 48, 24); result) {
     std::cout << "  ✓ Loaded and scaled icon_battery.png (48x24)\n";
   } else {
     std::cerr << "  ✗ Failed to load battery icon\n";
   }
 
   // Example 5: Draw from JPEG file
-  if (auto result = draw.draw_bitmap_from_file(10, 180, "images/circles.jpg", 50, 50); result) {
+  if (auto result = display->draw_bitmap_from_file(10, 180, "images/circles.jpg", 50, 50); result) {
     std::cout << "  ✓ Loaded circles.jpg (50x50)\n";
   } else {
     std::cerr << "  ✗ Failed to load circles.jpg\n";
   }
 
   // Example 6: Draw from BMP file
-  if (auto result = draw.draw_bitmap_from_file(70, 180, "images/checkerboard_64.bmp", 40, 40); result) {
+  if (auto result = display->draw_bitmap_from_file(70, 180, "images/checkerboard_64.bmp", 40, 40); result) {
     std::cout << "  ✓ Loaded checkerboard_64.bmp (40x40)\n";
   } else {
     std::cerr << "  ✗ Failed to load checkerboard_64.bmp\n";
   }
 
   // Add some text
-  draw.draw_string(10, 200, "Bitmap Drawing Demo", Font::font16(), Color::Black, Color::White);
+  display->draw_string(10, 200, "Bitmap Drawing Demo", Font::font16(), Color::Black, Color::White);
 
   // Refresh display (automatically enters sleep mode after refresh)
-  screen.refresh();
+  display->refresh();
 
   std::cout << "Bitmap drawing demo completed successfully!\n";
   std::cout << "Display automatically put to sleep after refresh.\n";

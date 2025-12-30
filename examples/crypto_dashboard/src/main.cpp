@@ -5,9 +5,8 @@
 #include "wallet_config.hpp"
 
 #include <epaper/device.hpp>
-#include <epaper/draw.hpp>
+#include <epaper/display.hpp>
 #include <epaper/drivers/epd27.hpp>
-#include <epaper/screen.hpp>
 
 #include <atomic>
 #include <chrono>
@@ -20,7 +19,6 @@ using namespace crypto_dashboard;
 
 // Global state for signal handling
 std::atomic<bool> g_running{true};
-EPD27 *g_epd27 = nullptr;
 
 void signal_handler(int signal) {
   std::cout << "\nReceived signal " << signal << ", shutting down gracefully...\n";
@@ -115,22 +113,14 @@ auto main(int argc, char *argv[]) -> int {
       return EXIT_FAILURE;
     }
 
-    // Create EPD27 driver
-    EPD27 epd27(device);
-    g_epd27 = &epd27;
-
-    if (auto result = epd27.init(DisplayMode::BlackWhite); !result) {
+    // Create display using factory function in landscape mode
+    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape90);
+    if (!display) {
       std::cerr << "Failed to initialize display\n";
       return EXIT_FAILURE;
     }
 
-    epd27.clear();
-
-    // Create screen in landscape mode
-    Screen screen(epd27, Orientation::Landscape90);
-    Draw draw(screen);
-
-    std::cout << "Display size (landscape): " << screen.effective_width() << "x" << screen.effective_height()
+    std::cout << "Display size (landscape): " << display->effective_width() << "x" << display->effective_height()
               << " pixels\n\n";
 
     // Create API clients using composition
@@ -138,7 +128,7 @@ auto main(int argc, char *argv[]) -> int {
     CryptoDataFetcher data_fetcher(http_client, config.etherscan_api_key);
 
     // Create renderer
-    DashboardRenderer renderer(screen, draw);
+    DashboardRenderer renderer(*display);
 
     // Main update loop
     int update_count = 0;
@@ -206,9 +196,9 @@ auto main(int argc, char *argv[]) -> int {
     // Clean shutdown
     std::cout << "Performing clean shutdown...\n";
     std::cout << "Clearing display...\n";
-    screen.clear();
-    screen.refresh(); // This takes 30-60 seconds but ensures clean display state
-                      // Display automatically enters sleep mode after refresh
+    display->clear();
+    display->refresh(); // This takes 30-60 seconds but ensures clean display state
+                        // Display automatically enters sleep mode after refresh
 
     std::cout << "Shutdown complete. Goodbye!\n";
     return EXIT_SUCCESS;
