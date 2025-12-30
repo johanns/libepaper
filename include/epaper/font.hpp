@@ -30,7 +30,8 @@ public:
 
   // Calculate bytes per character
   [[nodiscard]] constexpr auto bytes_per_char() const noexcept -> std::size_t {
-    return ((width_ % 8 == 0) ? (width_ / 8) : (width_ / 8 + 1)) * height_;
+    const auto width_bytes = static_cast<std::size_t>((width_ % 8 == 0) ? (width_ / 8) : (width_ / 8 + 1));
+    return width_bytes * static_cast<std::size_t>(height_);
   }
 
   // Factory methods for built-in fonts

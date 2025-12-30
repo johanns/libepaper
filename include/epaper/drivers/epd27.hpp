@@ -1,6 +1,7 @@
 #pragma once
 
 #include "epaper/device.hpp"
+#include "epaper/drivers/capabilities.hpp"
 #include "epaper/drivers/driver.hpp"
 #include <array>
 #include <cstddef>
@@ -43,10 +44,10 @@ enum class Command : std::uint8_t {
  * @brief Timing constants for EPD27 operations (in milliseconds).
  */
 namespace Timing {
-constexpr std::uint32_t BUSY_WAIT_DELAY_MS = 200;      ///< Delay after busy wait
+constexpr std::uint32_t BUSY_WAIT_DELAY_MS = 200;       ///< Delay after busy wait
 constexpr std::uint32_t DISPLAY_REFRESH_DELAY_MS = 200; ///< Delay after display refresh
-constexpr std::uint32_t RESET_DELAY_MS = 200;          ///< Reset signal delay
-constexpr std::uint32_t RESET_PULSE_MS = 2;            ///< Reset pulse duration
+constexpr std::uint32_t RESET_DELAY_MS = 200;           ///< Reset signal delay
+constexpr std::uint32_t RESET_PULSE_MS = 2;             ///< Reset pulse duration
 } // namespace Timing
 
 /**
@@ -55,23 +56,18 @@ constexpr std::uint32_t RESET_PULSE_MS = 2;            ///< Reset pulse duration
  * Configuration values for power supply and booster settings.
  */
 struct PowerConfig {
-  std::uint8_t vds_en_vdg_en;     ///< VDS_EN and VDG_EN control
-  std::uint8_t vcom_hv_vghl_lv;   ///< VCOM_HV and VGHL_LV control
-  std::uint8_t vdh;               ///< VDH voltage setting
-  std::uint8_t vdl;               ///< VDL voltage setting
-  std::uint8_t vdhr;              ///< VDHR voltage setting (black/white mode only)
+  std::uint8_t vds_en_vdg_en;   ///< VDS_EN and VDG_EN control
+  std::uint8_t vcom_hv_vghl_lv; ///< VCOM_HV and VGHL_LV control
+  std::uint8_t vdh;             ///< VDH voltage setting
+  std::uint8_t vdl;             ///< VDL voltage setting
+  std::uint8_t vdhr;            ///< VDHR voltage setting (black/white mode only)
 };
 
 /**
  * @brief Power configuration for black/white mode.
  */
 constexpr PowerConfig POWER_CONFIG_BW = {
-    .vds_en_vdg_en = 0x03,
-    .vcom_hv_vghl_lv = 0x00,
-    .vdh = 0x2B,
-    .vdl = 0x2B,
-    .vdhr = 0x09
-};
+    .vds_en_vdg_en = 0x03, .vcom_hv_vghl_lv = 0x00, .vdh = 0x2B, .vdl = 0x2B, .vdhr = 0x09};
 
 /**
  * @brief Power configuration for grayscale mode.
@@ -98,11 +94,7 @@ struct BoosterConfig {
 /**
  * @brief Standard booster soft start configuration.
  */
-constexpr BoosterConfig BOOSTER_CONFIG = {
-    .phase1 = 0x07,
-    .phase2 = 0x07,
-    .phase3 = 0x17
-};
+constexpr BoosterConfig BOOSTER_CONFIG = {.phase1 = 0x07, .phase2 = 0x07, .phase3 = 0x17};
 
 /**
  * @brief Power optimization register settings.
@@ -151,26 +143,26 @@ constexpr std::uint8_t HEIGHT_LOW = 0x08;  ///< Height low byte (264 & 0xFF)
  * @brief Bit manipulation constants for grayscale processing.
  */
 namespace Grayscale {
-constexpr std::uint8_t BLACK_MASK = 0x00;       ///< Bit pattern for black pixel
-constexpr std::uint8_t BIT_SHIFT = 2;           ///< Bit shift for 2-bit pixels
-constexpr std::uint8_t GRAY1_MASK = 0x80;       ///< Bit pattern for gray level 1
-constexpr std::uint8_t GRAY2_MASK = 0x40;       ///< Bit pattern for gray level 2
-constexpr std::uint8_t PIXEL_MASK = 0xC0;       ///< Mask for extracting 2-bit pixel
-constexpr std::size_t TOTAL_PIXELS = 5808;      ///< Total pixels / 8 for grayscale (176*264/8)
-constexpr std::uint8_t WHITE_MASK = 0xC0;       ///< Bit pattern for white pixel
+constexpr std::uint8_t BLACK_MASK = 0x00;  ///< Bit pattern for black pixel
+constexpr std::uint8_t BIT_SHIFT = 2;      ///< Bit shift for 2-bit pixels
+constexpr std::uint8_t GRAY1_MASK = 0x80;  ///< Bit pattern for gray level 1
+constexpr std::uint8_t GRAY2_MASK = 0x40;  ///< Bit pattern for gray level 2
+constexpr std::uint8_t PIXEL_MASK = 0xC0;  ///< Mask for extracting 2-bit pixel
+constexpr std::size_t TOTAL_PIXELS = 5808; ///< Total pixels / 8 for grayscale (176*264/8)
+constexpr std::uint8_t WHITE_MASK = 0xC0;  ///< Bit pattern for white pixel
 } // namespace Grayscale
 
 /**
  * @brief Display operation constants.
  */
-namespace Display {
+namespace DisplayOps {
 constexpr std::uint8_t BUSY_STATUS_MASK = 0x01;             ///< Mask for busy status bit
 constexpr std::uint8_t CLEAR_FILL_VALUE = 0xFF;             ///< Fill value for clearing (white)
 constexpr std::uint8_t PARTIAL_REFRESH_DISABLE = 0x00;      ///< Disable partial refresh
 constexpr std::uint8_t SLEEP_VCOM_DATA_INTERVAL = 0xF7;     ///< VCOM interval for sleep mode
 constexpr std::uint8_t DEEP_SLEEP_MAGIC = 0xA5;             ///< Magic value for deep sleep
 constexpr std::uint8_t VCOM_DATA_INTERVAL_GRAYSCALE = 0x97; ///< VCOM interval for grayscale
-} // namespace Display
+} // namespace DisplayOps
 
 // 2.7 inch e-paper display driver (176x264 pixels)
 class EPD27 : public Driver {
@@ -186,11 +178,17 @@ public:
   auto clear() -> void override;
   auto display(std::span<const std::byte> buffer) -> void override;
   auto sleep() -> void override;
+  [[nodiscard]] auto wake() -> std::expected<void, DriverError> override;
+  [[nodiscard]] auto power_off() -> std::expected<void, DriverError> override;
+  [[nodiscard]] auto power_on() -> std::expected<void, DriverError> override;
 
   [[nodiscard]] auto width() const noexcept -> std::size_t override { return WIDTH; }
   [[nodiscard]] auto height() const noexcept -> std::size_t override { return HEIGHT; }
   [[nodiscard]] auto mode() const noexcept -> DisplayMode override { return current_mode_; }
   [[nodiscard]] auto buffer_size() const noexcept -> std::size_t override;
+  [[nodiscard]] auto supports_partial_refresh() const noexcept -> bool override { return false; }
+  [[nodiscard]] auto supports_wake() const noexcept -> bool override { return false; }
+  [[nodiscard]] auto supports_power_control() const noexcept -> bool override { return true; }
 
 private:
   // Hardware reset
@@ -262,6 +260,22 @@ private:
       0x80, 0x0A, 0x00, 0x00, 0x00, 0x01, 0x90, 0x14, 0x14, 0x00, 0x00, 0x01, 0x20, 0x14,
       0x0A, 0x00, 0x00, 0x01, 0x50, 0x13, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+};
+
+/**
+ * @brief Capability specialization for EPD27 driver.
+ *
+ * EPD27 is a 2.7" e-paper display supporting both 1-bit black/white
+ * and 2-bit 4-level grayscale modes.
+ */
+template <> struct driver_capabilities<EPD27> {
+  static constexpr ColorDepth color_depth = ColorDepth::Bits2; ///< Supports 2-bit grayscale
+  static constexpr bool supports_grayscale = true;             ///< Grayscale capable
+  static constexpr bool supports_partial_refresh = true;       ///< Partial refresh capable
+  static constexpr bool supports_power_control = true;         ///< Power control capable
+  static constexpr bool supports_wake_from_sleep = false;      ///< Requires re-init after sleep
+  static constexpr std::size_t max_width = 176;                 ///< Maximum width in pixels
+  static constexpr std::size_t max_height = 264;                ///< Maximum height in pixels
 };
 
 } // namespace epaper
