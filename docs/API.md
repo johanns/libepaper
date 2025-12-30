@@ -1005,7 +1005,58 @@ while (running) {
 
 See the [crypto dashboard example](../examples/crypto_dashboard/) for a complete real-world implementation.
 
-## Troubleshooting
+## Debugging & Troubleshooting
+
+### BMP Export for Debugging
+
+**NEW:** Save your framebuffer to a BMP file for instant visual inspection without waiting for slow display refresh!
+
+```cpp
+// Draw your content
+display->clear(Color::White);
+display->draw_string(10, 10, "Layout Test", Font::font16(), 
+                    Color::Black, Color::White);
+display->draw_rectangle(5, 5, 250, 170, Color::Black, DrawFill::Empty);
+
+// Save to BMP for debugging (instant!)
+auto result = display->save_framebuffer_to_bmp("debug_layout.bmp");
+if (!result) {
+    std::cerr << "BMP export failed: " << result.error().what() << "\n";
+}
+
+// Now refresh to display (slow, ~2 seconds)
+display->refresh();
+```
+
+**Benefits:**
+- **Instant feedback**: See your layout immediately without 2-second display refresh
+- **Works anywhere**: View BMP on your computer, no display hardware needed
+- **Perfect accuracy**: Shows exactly what will appear on display (with orientation)
+- **Iterative development**: Quickly test different layouts
+
+**Color mapping:**
+- **BlackWhite mode**: Black→RGB(0,0,0), White→RGB(255,255,255)
+- **Grayscale4 mode**: Black→RGB(0,0,0), Gray2→RGB(85,85,85), Gray1→RGB(170,170,170), White→RGB(255,255,255)
+
+**Example workflow:**
+```cpp
+// Rapid layout iteration without hardware
+for (int layout = 0; layout < 5; ++layout) {
+    display->clear(Color::White);
+    render_layout(display, layout);
+    
+    // Save each layout variant
+    display->save_framebuffer_to_bmp("layout_" + std::to_string(layout) + ".bmp");
+}
+
+// Review all BMPs on computer, pick best one
+// Then deploy to hardware
+display->clear(Color::White);
+render_layout(display, best_layout);
+display->refresh();  // Only one slow refresh needed!
+```
+
+See `examples/bmp_debug_example.cpp` for a complete demonstration.
 
 ### Display Not Responding
 

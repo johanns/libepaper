@@ -498,6 +498,34 @@ public:
    */
   [[nodiscard]] auto buffer() const -> std::span<const std::byte> { return buffer_; }
 
+  // ========== Debugging Operations ==========
+
+  /**
+   * @brief Save framebuffer contents to BMP file for debugging.
+   *
+   * Exports the current framebuffer to a 24-bit RGB BMP file, applying
+   * orientation transforms so the image matches what will appear on the
+   * display after refresh(). Useful for debugging layouts without waiting
+   * for slow display refresh cycles.
+   *
+   * Color mapping:
+   * - BlackWhite mode: Black→(0,0,0), White→(255,255,255)
+   * - Grayscale4 mode: Black→(0,0,0), Gray2→(85,85,85), Gray1→(170,170,170), White→(255,255,255)
+   *
+   * @param filename Path to output BMP file (will be overwritten if exists)
+   * @return void on success, Error on failure
+   * @note Exception Safety: Strong guarantee - file unchanged on failure.
+   *
+   * @example
+   * @code{.cpp}
+   * display->clear(Color::White);
+   * display->draw_string(10, 10, "Debug", Font::font16(), Color::Black, Color::White);
+   * display->save_framebuffer_to_bmp("debug_frame.bmp");  // Save before refresh
+   * display->refresh();  // Now refresh to display
+   * @endcode
+   */
+  [[nodiscard]] auto save_framebuffer_to_bmp(std::string_view filename) -> std::expected<void, Error>;
+
 private:
   // ========== Helper Methods ==========
 
