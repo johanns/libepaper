@@ -34,10 +34,9 @@ endif()
 # Library sources
 set(EPAPER_SOURCES
     src/device.cpp
-    src/draw.cpp
+    src/display.cpp
     src/drivers/epd27.cpp
     src/font.cpp
-    src/screen.cpp
 )
 
 # Font C files
@@ -70,11 +69,17 @@ target_link_libraries(epaper
         m
 )
 
+# Public headers for installation
+set(EPAPER_PUBLIC_HEADERS
+    include/epaper/device.hpp
+    include/epaper/display.hpp
+)
+
 # Set library properties
 set_target_properties(epaper PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
-    PUBLIC_HEADER include/epaper/device.hpp
+    PUBLIC_HEADER "${EPAPER_PUBLIC_HEADERS}"
 )
 
 # Add examples subdirectory
