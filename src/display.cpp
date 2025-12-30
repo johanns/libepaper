@@ -193,26 +193,30 @@ auto Display::clear_region(std::size_t x_start, std::size_t y_start, std::size_t
   }
 }
 
-auto Display::refresh() -> void {
-  driver_->display(buffer_);
+auto Display::refresh() -> std::expected<void, Error> {
+  auto result = driver_->display(buffer_);
+  if (!result) {
+    return result;
+  }
   if (auto_sleep_enabled_) {
     driver_->sleep();
   }
+  return {};
 }
 
 auto Display::sleep() -> void {
   driver_->sleep();
 }
 
-auto Display::wake() -> std::expected<void, DriverError> {
+auto Display::wake() -> std::expected<void, Error> {
   return driver_->wake();
 }
 
-auto Display::power_off() -> std::expected<void, DriverError> {
+auto Display::power_off() -> std::expected<void, Error> {
   return driver_->power_off();
 }
 
-auto Display::power_on() -> std::expected<void, DriverError> {
+auto Display::power_on() -> std::expected<void, Error> {
   return driver_->power_on();
 }
 
@@ -516,7 +520,7 @@ auto Display::draw_bitmap(std::size_t x, std::size_t y, std::span<const Color> p
 }
 
 auto Display::draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path, std::size_t target_width,
-                                    std::size_t target_height) -> std::expected<void, BitmapError> {
+                                    std::size_t target_height) -> std::expected<void, Error> {
   // Load image using stb_image
   int width = 0;
   int height = 0;
@@ -531,11 +535,11 @@ auto Display::draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_vi
 
   if (!image_data) {
     // Check if file exists or if it's a format error
-    return std::unexpected(BitmapError::LoadFailed);
+    return std::unexpected(Error(ErrorCode::LoadFailed));
   }
 
   if (width <= 0 || height <= 0) {
-    return std::unexpected(BitmapError::InvalidDimensions);
+    return std::unexpected(Error(ErrorCode::InvalidDimensions));
   }
 
   // Convert image data to Color array

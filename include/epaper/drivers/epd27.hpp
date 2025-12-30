@@ -174,13 +174,13 @@ public:
   ~EPD27() override = default;
 
   // Driver interface implementation
-  [[nodiscard]] auto init(DisplayMode mode) -> std::expected<void, DriverError> override;
+  [[nodiscard]] auto init(DisplayMode mode) -> std::expected<void, Error> override;
   auto clear() -> void override;
-  auto display(std::span<const std::byte> buffer) -> void override;
+  [[nodiscard]] auto display(std::span<const std::byte> buffer) -> std::expected<void, Error> override;
   auto sleep() -> void override;
-  [[nodiscard]] auto wake() -> std::expected<void, DriverError> override;
-  [[nodiscard]] auto power_off() -> std::expected<void, DriverError> override;
-  [[nodiscard]] auto power_on() -> std::expected<void, DriverError> override;
+  [[nodiscard]] auto wake() -> std::expected<void, Error> override;
+  [[nodiscard]] auto power_off() -> std::expected<void, Error> override;
+  [[nodiscard]] auto power_on() -> std::expected<void, Error> override;
 
   [[nodiscard]] auto width() const noexcept -> std::size_t override { return WIDTH; }
   [[nodiscard]] auto height() const noexcept -> std::size_t override { return HEIGHT; }

@@ -37,14 +37,14 @@ Device &Device::operator=(Device &&other) noexcept {
   return *this;
 }
 
-auto Device::init() -> std::expected<void, DeviceError> {
+auto Device::init() -> std::expected<void, Error> {
   if (initialized_) {
     return {};
   }
 
   // Initialize BCM2835 library
   if (bcm2835_init() == 0) {
-    return std::unexpected(DeviceError::InitializationFailed);
+    return std::unexpected(Error(ErrorCode::DeviceInitFailed));
   }
   initialized_ = true;
 
@@ -52,7 +52,7 @@ auto Device::init() -> std::expected<void, DeviceError> {
   if (bcm2835_spi_begin() == 0) {
     bcm2835_close();
     initialized_ = false;
-    return std::unexpected(DeviceError::SPIInitFailed);
+    return std::unexpected(Error(ErrorCode::SPIInitFailed));
   }
   spi_initialized_ = true;
 

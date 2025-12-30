@@ -1,5 +1,6 @@
 #pragma once
 
+#include "epaper/errors.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <expected>
@@ -8,59 +9,82 @@
 
 namespace epaper {
 
-// Display operation errors
-enum class DriverError { NotInitialized, InitializationFailed, InvalidMode, TransferFailed, Timeout };
-
-[[nodiscard]] constexpr auto to_string(DriverError error) -> std::string_view {
-  switch (error) {
-  case DriverError::NotInitialized:
-    return "Driver not initialized";
-  case DriverError::InitializationFailed:
-    return "Driver initialization failed";
-  case DriverError::InvalidMode:
-    return "Invalid display mode";
-  case DriverError::TransferFailed:
-    return "Data transfer failed";
-  case DriverError::Timeout:
-    return "Operation timed out";
-  }
-  return "Unknown error";
-}
-
 // Display modes
 enum class DisplayMode {
   BlackWhite, // 1-bit black and white
   Grayscale4  // 2-bit 4-level grayscale
 };
 
-// Abstract driver interface for e-paper displays
+/**
+ * @brief Abstract driver interface for e-paper displays.
+ *
+ * Defines the interface that all e-paper display drivers must implement.
+ * Provides hardware abstraction for different display models.
+ *
+ * @note Exception Safety: All virtual methods provide basic exception safety.
+ *       Derived classes must maintain object validity even if operations fail.
+ */
 class Driver {
 public:
   virtual ~Driver() = default;
 
-  // Initialize the display with specified mode
-  [[nodiscard]] virtual auto init(DisplayMode mode) -> std::expected<void, DriverError> = 0;
+  /**
+   * @brief Initialize the display with specified mode.
+   *
+   * @param mode Display mode (BlackWhite or Grayscale4)
+   * @return void on success, Error on failure
+   * @note Exception Safety: Strong guarantee - display remains uninitialized on failure.
+   */
+  [[nodiscard]] virtual auto init(DisplayMode mode) -> std::expected<void, Error> = 0;
 
-  // Clear the display (typically to white)
+  /**
+   * @brief Clear the display (typically to white).
+   *
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
+   *       This operation is benign and does not fail.
+   */
   virtual auto clear() -> void = 0;
 
-  // Send buffer data to display and refresh
-  virtual auto display(std::span<const std::byte> buffer) -> void = 0;
+  /**
+   * @brief Send buffer data to display and refresh.
+   *
+   * @param buffer Framebuffer data to display
+   * @return void on success, Error on failure
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
+   */
+  [[nodiscard]] virtual auto display(std::span<const std::byte> buffer) -> std::expected<void, Error> = 0;
 
-  // Put display into low-power sleep mode
+  /**
+   * @brief Put display into low-power sleep mode.
+   *
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
+   *       This operation is benign and does not fail.
+   */
   virtual auto sleep() -> void = 0;
 
-  // Wake display from sleep mode
-  // Returns error if wake is not supported or fails
-  [[nodiscard]] virtual auto wake() -> std::expected<void, DriverError> = 0;
+  /**
+   * @brief Wake display from sleep mode.
+   *
+   * @return void on success, Error if wake is not supported or fails
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
+   */
+  [[nodiscard]] virtual auto wake() -> std::expected<void, Error> = 0;
 
-  // Turn display power completely off (hardware power down)
-  // Returns error if power off is not supported or fails
-  [[nodiscard]] virtual auto power_off() -> std::expected<void, DriverError> = 0;
+  /**
+   * @brief Turn display power completely off (hardware power down).
+   *
+   * @return void on success, Error if power off is not supported or fails
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
+   */
+  [[nodiscard]] virtual auto power_off() -> std::expected<void, Error> = 0;
 
-  // Turn display power on (hardware power up)
-  // Returns error if power on is not supported or fails
-  [[nodiscard]] virtual auto power_on() -> std::expected<void, DriverError> = 0;
+  /**
+   * @brief Turn display power on (hardware power up).
+   *
+   * @return void on success, Error if power on is not supported or fails
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
+   */
+  [[nodiscard]] virtual auto power_on() -> std::expected<void, Error> = 0;
 
   // Get display dimensions
   [[nodiscard]] virtual auto width() const noexcept -> std::size_t = 0;
