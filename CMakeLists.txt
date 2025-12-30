@@ -84,6 +84,7 @@ set_target_properties(epaper PROPERTIES
 
 # Add examples subdirectory
 add_subdirectory(examples)
+add_subdirectory(tests)
 
 # Installation rules
 include(GNUInstallDirs)
