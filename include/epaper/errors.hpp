@@ -13,27 +13,27 @@ namespace epaper {
  */
 enum class ErrorCode {
   // Device errors
-  DeviceNotInitialized,  ///< Device has not been initialized
-  DeviceInitFailed,      ///< Device initialization failed
-  SPIInitFailed,         ///< SPI initialization failed
-  InvalidPin,            ///< Invalid GPIO pin number
-  TransferFailed,        ///< SPI/data transfer failed
+  DeviceNotInitialized, ///< Device has not been initialized
+  DeviceInitFailed,     ///< Device initialization failed
+  SPIInitFailed,        ///< SPI initialization failed
+  InvalidPin,           ///< Invalid GPIO pin number
+  TransferFailed,       ///< SPI/data transfer failed
 
   // Driver errors
-  DriverNotInitialized,  ///< Driver has not been initialized
-  DriverInitFailed,      ///< Driver initialization failed
-  InvalidMode,           ///< Invalid display mode specified
-  Timeout,               ///< Operation timed out
+  DriverNotInitialized, ///< Driver has not been initialized
+  DriverInitFailed,     ///< Driver initialization failed
+  InvalidMode,          ///< Invalid display mode specified
+  Timeout,              ///< Operation timed out
 
   // Display errors
-  DisplayNotReady,       ///< Display is not ready for operation
-  RefreshFailed,         ///< Display refresh operation failed
+  DisplayNotReady, ///< Display is not ready for operation
+  RefreshFailed,   ///< Display refresh operation failed
 
   // Bitmap errors
-  FileNotFound,          ///< Image file not found
-  InvalidFormat,         ///< Invalid or unsupported image format
-  LoadFailed,            ///< Failed to load image data
-  InvalidDimensions      ///< Invalid image dimensions
+  FileNotFound,     ///< Image file not found
+  InvalidFormat,    ///< Invalid or unsupported image format
+  LoadFailed,       ///< Failed to load image data
+  InvalidDimensions ///< Invalid image dimensions
 };
 
 /**
@@ -92,8 +92,8 @@ enum class ErrorCode {
  * combining an error code with an optional detailed message.
  */
 struct Error {
-  ErrorCode code;        ///< Error code
-  std::string message;   ///< Optional detailed error message
+  ErrorCode code;      ///< Error code
+  std::string message; ///< Optional detailed error message
 
   /**
    * @brief Construct error with code only.

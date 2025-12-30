@@ -253,6 +253,7 @@ auto EPD27::init(DisplayMode mode) -> std::expected<void, Error> {
   }
 
   initialized_ = true;
+  is_asleep_ = false;  // Mark as awake after successful initialization
   return {};
 }
 
@@ -278,6 +279,14 @@ auto EPD27::clear() -> void {
 }
 
 auto EPD27::display(std::span<const std::byte> buffer) -> std::expected<void, Error> {
+  // AUTO-WAKE: Check if display is asleep and wake it transparently
+  if (is_asleep_) {
+    auto wake_result = wake();
+    if (!wake_result) {
+      return wake_result;  // Propagate wake error
+    }
+  }
+
   if (current_mode_ == DisplayMode::BlackWhite) {
     const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : (WIDTH / 8 + 1);
 
@@ -377,22 +386,37 @@ auto EPD27::display(std::span<const std::byte> buffer) -> std::expected<void, Er
 }
 
 auto EPD27::sleep() -> void {
+  if (is_asleep_) {
+    return;  // Already asleep, no-op
+  }
+
   send_command(Command::VCOM_DATA_INTERVAL);
   send_data(DisplayOps::SLEEP_VCOM_DATA_INTERVAL);
   send_command(Command::POWER_OFF);
   send_command(Command::DEEP_SLEEP);
   send_data(DisplayOps::DEEP_SLEEP_MAGIC);
+
+  is_asleep_ = true;  // Track sleep state
 }
 
 auto EPD27::wake() -> std::expected<void, Error> {
+  if (!is_asleep_) {
+    return {};  // Already awake, no-op
+  }
+
   // EPD27 requires full re-initialization after deep sleep
   // This is a limitation of the hardware - it cannot wake from deep sleep
   // without re-initialization
   if (!initialized_) {
     return std::unexpected(Error(ErrorCode::DriverNotInitialized));
   }
+
   // Re-initialize with the current mode
-  return init(current_mode_);
+  auto result = init(current_mode_);
+  if (result) {
+    is_asleep_ = false;  // Track state - awake after successful init
+  }
+  return result;
 }
 
 auto EPD27::power_off() -> std::expected<void, Error> {
