@@ -1,9 +1,9 @@
+#include <chrono>
+#include <cstdlib>
 #include <epaper/device.hpp>
 #include <epaper/display.hpp>
 #include <epaper/drivers/epd27.hpp>
 #include <epaper/font.hpp>
-#include <chrono>
-#include <cstdlib>
 #include <iostream>
 #include <thread>
 
@@ -204,6 +204,44 @@ auto main() -> int {
     std::cout << "  [ ] Final summary display is visible\n";
     std::cout << "\nNOTE: Auto-sleep should be kept ENABLED in production\n";
     std::cout << "      to prevent screen burn-in as recommended by manufacturer.\n";
+
+    // Test 6: Transparent wake (multiple renders with auto-sleep enabled)
+    std::cout << "\n=== Test 6: Transparent Wake Management ===\n";
+    std::cout << "Testing multiple refreshes with auto-sleep enabled...\n";
+    auto display2 = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Portrait0, true);
+
+    if (!display2) {
+      std::cerr << "Failed to create display for transparent wake test: " << display2.error().what() << "\n";
+      return EXIT_FAILURE;
+    }
+
+    std::cout << "First render (display will sleep after)...\n";
+    display2->clear();
+    display2->draw_string(10, 10, "FIRST RENDER", Font::font16(), Color::Black, Color::White);
+    display2->draw_string(10, 30, "Display sleeps", Font::font12(), Color::Black, Color::White);
+    display2->draw_string(10, 45, "after this", Font::font12(), Color::Black, Color::White);
+    if (auto result = display2->refresh(); !result) {
+      std::cerr << "First refresh failed: " << result.error().what() << "\n";
+      return EXIT_FAILURE;
+    }
+    std::cout << "First refresh complete. Display is now in sleep mode.\n";
+    std::cout << "Waiting 3 seconds...\n";
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+
+    std::cout << "\nSecond render (should auto-wake transparently)...\n";
+    display2->clear();
+    display2->draw_string(10, 10, "SECOND RENDER", Font::font16(), Color::Black, Color::White);
+    display2->draw_string(10, 30, "Auto-wake", Font::font12(), Color::Black, Color::White);
+    display2->draw_string(10, 45, "worked!", Font::font12(), Color::Black, Color::White);
+    if (auto result = display2->refresh(); !result) {
+      std::cerr << "Second refresh failed: " << result.error().what() << "\n";
+      return EXIT_FAILURE;
+    }
+    std::cout << "Second refresh complete - transparent wake successful!\n";
+    std::cout << "Test 6 passed!\n";
+
+    std::cout << "\nSUCCESS: All tests completed successfully!\n";
+    std::cout << "Transparent sleep/wake management is working correctly.\n";
 
     return EXIT_SUCCESS;
 
