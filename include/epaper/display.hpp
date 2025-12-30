@@ -2,6 +2,7 @@
 
 #include "epaper/device.hpp"
 #include "epaper/drivers/driver.hpp"
+#include "epaper/errors.hpp"
 #include "epaper/font.hpp"
 #include <cstddef>
 #include <cstdint>
@@ -39,17 +40,6 @@ enum class Orientation : std::uint8_t {
   Landscape270 = 3 ///< Counter-clockwise 90° (270°)
 };
 
-/**
- * @brief Bitmap error types.
- *
- * Error codes for bitmap loading and rendering operations.
- */
-enum class BitmapError {
-  FileNotFound,     ///< Bitmap file not found
-  InvalidFormat,    ///< Invalid or unsupported bitmap format
-  LoadFailed,       ///< Failed to load bitmap data
-  InvalidDimensions ///< Invalid bitmap dimensions
-};
 
 /**
  * @brief Drawing styles for points and lines.
@@ -95,6 +85,11 @@ enum class DrawFill {
  * @note The display automatically enters sleep mode after refresh if
  *       auto-sleep is enabled (default).
  *
+ * @note Exception Safety: All operations provide at least the basic guarantee.
+ *       The Display object remains in a valid state after any operation.
+ *       Drawing operations never throw and silently clip out-of-bounds coordinates.
+ *       Move operations are noexcept.
+ *
  * @example
  * @code{.cpp}
  * epaper::Device device;
@@ -108,7 +103,9 @@ enum class DrawFill {
  *     display->draw_line(10, 10, 100, 100, epaper::Color::Black);
  *     display->draw_string(10, 120, "Hello World", epaper::Font::font16(),
  *                         epaper::Color::Black, epaper::Color::White);
- *     display->refresh();
+ *     if (auto result = display->refresh(); !result) {
+ *         std::cerr << "Refresh failed: " << result.error().what() << "\n";
+ *     }
  * }
  * @endcode
  */
@@ -122,6 +119,7 @@ public:
    * @param auto_sleep Enable automatic sleep after refresh
    *
    * @note The driver must already be initialized before passing to Display.
+   * @note Exception Safety: Strong guarantee - throws on allocation failure.
    */
   explicit Display(std::unique_ptr<Driver> driver, Orientation orientation = Orientation::Portrait0,
                    bool auto_sleep = true);
@@ -129,9 +127,29 @@ public:
   // Non-copyable, movable
   Display(const Display &) = delete;
   Display &operator=(const Display &) = delete;
+  
+  /**
+   * @brief Move constructor.
+   *
+   * @param other Display to move from
+   * @note Exception Safety: Nothrow guarantee.
+   */
   Display(Display &&) noexcept = default;
+  
+  /**
+   * @brief Move assignment operator.
+   *
+   * @param other Display to move from
+   * @return Reference to this display
+   * @note Exception Safety: Nothrow guarantee.
+   */
   Display &operator=(Display &&) noexcept = default;
 
+  /**
+   * @brief Destructor.
+   *
+   * @note Exception Safety: Nothrow guarantee - never throws.
+   */
   ~Display() = default;
 
   // ========== Display Properties ==========
@@ -245,8 +263,11 @@ public:
    *
    * This operation takes several seconds to complete. If auto-sleep is
    * enabled, the display will automatically enter sleep mode after refresh.
+   *
+   * @return void on success, Error on failure
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
    */
-  auto refresh() -> void;
+  [[nodiscard]] auto refresh() -> std::expected<void, Error>;
 
   // ========== Power Management ==========
 
@@ -257,6 +278,7 @@ public:
    * auto-sleep is disabled and you want to control when the display sleeps.
    *
    * @note This is automatically called after refresh() if auto-sleep is enabled.
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
    */
   auto sleep() -> void;
 
@@ -266,9 +288,10 @@ public:
    * Wakes the display from sleep mode. For displays that don't support
    * true wake from sleep (like EPD27), this will re-initialize the display.
    *
-   * @return void on success, DriverError on failure
+   * @return void on success, Error on failure
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
    */
-  [[nodiscard]] auto wake() -> std::expected<void, DriverError>;
+  [[nodiscard]] auto wake() -> std::expected<void, Error>;
 
   /**
    * @brief Turn display power completely off.
@@ -276,9 +299,10 @@ public:
    * Performs a hardware power down of the display. This is different from
    * sleep() which puts the display in low-power mode but keeps it powered.
    *
-   * @return void on success, DriverError on failure
+   * @return void on success, Error on failure
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
    */
-  [[nodiscard]] auto power_off() -> std::expected<void, DriverError>;
+  [[nodiscard]] auto power_off() -> std::expected<void, Error>;
 
   /**
    * @brief Turn display power on.
@@ -286,9 +310,10 @@ public:
    * Powers on the display hardware. This should be called after power_off()
    * before attempting to use the display.
    *
-   * @return void on success, DriverError on failure
+   * @return void on success, Error on failure
+   * @note Exception Safety: Basic guarantee - display remains in valid state.
    */
-  [[nodiscard]] auto power_on() -> std::expected<void, DriverError>;
+  [[nodiscard]] auto power_on() -> std::expected<void, Error>;
 
   /**
    * @brief Check if wake from sleep is supported.
@@ -305,14 +330,23 @@ public:
   [[nodiscard]] auto supports_power_control() const noexcept -> bool;
 
   // ========== Drawing Operations ==========
+  //
+  // All drawing operations follow the GDI pattern:
+  // - Out-of-bounds coordinates are silently clipped (no errors)
+  // - Operations never fail or throw exceptions
+  // - Coordinates are in logical space (accounting for display orientation)
+  // - Drawing is performed on the framebuffer; call refresh() to update the display
 
   /**
    * @brief Draw a point with specified size.
+   *
+   * Out-of-bounds coordinates are silently clipped.
    *
    * @param x X coordinate
    * @param y Y coordinate
    * @param color Point color
    * @param pixel_size Size of the point (default: 1x1)
+   * @note Exception Safety: Nothrow guarantee - never throws.
    */
   auto draw_point(std::size_t x, std::size_t y, Color color, DotPixel pixel_size = DotPixel::Pixel1x1) -> void;
 
@@ -448,10 +482,11 @@ public:
    * @param file_path Path to image file
    * @param target_width Target width (0 = original size)
    * @param target_height Target height (0 = original size)
-   * @return void on success, BitmapError on failure
+   * @return void on success, Error on failure
+   * @note Exception Safety: Strong guarantee - framebuffer unchanged on failure.
    */
-  auto draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path, std::size_t target_width = 0,
-                             std::size_t target_height = 0) -> std::expected<void, BitmapError>;
+  [[nodiscard]] auto draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_view file_path, std::size_t target_width = 0,
+                             std::size_t target_height = 0) -> std::expected<void, Error>;
 
   /**
    * @brief Get direct read-only access to the framebuffer.
@@ -504,7 +539,9 @@ private:
  * @param mode Display mode (BlackWhite or Grayscale4)
  * @param orientation Display orientation (default: Portrait0)
  * @param auto_sleep Enable auto-sleep after refresh (default: true)
- * @return Display instance on success, DriverError on failure
+ * @return Display instance on success, Error on failure
+ *
+ * @note Exception Safety: Strong guarantee - no resources allocated on failure.
  *
  * @example
  * @code{.cpp}
@@ -517,15 +554,17 @@ private:
  * if (display) {
  *     display->draw_string(0, 0, "Hello!", epaper::Font::font16(),
  *                         epaper::Color::Black, epaper::Color::White);
- *     display->refresh();
+ *     if (auto result = display->refresh(); !result) {
+ *         std::cerr << "Refresh failed: " << result.error().what() << "\n";
+ *     }
  * } else {
- *     std::cerr << "Failed to create display\n";
+ *     std::cerr << "Failed to create display: " << display.error().what() << "\n";
  * }
  * @endcode
  */
 template <typename DriverType>
-auto create_display(Device &device, DisplayMode mode, Orientation orientation = Orientation::Portrait0,
-                    bool auto_sleep = true) -> std::expected<Display, DriverError> {
+[[nodiscard]] auto create_display(Device &device, DisplayMode mode, Orientation orientation = Orientation::Portrait0,
+                    bool auto_sleep = true) -> std::expected<Display, Error> {
   auto driver = std::make_unique<DriverType>(device);
   if (auto result = driver->init(mode); !result) {
     return std::unexpected(result.error());

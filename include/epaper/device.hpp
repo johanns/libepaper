@@ -1,5 +1,6 @@
 #pragma once
 
+#include "epaper/errors.hpp"
 #include <bcm2835.h>
 #include <cstddef>
 #include <cstdint>
@@ -9,24 +10,6 @@
 #include <string_view>
 
 namespace epaper {
-
-// Error types for device operations
-enum class DeviceError { InitializationFailed, SPIInitFailed, InvalidPin, TransferFailed };
-
-// Convert error to string for debugging
-[[nodiscard]] constexpr auto to_string(DeviceError error) -> std::string_view {
-  switch (error) {
-  case DeviceError::InitializationFailed:
-    return "Device initialization failed";
-  case DeviceError::SPIInitFailed:
-    return "SPI initialization failed";
-  case DeviceError::InvalidPin:
-    return "Invalid pin number";
-  case DeviceError::TransferFailed:
-    return "SPI transfer failed";
-  }
-  return "Unknown error";
-}
 
 // Type-safe pin wrapper
 class Pin {
@@ -48,20 +31,59 @@ constexpr Pin BUSY{24}; // GPIO 24
 constexpr Pin PWR{18};  // GPIO 18 (optional power control)
 } // namespace pins
 
-// RAII wrapper for BCM2835 device
+/**
+ * @brief RAII wrapper for BCM2835 device.
+ *
+ * Manages the lifecycle of the BCM2835 library and SPI interface.
+ * Follows the RAII pattern with automatic resource cleanup.
+ *
+ * @note Exception Safety: Strong guarantee for all operations.
+ *       Destructor is noexcept and will never throw.
+ *       Move operations are noexcept.
+ */
 class Device {
 public:
   Device() = default;
+  
+  /**
+   * @brief Destructor. Cleans up BCM2835 and SPI resources.
+   *
+   * @note Exception Safety: Nothrow guarantee - never throws exceptions.
+   */
   ~Device() noexcept;
 
   // Non-copyable, movable
   Device(const Device &) = delete;
   Device &operator=(const Device &) = delete;
+  
+  /**
+   * @brief Move constructor.
+   *
+   * @param other Device to move from
+   * @note Exception Safety: Nothrow guarantee.
+   */
   Device(Device &&other) noexcept;
+  
+  /**
+   * @brief Move assignment operator.
+   *
+   * @param other Device to move from
+   * @return Reference to this device
+   * @note Exception Safety: Nothrow guarantee.
+   */
   Device &operator=(Device &&other) noexcept;
 
-  // Initialize the BCM2835 library and SPI
-  [[nodiscard]] auto init() -> std::expected<void, DeviceError>;
+  /**
+   * @brief Initialize the BCM2835 library and SPI.
+   *
+   * This must be called before any other operations on the device.
+   * Idempotent - calling init() on an already initialized device succeeds.
+   *
+   * @return void on success, Error on failure
+   * @note Exception Safety: Strong guarantee - if initialization fails,
+   *       the device remains in an uninitialized state.
+   */
+  [[nodiscard]] auto init() -> std::expected<void, Error>;
 
   // Check if device is initialized
   [[nodiscard]] auto is_initialized() const noexcept -> bool { return initialized_; }

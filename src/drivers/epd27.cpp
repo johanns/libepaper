@@ -119,9 +119,9 @@ auto EPD27::set_lut_grayscale() -> void {
   }
 }
 
-auto EPD27::init(DisplayMode mode) -> std::expected<void, DriverError> {
+auto EPD27::init(DisplayMode mode) -> std::expected<void, Error> {
   if (!device_.is_initialized()) {
-    return std::unexpected(DriverError::NotInitialized);
+    return std::unexpected(Error(ErrorCode::DriverNotInitialized));
   }
 
   current_mode_ = mode;
@@ -277,7 +277,7 @@ auto EPD27::clear() -> void {
   wait_busy();
 }
 
-auto EPD27::display(std::span<const std::byte> buffer) -> void {
+auto EPD27::display(std::span<const std::byte> buffer) -> std::expected<void, Error> {
   if (current_mode_ == DisplayMode::BlackWhite) {
     const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : (WIDTH / 8 + 1);
 
@@ -373,6 +373,7 @@ auto EPD27::display(std::span<const std::byte> buffer) -> void {
     Device::delay_ms(Timing::DISPLAY_REFRESH_DELAY_MS);
     wait_busy();
   }
+  return {};
 }
 
 auto EPD27::sleep() -> void {
@@ -383,20 +384,20 @@ auto EPD27::sleep() -> void {
   send_data(DisplayOps::DEEP_SLEEP_MAGIC);
 }
 
-auto EPD27::wake() -> std::expected<void, DriverError> {
+auto EPD27::wake() -> std::expected<void, Error> {
   // EPD27 requires full re-initialization after deep sleep
   // This is a limitation of the hardware - it cannot wake from deep sleep
   // without re-initialization
   if (!initialized_) {
-    return std::unexpected(DriverError::NotInitialized);
+    return std::unexpected(Error(ErrorCode::DriverNotInitialized));
   }
   // Re-initialize with the current mode
   return init(current_mode_);
 }
 
-auto EPD27::power_off() -> std::expected<void, DriverError> {
+auto EPD27::power_off() -> std::expected<void, Error> {
   if (!device_.is_initialized()) {
-    return std::unexpected(DriverError::NotInitialized);
+    return std::unexpected(Error(ErrorCode::DriverNotInitialized));
   }
 
   // Try hardware power control first (if PWR pin is configured)
@@ -407,9 +408,9 @@ auto EPD27::power_off() -> std::expected<void, DriverError> {
   return {};
 }
 
-auto EPD27::power_on() -> std::expected<void, DriverError> {
+auto EPD27::power_on() -> std::expected<void, Error> {
   if (!device_.is_initialized()) {
-    return std::unexpected(DriverError::NotInitialized);
+    return std::unexpected(Error(ErrorCode::DriverNotInitialized));
   }
 
   // Try hardware power control first (if PWR pin is configured)
