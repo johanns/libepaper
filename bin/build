@@ -1,9 +1,70 @@
 #!/usr/bin/env bash
+#
+# E-Paper Library Build Script
+#
+# Configures and builds the libepaper2 library, examples, and tests.
+#
+# Usage:
+#   ./bin/build                    # Build everything
+#   ./bin/build [target]           # Build specific target
+#
+# Available targets:
+#   all                - Build library, examples, and tests (default)
+#   epaper            - Build library only
+#   examples          - Build all examples
+#   crypto_dashboard  - Build crypto dashboard example
+#   tests             - Build all tests
+#   test_auto_sleep   - Build specific test
+#
+# Examples:
+#   ./bin/build                              # Build everything
+#   ./bin/build crypto_dashboard             # Build one example
+#   cmake --build build --target tests       # Build tests only
+#
+# Output:
+#   build/lib/libepaper.a                    # Static library
+#   build/examples/crypto_dashboard/...      # Example binaries
+#   build/tests/...                          # Test binaries
+#
+# Requirements:
+#   - CMake 3.25+
+#   - GCC 14+ or Clang 18+
+#   - Dependencies installed (run ./bin/setup first)
+#
+# Documentation: README.md#quick-start
+
+set -e
+
+echo "==================================="
+echo "E-Paper Library Build"
+echo "==================================="
+echo ""
 
 echo "Remember to run this command from the root directory of the project."
+echo ""
+
+# Check if a specific target was requested
+TARGET="${1:-all}"
 
 echo "Configuring build..."
 cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER=g++-14
 
-echo "Building library..."
-cmake --build build -j$(nproc)
+echo ""
+echo "Building target: ${TARGET}..."
+if [ "${TARGET}" = "all" ]; then
+  cmake --build build -j$(nproc)
+else
+  cmake --build build --target "${TARGET}" -j$(nproc)
+fi
+
+echo ""
+echo "==================================="
+echo "Build complete!"
+echo "==================================="
+echo ""
+echo "Run examples with sudo:"
+echo "  sudo ./build/examples/crypto_dashboard/crypto_dashboard"
+echo ""
+echo "Run tests with sudo:"
+echo "  sudo ./build/tests/test_auto_sleep"
+echo ""
