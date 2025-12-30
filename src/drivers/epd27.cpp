@@ -44,7 +44,7 @@ auto EPD27::wait_busy() -> void {
   do {
     send_command(Command::GET_STATUS);
     busy = device_.read_pin(pins::BUSY);
-    busy = !(busy & Display::BUSY_STATUS_MASK);
+    busy = !(busy & DisplayOps::BUSY_STATUS_MASK);
   } while (busy);
   Device::delay_ms(Timing::BUSY_WAIT_DELAY_MS);
 }
@@ -171,7 +171,7 @@ auto EPD27::init(DisplayMode mode) -> std::expected<void, DriverError> {
     send_data(PowerOptimization::VAL7);
 
     send_command(Command::PARTIAL_DISPLAY_REFRESH);
-    send_data(Display::PARTIAL_REFRESH_DISABLE);
+    send_data(DisplayOps::PARTIAL_REFRESH_DISABLE);
 
     send_command(Command::POWER_ON);
     wait_busy();
@@ -228,7 +228,7 @@ auto EPD27::init(DisplayMode mode) -> std::expected<void, DriverError> {
     send_data(PowerOptimization::VAL7);
 
     send_command(Command::PARTIAL_DISPLAY_REFRESH);
-    send_data(Display::PARTIAL_REFRESH_DISABLE);
+    send_data(DisplayOps::PARTIAL_REFRESH_DISABLE);
 
     send_command(Command::POWER_ON);
     wait_busy();
@@ -249,7 +249,7 @@ auto EPD27::init(DisplayMode mode) -> std::expected<void, DriverError> {
     send_data(PanelConfig::VCM_DC_SETTING_VALUE);
 
     send_command(Command::VCOM_DATA_INTERVAL);
-    send_data(Display::VCOM_DATA_INTERVAL_GRAYSCALE);
+    send_data(DisplayOps::VCOM_DATA_INTERVAL_GRAYSCALE);
   }
 
   initialized_ = true;
@@ -262,14 +262,14 @@ auto EPD27::clear() -> void {
   send_command(Command::DATA_START_TRANSMISSION_1);
   for (std::size_t j = 0; j < HEIGHT; ++j) {
     for (std::size_t i = 0; i < width_bytes; ++i) {
-      send_data(Display::CLEAR_FILL_VALUE);
+      send_data(DisplayOps::CLEAR_FILL_VALUE);
     }
   }
 
   send_command(Command::DATA_START_TRANSMISSION_2);
   for (std::size_t j = 0; j < HEIGHT; ++j) {
     for (std::size_t i = 0; i < width_bytes; ++i) {
-      send_data(Display::CLEAR_FILL_VALUE);
+      send_data(DisplayOps::CLEAR_FILL_VALUE);
     }
   }
 
@@ -377,10 +377,47 @@ auto EPD27::display(std::span<const std::byte> buffer) -> void {
 
 auto EPD27::sleep() -> void {
   send_command(Command::VCOM_DATA_INTERVAL);
-  send_data(Display::SLEEP_VCOM_DATA_INTERVAL);
+  send_data(DisplayOps::SLEEP_VCOM_DATA_INTERVAL);
   send_command(Command::POWER_OFF);
   send_command(Command::DEEP_SLEEP);
-  send_data(Display::DEEP_SLEEP_MAGIC);
+  send_data(DisplayOps::DEEP_SLEEP_MAGIC);
+}
+
+auto EPD27::wake() -> std::expected<void, DriverError> {
+  // EPD27 requires full re-initialization after deep sleep
+  // This is a limitation of the hardware - it cannot wake from deep sleep
+  // without re-initialization
+  if (!initialized_) {
+    return std::unexpected(DriverError::NotInitialized);
+  }
+  // Re-initialize with the current mode
+  return init(current_mode_);
+}
+
+auto EPD27::power_off() -> std::expected<void, DriverError> {
+  if (!device_.is_initialized()) {
+    return std::unexpected(DriverError::NotInitialized);
+  }
+
+  // Try hardware power control first (if PWR pin is configured)
+  // For now, use software power off command
+  send_command(Command::POWER_OFF);
+  wait_busy();
+
+  return {};
+}
+
+auto EPD27::power_on() -> std::expected<void, DriverError> {
+  if (!device_.is_initialized()) {
+    return std::unexpected(DriverError::NotInitialized);
+  }
+
+  // Try hardware power control first (if PWR pin is configured)
+  // For now, use software power on command
+  send_command(Command::POWER_ON);
+  wait_busy();
+
+  return {};
 }
 
 } // namespace epaper

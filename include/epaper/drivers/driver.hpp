@@ -50,6 +50,18 @@ public:
   // Put display into low-power sleep mode
   virtual auto sleep() -> void = 0;
 
+  // Wake display from sleep mode
+  // Returns error if wake is not supported or fails
+  [[nodiscard]] virtual auto wake() -> std::expected<void, DriverError> = 0;
+
+  // Turn display power completely off (hardware power down)
+  // Returns error if power off is not supported or fails
+  [[nodiscard]] virtual auto power_off() -> std::expected<void, DriverError> = 0;
+
+  // Turn display power on (hardware power up)
+  // Returns error if power on is not supported or fails
+  [[nodiscard]] virtual auto power_on() -> std::expected<void, DriverError> = 0;
+
   // Get display dimensions
   [[nodiscard]] virtual auto width() const noexcept -> std::size_t = 0;
   [[nodiscard]] virtual auto height() const noexcept -> std::size_t = 0;
@@ -60,14 +72,19 @@ public:
   // Calculate required buffer size for current mode
   [[nodiscard]] virtual auto buffer_size() const noexcept -> std::size_t = 0;
 
+  // Driver capabilities (query at runtime)
+  [[nodiscard]] virtual auto supports_partial_refresh() const noexcept -> bool = 0;
+  [[nodiscard]] virtual auto supports_wake() const noexcept -> bool = 0;
+  [[nodiscard]] virtual auto supports_power_control() const noexcept -> bool = 0;
+
 protected:
   Driver() = default;
 
-  // Non-copyable, non-movable (interface class)
+  // Non-copyable, movable
   Driver(const Driver &) = delete;
   Driver &operator=(const Driver &) = delete;
-  Driver(Driver &&) = delete;
-  Driver &operator=(Driver &&) = delete;
+  Driver(Driver &&) noexcept = default;
+  Driver &operator=(Driver &&) noexcept = default;
 };
 
 } // namespace epaper
