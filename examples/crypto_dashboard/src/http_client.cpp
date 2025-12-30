@@ -13,7 +13,7 @@ struct HTTPClient::Impl {
     if (curl) {
       // Set common options
       curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-      curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+      curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L); // 10 second timeout for faster shutdown
       curl_easy_setopt(curl, CURLOPT_USERAGENT, "CryptoDashboard/1.0");
     }
   }

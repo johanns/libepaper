@@ -41,39 +41,11 @@ private:
   [[nodiscard]] static auto symbol_to_coingecko_id(const std::string &symbol) -> std::string;
 };
 
-/// Bitcoin blockchain API implementation
-class BitcoinBlockchainAPI {
-public:
-  explicit BitcoinBlockchainAPI(const HTTPClient &client) : client_(client) {}
-
-  /// Fetch balance for a Bitcoin address
-  [[nodiscard]] auto fetch_balance(const std::string &address) const -> std::expected<double, std::string>;
-
-private:
-  const HTTPClient &client_;
-};
-
-/// Etherscan API implementation
-class EtherscanAPI {
-public:
-  explicit EtherscanAPI(const HTTPClient &client, std::string api_key)
-      : client_(client), api_key_(std::move(api_key)) {}
-
-  /// Fetch balance for an Ethereum address
-  [[nodiscard]] auto fetch_balance(const std::string &address) const -> std::expected<double, std::string>;
-
-  [[nodiscard]] auto has_api_key() const noexcept -> bool { return !api_key_.empty(); }
-
-private:
-  const HTTPClient &client_;
-  std::string api_key_;
-};
-
 /// High-level API aggregator that composes multiple API clients
 /// Demonstrates composition over inheritance
 class CryptoDataFetcher {
 public:
-  CryptoDataFetcher(const HTTPClient &client, std::string etherscan_api_key = "");
+  explicit CryptoDataFetcher(const HTTPClient &client);
 
   /// Fetch prices for Bitcoin and Ethereum
   [[nodiscard]] auto fetch_crypto_prices() const -> std::expected<std::pair<CryptoPrice, CryptoPrice>, std::string>;
@@ -82,15 +54,9 @@ public:
   [[nodiscard]] auto fetch_price_history(const std::string &symbol, int days) const
       -> std::expected<PriceHistory, std::string>;
 
-  /// Fetch wallet balances
-  [[nodiscard]] auto fetch_wallet_balances(const std::vector<std::string> &btc_addresses,
-                                           const std::vector<std::string> &eth_addresses) const -> WalletBalance;
-
 private:
   const HTTPClient &client_;
   CoinGeckoAPI coingecko_api_;
-  BitcoinBlockchainAPI bitcoin_api_;
-  EtherscanAPI etherscan_api_;
 };
 
 } // namespace crypto_dashboard

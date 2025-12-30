@@ -20,7 +20,6 @@ set(SOURCES
     src/types.cpp
     src/http_client.cpp
     src/crypto_api.cpp
-    src/wallet_config.cpp
     src/dashboard_renderer.cpp
 )
 
@@ -52,12 +51,6 @@ target_compile_options(crypto_dashboard
 # Installation
 install(TARGETS crypto_dashboard
     RUNTIME DESTINATION bin
-)
-
-# Install example configuration
-install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/wallets.json.example
-    DESTINATION share/crypto_dashboard
 )
 
 # Print configuration
