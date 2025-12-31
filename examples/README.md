@@ -184,8 +184,10 @@ A slideshow application displaying images from a directory.
 
 **Will demonstrate:**
 - Bitmap loading from files
+- Automatic RGB to grayscale conversion
 - Image scaling
-- Automatic format detection (PNG, JPEG, BMP)
+- Automatic format detection (PNG, JPEG, BMP, GIF, etc.)
+- Intelligent color quantization for display mode
 - Slideshow timing
 - Directory scanning
 

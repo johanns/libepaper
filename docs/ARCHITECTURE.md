@@ -60,13 +60,13 @@ graph TD
     E --> F[Hardware Device Layer]
     F --> G[BCM2835/SPI/GPIO]
 
-    style A fill:#e1f5ff
-    style B fill:#b3e5fc
-    style C fill:#81d4fa
-    style D fill:#4fc3f7
-    style E fill:#29b6f6
-    style F fill:#039be5
-    style G fill:#0277bd
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style B fill:#bbdefb,stroke:#1565c0,stroke-width:2px,color:#000
+    style C fill:#90caf9,stroke:#0d47a1,stroke-width:2px,color:#000
+    style D fill:#64b5f6,stroke:#0d47a1,stroke-width:2px,color:#000
+    style E fill:#42a5f5,stroke:#0d47a1,stroke-width:2px,color:#000
+    style F fill:#1e88e5,stroke:#0d47a1,stroke-width:2px,color:#fff
+    style G fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
 ```
 
 ### Layer Responsibilities
@@ -300,10 +300,12 @@ graph LR
     D --> E
     E --> F[Hardware Buffer]
 
-    style A fill:#e1f5ff
-    style C fill:#81d4fa
-    style D fill:#81d4fa
-    style F fill:#0277bd
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style B fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000
+    style C fill:#90caf9,stroke:#0d47a1,stroke-width:2px,color:#000
+    style D fill:#90caf9,stroke:#0d47a1,stroke-width:2px,color:#000
+    style E fill:#64b5f6,stroke:#0d47a1,stroke-width:2px,color:#000
+    style F fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
 ```
 
 **Color Enum:**
@@ -319,6 +321,53 @@ enum class Color {
 **Framebuffer Encoding:**
 - **BlackWhite mode**: 1 bit per pixel, packed 8 pixels per byte
 - **Grayscale4 mode**: 2 bits per pixel, packed 4 pixels per byte
+
+### Automatic Color Conversion
+
+The library includes a sophisticated color management system that automatically handles color conversion from RGB/RGBA to display-appropriate formats.
+
+**ColorManager Class:**
+
+The `ColorManager` (in `include/epaper/color/color_manager.hpp`) provides automatic conversion:
+
+```cpp
+// RGB to Grayscale conversion using standard formula
+auto rgb_to_gray(const RGB& color) -> uint8_t {
+  return 0.299 * R + 0.587 * G + 0.114 * B;
+}
+
+// Automatic quantization based on display mode
+BlackWhite mode:  gray >= 128 ? White : Black
+Grayscale4 mode:  0-63 → Black, 64-127 → Gray2, 128-191 → Gray1, 192-255 → White
+```
+
+**Image Loading with Automatic Conversion:**
+
+When you load images (PNG, JPEG, BMP, TGA, GIF, PSD, HDR), the library automatically:
+
+1. **Loads** the image using stb_image
+2. **Converts** RGB/RGBA to grayscale using standard luminance formula
+3. **Quantizes** to display's color depth (1-bit or 2-bit)
+4. **Renders** to framebuffer
+
+```cpp
+// Load a full-color photo - automatic conversion!
+display->draw_bitmap_from_file(0, 0, "colorful_photo.png");
+
+// Library automatically handles:
+// 1. PNG decode → RGB
+// 2. RGB → Grayscale (0.299*R + 0.587*G + 0.114*B)
+// 3. Grayscale → 4-level quantization (if in Grayscale4 mode)
+// 4. Draw to framebuffer
+```
+
+**Benefits:**
+- **Zero manual work**: Load any color image without preprocessing
+- **Intelligent quantization**: Uses perceptual grayscale conversion
+- **Format agnostic**: Works with PNG, JPEG, BMP, and more
+- **Mode aware**: Automatically adapts to BlackWhite or Grayscale4 display mode
+
+This means developers can use standard color images and the library handles all conversion automatically.
 
 ## Data Flow
 
@@ -584,8 +633,8 @@ graph TD
     L --> M[Wait BUSY]
     M --> N[Ready]
 
-    style A fill:#e1f5ff
-    style N fill:#4caf50
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style N fill:#66bb6a,stroke:#2e7d32,stroke-width:2px,color:#fff
 ```
 
 ### Pin Configuration
@@ -625,12 +674,12 @@ graph LR
     GND --> EGND
     VCC --> EVCC
 
-    style RST fill:#4fc3f7
-    style DC fill:#4fc3f7
-    style CS fill:#4fc3f7
-    style BUSY fill:#4fc3f7
-    style MOSI fill:#29b6f6
-    style SCLK fill:#29b6f6
+    style RST fill:#64b5f6,stroke:#0d47a1,stroke-width:2px,color:#000
+    style DC fill:#64b5f6,stroke:#0d47a1,stroke-width:2px,color:#000
+    style CS fill:#64b5f6,stroke:#0d47a1,stroke-width:2px,color:#000
+    style BUSY fill:#64b5f6,stroke:#0d47a1,stroke-width:2px,color:#000
+    style MOSI fill:#42a5f5,stroke:#0d47a1,stroke-width:2px,color:#000
+    style SCLK fill:#42a5f5,stroke:#0d47a1,stroke-width:2px,color:#000
 ```
 
 ## Performance Considerations

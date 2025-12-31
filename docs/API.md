@@ -522,10 +522,26 @@ display->draw_bitmap_from_file(10, 100, "photo.jpg", 200, 150);  // Scale to 200
 - PSD (composited view)
 - HDR
 
-**Image Conversion:**
-Images are automatically converted to the display's color mode:
-- **BlackWhite mode**: Brightness threshold at 50%
-- **Grayscale4 mode**: 4-level quantization
+**Automatic Color Conversion:**
+
+The library automatically converts color images to your display's mode:
+
+1. **RGB to Grayscale**: Uses standard perceptual formula (0.299×R + 0.587×G + 0.114×B)
+2. **Quantization**:
+   - **BlackWhite mode**: 50% brightness threshold (gray ≥ 128 → White)
+   - **Grayscale4 mode**: 4-level mapping (0-63→Black, 64-127→Gray2, 128-191→Gray1, 192-255→White)
+
+This means you can load **any color image** (photos, graphics, screenshots) and the library intelligently converts it to work with your e-paper display:
+
+```cpp
+// Load a full-color photograph - automatically converted!
+display->draw_bitmap_from_file(10, 10, "vacation_photo.jpg");
+
+// Load a colorful logo - automatically converted!
+display->draw_bitmap_from_file(100, 50, "company_logo.png");
+
+// No manual color processing needed!
+```
 
 ## Color & Grayscale
 

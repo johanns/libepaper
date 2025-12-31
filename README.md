@@ -39,6 +39,7 @@ int main() {
 - **Transparent Sleep/Wake**: Auto-sleep prevents burn-in, auto-wake on refresh—no manual management
 - **Clean Architecture**: Modular design with RAII and composition over inheritance
 - **Full Drawing API**: Points, lines, rectangles, circles, text, bitmaps with PNG/JPEG support
+- **Automatic Color Conversion**: RGB images automatically converted to grayscale with intelligent quantization
 - **Multiple Display Modes**: Black/white (1-bit) and 4-level grayscale (2-bit)
 - **Display Orientation**: Rotate 0°, 90°, 180°, 270° with automatic coordinate transformation
 - **Extensible Drivers**: Abstract driver interface for easy addition of new displays
