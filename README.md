@@ -47,6 +47,8 @@ int main() {
 
 ## 📚 Documentation
 
+**[Full API Reference](https://docs.jsg.io/libepaper/index.html)**
+
 | Document | Description |
 |----------|-------------|
 | **[Examples & Tutorials](examples/README.md)** | Get started quickly with working examples |
