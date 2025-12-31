@@ -461,3 +461,5 @@ examples/images/*.bmp
 examples/images/*.jpg
 examples/images/*.png
 examples/wallets.json
+
+doxygen/
