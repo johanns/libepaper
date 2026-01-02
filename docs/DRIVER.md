@@ -48,7 +48,7 @@ Your Driver (your_epd.cpp) ← Implement this!
        ↓
 Hardware Device (device.hpp)
        ↓
-BCM2835/SPI/GPIO
+libgpiod/SPIdev
 ```
 
 ## Driver Interface

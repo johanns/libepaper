@@ -21,8 +21,8 @@ A comprehensive guide to using the libepaper API for e-paper display control.
 
 - Raspberry Pi with SPI enabled
 - C++23 capable compiler (GCC 14+ or Clang 18+)
-- BCM2835 library installed
-- Root privileges for GPIO/SPI access
+- libgpiod library installed (`sudo apt install libgpiod-dev`)
+- User in `gpio` and `spi` groups (no sudo required)
 
 ### Basic Setup
 
@@ -139,8 +139,8 @@ int main() {
 # Build
 cmake --build build
 
-# Run (requires sudo for GPIO/SPI)
-sudo ./build/your_program
+# Run (no sudo required with proper group membership)
+./build/your_program
 ```
 
 ## Display Creation & Management
@@ -727,7 +727,7 @@ try {
 | Error Code | Description | Recovery Strategy |
 |------------|-------------|-------------------|
 | `DeviceNotInitialized` | Hardware not initialized | Call `device.init()` first |
-| `DeviceInitFailed` | BCM2835 init failed | Check permissions, hardware connection |
+| `DeviceInitFailed` | Device initialization failed | Check permissions, hardware connection, group membership |
 | `DriverNotInitialized` | Driver not initialized | Call `driver.init(mode)` |
 | `InvalidDisplayMode` | Unsupported display mode | Use `BlackWhite` or `Grayscale4` |
 | `HardwareTimeout` | Display BUSY timeout | Check wiring, try again |
@@ -782,6 +782,56 @@ if (!result) {
 ```
 
 ## Advanced Topics
+
+### Button Handling
+
+The `Device` class provides GPIO operations that can be used to handle buttons on your e-paper display (e.g., Waveshare 2.7" includes KEY1, KEY2, KEY3 buttons).
+
+**Basic Button Reading:**
+
+```cpp
+#include <epaper/device.hpp>
+#include <thread>
+#include <chrono>
+#include <iostream>
+
+using namespace epaper;
+
+// Define button pins (check your hardware documentation for actual pin numbers)
+namespace button_pins {
+    constexpr Pin KEY1{5};   // Example: GPIO 5
+    constexpr Pin KEY2{6};   // Example: GPIO 6
+    constexpr Pin KEY3{13};  // Example: GPIO 13
+}
+
+int main() {
+    Device device;
+    device.init().value();
+
+    // Configure buttons as inputs
+    device.set_pin_input(button_pins::KEY1);
+    device.set_pin_input(button_pins::KEY2);
+    device.set_pin_input(button_pins::KEY3);
+
+    // Poll button state
+    while (true) {
+        if (device.read_pin(button_pins::KEY1)) {
+            std::cout << "KEY1 pressed\n";
+            // Handle button press
+        }
+        if (device.read_pin(button_pins::KEY2)) {
+            std::cout << "KEY2 pressed\n";
+        }
+        if (device.read_pin(button_pins::KEY3)) {
+            std::cout << "KEY3 pressed\n";
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Debounce
+    }
+}
+```
+
+**Note:** Button pin numbers vary by hardware. Check your Waveshare display documentation for the correct GPIO pin assignments. The library provides the GPIO API; you implement the button handling logic.
 
 ### Framebuffer Direct Access
 
@@ -1081,7 +1131,8 @@ See `examples/bmp_debug_example.cpp` for a complete demonstration.
 **Solutions:**
 1. Check hardware connections (especially BUSY pin)
 2. Verify SPI is enabled: `sudo raspi-config` → Interface Options → SPI
-3. Ensure running with `sudo` (GPIO access requires root)
+3. Ensure user is in `gpio` and `spi` groups: `groups` (should show both)
+4. If not in groups, add with: `sudo usermod -a -G gpio,spi $USER` (then log out/in)
 4. Check display power supply (3.3V, sufficient current)
 
 ### Garbled Output

@@ -590,96 +590,96 @@ auto Display::save_framebuffer_to_bmp(std::string_view filename) -> std::expecte
   bmp_data.reserve(file_size);
 
   // File header
-  bmp_data.push_back('B');                                         // Signature
-  bmp_data.push_back('M');                                         // Signature
-  bmp_data.push_back(file_size & 0xFF);                            // File size (little-endian)
-  bmp_data.push_back((file_size >> 8) & 0xFF);                     //
-  bmp_data.push_back((file_size >> 16) & 0xFF);                    //
-  bmp_data.push_back((file_size >> 24) & 0xFF);                    //
-  bmp_data.push_back(0);                                           // Reserved
-  bmp_data.push_back(0);                                           // Reserved
-  bmp_data.push_back(0);                                           // Reserved
-  bmp_data.push_back(0);                                           // Reserved
-  bmp_data.push_back(54);                                          // Pixel data offset (14 + 40)
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
+  bmp_data.push_back('B');                      // Signature
+  bmp_data.push_back('M');                      // Signature
+  bmp_data.push_back(file_size & 0xFF);         // File size (little-endian)
+  bmp_data.push_back((file_size >> 8) & 0xFF);  //
+  bmp_data.push_back((file_size >> 16) & 0xFF); //
+  bmp_data.push_back((file_size >> 24) & 0xFF); //
+  bmp_data.push_back(0);                        // Reserved
+  bmp_data.push_back(0);                        // Reserved
+  bmp_data.push_back(0);                        // Reserved
+  bmp_data.push_back(0);                        // Reserved
+  bmp_data.push_back(54);                       // Pixel data offset (14 + 40)
+  bmp_data.push_back(0);                        //
+  bmp_data.push_back(0);                        //
+  bmp_data.push_back(0);                        //
 
   // DIB header (BITMAPINFOHEADER, 40 bytes)
-  bmp_data.push_back(40);                                          // Header size
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(width & 0xFF);                                // Width (little-endian)
-  bmp_data.push_back((width >> 8) & 0xFF);                         //
-  bmp_data.push_back((width >> 16) & 0xFF);                        //
-  bmp_data.push_back((width >> 24) & 0xFF);                        //
-  bmp_data.push_back(height & 0xFF);                               // Height (little-endian)
-  bmp_data.push_back((height >> 8) & 0xFF);                        //
-  bmp_data.push_back((height >> 16) & 0xFF);                       //
-  bmp_data.push_back((height >> 24) & 0xFF);                       //
-  bmp_data.push_back(1);                                           // Color planes
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(24);                                          // Bits per pixel (24-bit RGB)
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           // Compression (0 = none)
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(pixel_data_size & 0xFF);                      // Image size
-  bmp_data.push_back((pixel_data_size >> 8) & 0xFF);               //
-  bmp_data.push_back((pixel_data_size >> 16) & 0xFF);              //
-  bmp_data.push_back((pixel_data_size >> 24) & 0xFF);              //
-  bmp_data.push_back(0x13);                                        // X pixels per meter (~72 DPI)
-  bmp_data.push_back(0x0B);                                        //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0x13);                                        // Y pixels per meter (~72 DPI)
-  bmp_data.push_back(0x0B);                                        //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           // Colors in palette (0 = default)
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           // Important colors (0 = all)
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
-  bmp_data.push_back(0);                                           //
+  bmp_data.push_back(40);                             // Header size
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(width & 0xFF);                   // Width (little-endian)
+  bmp_data.push_back((width >> 8) & 0xFF);            //
+  bmp_data.push_back((width >> 16) & 0xFF);           //
+  bmp_data.push_back((width >> 24) & 0xFF);           //
+  bmp_data.push_back(height & 0xFF);                  // Height (little-endian)
+  bmp_data.push_back((height >> 8) & 0xFF);           //
+  bmp_data.push_back((height >> 16) & 0xFF);          //
+  bmp_data.push_back((height >> 24) & 0xFF);          //
+  bmp_data.push_back(1);                              // Color planes
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(24);                             // Bits per pixel (24-bit RGB)
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              // Compression (0 = none)
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(pixel_data_size & 0xFF);         // Image size
+  bmp_data.push_back((pixel_data_size >> 8) & 0xFF);  //
+  bmp_data.push_back((pixel_data_size >> 16) & 0xFF); //
+  bmp_data.push_back((pixel_data_size >> 24) & 0xFF); //
+  bmp_data.push_back(0x13);                           // X pixels per meter (~72 DPI)
+  bmp_data.push_back(0x0B);                           //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0x13);                           // Y pixels per meter (~72 DPI)
+  bmp_data.push_back(0x0B);                           //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              // Colors in palette (0 = default)
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              // Important colors (0 = all)
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
+  bmp_data.push_back(0);                              //
 
   // Pixel data (BGR format, bottom-to-top)
   // BMP format stores rows bottom-to-top, so we iterate y in reverse
   for (std::size_t y = height; y > 0; --y) {
     const auto current_y = y - 1;
-    
+
     for (std::size_t x = 0; x < width; ++x) {
       // Get pixel color from framebuffer (with orientation transform)
       const auto color = get_pixel(x, current_y);
-      
+
       // Convert Color enum to RGB values
       std::uint8_t r, g, b;
       switch (color) {
-        case Color::White:
-          r = g = b = 255;
-          break;
-        case Color::Gray1:
-          r = g = b = 170;  // Light gray
-          break;
-        case Color::Gray2:
-          r = g = b = 85;   // Dark gray
-          break;
-        case Color::Black:
-        default:
-          r = g = b = 0;
-          break;
+      case Color::White:
+        r = g = b = 255;
+        break;
+      case Color::Gray1:
+        r = g = b = 170; // Light gray
+        break;
+      case Color::Gray2:
+        r = g = b = 85; // Dark gray
+        break;
+      case Color::Black:
+      default:
+        r = g = b = 0;
+        break;
       }
-      
+
       // BMP uses BGR format
       bmp_data.push_back(b);
       bmp_data.push_back(g);
       bmp_data.push_back(r);
     }
-    
+
     // Pad row to 4-byte boundary
     const auto padding = row_size - (width * 3);
     for (std::size_t p = 0; p < padding; ++p) {
@@ -688,18 +688,17 @@ auto Display::save_framebuffer_to_bmp(std::string_view filename) -> std::expecte
   }
 
   // Write to file
-  std::FILE* file = std::fopen(filename.data(), "wb");
+  std::FILE *file = std::fopen(filename.data(), "wb");
   if (!file) {
-    return std::unexpected(Error{ErrorCode::FileNotFound, 
-                                 std::string("Failed to create BMP file: ") + std::string(filename)});
+    return std::unexpected(
+        Error{ErrorCode::FileNotFound, std::string("Failed to create BMP file: ") + std::string(filename)});
   }
 
   const auto bytes_written = std::fwrite(bmp_data.data(), 1, bmp_data.size(), file);
   std::fclose(file);
 
   if (bytes_written != bmp_data.size()) {
-    return std::unexpected(Error{ErrorCode::LoadFailed, 
-                                 "Failed to write complete BMP file"});
+    return std::unexpected(Error{ErrorCode::LoadFailed, "Failed to write complete BMP file"});
   }
 
   return {};

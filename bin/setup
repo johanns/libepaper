@@ -12,7 +12,8 @@
 #   - Checks if running on Raspberry Pi
 #   - Updates package lists
 #   - Installs build tools (CMake, GCC 14, Clang)
-#   - Installs libraries (BCM2835, cURL, nlohmann-json)
+#   - Installs libraries (libgpiod, cURL, nlohmann-json)
+#   - Adds user to gpio group (for GPIO access without sudo)
 #   - Enables SPI interface
 #   - Configures Git settings (optional)
 #
@@ -49,10 +50,11 @@ sudo apt install -y \
     g++-14 \
     clang \
     clangd \
-    libbcm2835-dev \
+    libgpiod-dev \
     libcurl4-openssl-dev \
     nlohmann-json3-dev \
-    ninja-build
+    ninja-build \
+    pkg-config
 
 # Check compiler versions
 echo ""
@@ -77,12 +79,63 @@ if [ -e /dev/spidev0.0 ]; then
 else
     echo "SPI is not enabled... enabling now"
     sudo raspi-config nonint do_spi 0
-    echo "SPI enabled. Rebooting system before continuing..."
+    echo "SPI enabled. You may need to reboot for changes to take effect."
+fi
+
+# Check and add user to gpio and spi groups
+echo ""
+echo "Checking GPIO and SPI group membership..."
+CURRENT_USER="${SUDO_USER:-$USER}"
+if [ -z "$CURRENT_USER" ]; then
+    CURRENT_USER=$(whoami)
+fi
+
+GPIO_ADDED=false
+SPI_ADDED=false
+
+if groups "$CURRENT_USER" | grep -q "\bgpio\b"; then
+    echo "User '$CURRENT_USER' is already in the gpio group"
+else
+    echo "Adding user '$CURRENT_USER' to gpio group..."
+    sudo usermod -a -G gpio "$CURRENT_USER"
+    GPIO_ADDED=true
+    echo "User '$CURRENT_USER' has been added to the gpio group"
+fi
+
+if groups "$CURRENT_USER" | grep -q "\bspi\b"; then
+    echo "User '$CURRENT_USER' is already in the spi group"
+else
+    echo "Adding user '$CURRENT_USER' to spi group..."
+    sudo usermod -a -G spi "$CURRENT_USER"
+    SPI_ADDED=true
+    echo "User '$CURRENT_USER' has been added to the spi group"
+fi
+
+if [ "$GPIO_ADDED" = true ] || [ "$SPI_ADDED" = true ]; then
+    echo ""
+    echo "⚠️  IMPORTANT: Group membership changes require a new login session."
+    echo "   Please log out and log back in (or reboot) for GPIO/SPI access to work."
+    echo "   After logging back in, you can verify with: groups"
+fi
+
+# Verify gpiochip0 exists
+echo ""
+echo "Checking GPIO chip availability..."
+if [ -e /dev/gpiochip0 ]; then
+    echo "GPIO chip /dev/gpiochip0 is available"
+else
+    echo "Warning: /dev/gpiochip0 not found. GPIO operations may not work."
 fi
 
 echo ""
 echo "==================================="
 echo "Setup Complete!"
 echo "==================================="
+echo ""
+echo "Next steps:"
+echo "  1. If you were added to the gpio group, log out and log back in"
+echo "  2. Verify GPIO access: groups (should show 'gpio')"
+echo "  3. Build the library: ./bin/build"
+echo "  4. Run examples: cd build && ./examples/crypto_dashboard/crypto_dashboard"
 echo ""
 

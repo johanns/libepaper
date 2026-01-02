@@ -1,13 +1,10 @@
 #pragma once
 
 #include "epaper/errors.hpp"
-#include <bcm2835.h>
-#include <cstddef>
 #include <cstdint>
 #include <expected>
+#include <memory>
 #include <span>
-#include <string>
-#include <string_view>
 
 namespace epaper {
 
@@ -31,22 +28,31 @@ constexpr Pin BUSY{24}; // GPIO 24
 constexpr Pin PWR{18};  // GPIO 18 (optional power control)
 } // namespace pins
 
+// Forward declaration for PImpl
+struct DeviceImpl;
+
 /**
- * @brief RAII wrapper for BCM2835 device.
+ * @brief RAII wrapper for GPIO and SPI device access.
  *
- * Manages the lifecycle of the BCM2835 library and SPI interface.
+ * Manages the lifecycle of libgpiod (GPIO) and Linux SPIdev (SPI) interfaces.
  * Follows the RAII pattern with automatic resource cleanup.
  *
  * @note Exception Safety: Strong guarantee for all operations.
  *       Destructor is noexcept and will never throw.
  *       Move operations are noexcept.
+ *
+ * @note GPIO operations can be used for button handling:
+ *       @code{.cpp}
+ *       device.set_pin_input(button_pin);
+ *       bool pressed = device.read_pin(button_pin);
+ *       @endcode
  */
 class Device {
 public:
-  Device() = default;
+  Device();
 
   /**
-   * @brief Destructor. Cleans up BCM2835 and SPI resources.
+   * @brief Destructor. Cleans up GPIO and SPI resources.
    *
    * @note Exception Safety: Nothrow guarantee - never throws exceptions.
    */
@@ -74,7 +80,7 @@ public:
   Device &operator=(Device &&other) noexcept;
 
   /**
-   * @brief Initialize the BCM2835 library and SPI.
+   * @brief Initialize the GPIO (libgpiod) and SPI (SPIdev) interfaces.
    *
    * This must be called before any other operations on the device.
    * Idempotent - calling init() on an already initialized device succeeds.
@@ -86,7 +92,7 @@ public:
   [[nodiscard]] auto init() -> std::expected<void, Error>;
 
   // Check if device is initialized
-  [[nodiscard]] auto is_initialized() const noexcept -> bool { return initialized_; }
+  [[nodiscard]] auto is_initialized() const noexcept -> bool;
 
   // GPIO operations
   auto set_pin_output(Pin pin) -> void;
@@ -103,8 +109,7 @@ public:
   static auto delay_us(std::uint32_t microseconds) -> void;
 
 private:
-  bool initialized_ = false;
-  bool spi_initialized_ = false;
+  std::unique_ptr<DeviceImpl> pimpl_;
 };
 
 } // namespace epaper

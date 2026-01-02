@@ -1,65 +1,178 @@
 #include "epaper/device.hpp"
-#include <algorithm>
+
+#include <chrono>
+#include <fcntl.h>
+#include <gpiod.h>
+#include <linux/spi/spidev.h>
+#include <sys/ioctl.h>
 #include <thread>
+#include <unistd.h>
+#include <unordered_map>
+#include <vector>
 
 namespace epaper {
 
-Device::~Device() noexcept {
-  if (spi_initialized_) {
-    bcm2835_spi_end();
-  }
-  if (initialized_) {
-    bcm2835_close();
-  }
-}
+// Pin configuration tracking
+struct PinConfig {
+  unsigned int offset;
+  bool is_output;
+  enum gpiod_line_value initial_value;
+};
 
-Device::Device(Device &&other) noexcept : initialized_(other.initialized_), spi_initialized_(other.spi_initialized_) {
-  other.initialized_ = false;
-  other.spi_initialized_ = false;
+// PImpl structure to hide implementation details
+struct DeviceImpl {
+  struct gpiod_chip *chip = nullptr;
+  struct gpiod_line_request *line_request = nullptr;
+  std::unordered_map<std::uint8_t, PinConfig> pin_configs; // Track all configured pins
+  int spi_fd = -1;
+  bool initialized = false;
+  bool spi_initialized = false;
+
+  // Rebuild line request with all configured pins
+  auto rebuild_line_request() -> bool {
+    if (chip == nullptr || pin_configs.empty()) {
+      return false;
+    }
+
+    // Release old request if exists
+    if (line_request != nullptr) {
+      gpiod_line_request_release(line_request);
+      line_request = nullptr;
+    }
+
+    // Create line config with all pins
+    struct gpiod_line_config *line_cfg = gpiod_line_config_new();
+    if (line_cfg == nullptr) {
+      return false;
+    }
+
+    // Add all pins to the config (create settings for each pin)
+    for (const auto &[pin_num, config] : pin_configs) {
+      struct gpiod_line_settings *settings = gpiod_line_settings_new();
+      if (settings == nullptr) {
+        gpiod_line_config_free(line_cfg);
+        return false;
+      }
+
+      if (config.is_output) {
+        gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_OUTPUT);
+        gpiod_line_settings_set_output_value(settings, config.initial_value);
+      } else {
+        gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_INPUT);
+      }
+
+      unsigned int offset = config.offset;
+      if (gpiod_line_config_add_line_settings(line_cfg, &offset, 1, settings) < 0) {
+        gpiod_line_settings_free(settings);
+        gpiod_line_config_free(line_cfg);
+        return false;
+      }
+      // Settings are copied into config, so we can free them
+      gpiod_line_settings_free(settings);
+    }
+
+    // Create request config
+    struct gpiod_request_config *req_cfg = gpiod_request_config_new();
+    if (req_cfg == nullptr) {
+      gpiod_line_config_free(line_cfg);
+      return false;
+    }
+    gpiod_request_config_set_consumer(req_cfg, "libepaper");
+
+    // Request all lines
+    line_request = gpiod_chip_request_lines(chip, req_cfg, line_cfg);
+
+    // Clean up temporary objects
+    gpiod_request_config_free(req_cfg);
+    gpiod_line_config_free(line_cfg);
+
+    return line_request != nullptr;
+  }
+
+  ~DeviceImpl() { cleanup(); }
+
+  void cleanup() noexcept {
+    // Release line request
+    if (line_request != nullptr) {
+      gpiod_line_request_release(line_request);
+      line_request = nullptr;
+    }
+    pin_configs.clear();
+
+    // Close GPIO chip
+    if (chip != nullptr) {
+      gpiod_chip_close(chip);
+      chip = nullptr;
+    }
+
+    // Close SPI device
+    if (spi_fd >= 0) {
+      ::close(spi_fd);
+      spi_fd = -1;
+    }
+
+    initialized = false;
+    spi_initialized = false;
+  }
+};
+
+Device::Device() : pimpl_(std::make_unique<DeviceImpl>()) {}
+
+Device::~Device() noexcept = default;
+
+Device::Device(Device &&other) noexcept : pimpl_(std::move(other.pimpl_)) {
+  other.pimpl_ = std::make_unique<DeviceImpl>();
 }
 
 Device &Device::operator=(Device &&other) noexcept {
   if (this != &other) {
-    // Clean up current resources
-    if (spi_initialized_) {
-      bcm2835_spi_end();
-    }
-    if (initialized_) {
-      bcm2835_close();
-    }
-
-    // Transfer ownership
-    initialized_ = other.initialized_;
-    spi_initialized_ = other.spi_initialized_;
-    other.initialized_ = false;
-    other.spi_initialized_ = false;
+    pimpl_ = std::move(other.pimpl_);
+    other.pimpl_ = std::make_unique<DeviceImpl>();
   }
   return *this;
 }
 
 auto Device::init() -> std::expected<void, Error> {
-  if (initialized_) {
+  if (pimpl_->initialized) {
     return {};
   }
 
-  // Initialize BCM2835 library
-  if (bcm2835_init() == 0) {
-    return std::unexpected(Error(ErrorCode::DeviceInitFailed));
+  // Initialize GPIO chip (libgpiod v2)
+  pimpl_->chip = gpiod_chip_open("/dev/gpiochip0");
+  if (pimpl_->chip == nullptr) {
+    return std::unexpected(Error(ErrorCode::GPIOInitFailed, "Failed to open /dev/gpiochip0"));
   }
-  initialized_ = true;
+  pimpl_->initialized = true;
 
-  // Initialize SPI
-  if (bcm2835_spi_begin() == 0) {
-    bcm2835_close();
-    initialized_ = false;
-    return std::unexpected(Error(ErrorCode::SPIInitFailed));
+  // Initialize SPI device (Linux SPIdev)
+  pimpl_->spi_fd = open("/dev/spidev0.0", O_RDWR);
+  if (pimpl_->spi_fd < 0) {
+    pimpl_->cleanup();
+    return std::unexpected(Error(ErrorCode::SPIDeviceOpenFailed, "Failed to open /dev/spidev0.0"));
   }
-  spi_initialized_ = true;
 
-  // Configure SPI parameters
-  bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
-  bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);
-  bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_128);
+  // Configure SPI mode (SPI_MODE_0: CPOL=0, CPHA=0)
+  std::uint8_t mode = SPI_MODE_0;
+  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_MODE, &mode) < 0) {
+    pimpl_->cleanup();
+    return std::unexpected(Error(ErrorCode::SPIConfigFailed, "Failed to set SPI mode"));
+  }
+
+  // Configure SPI speed (250MHz / 128 ≈ 1.95MHz)
+  constexpr std::uint32_t spi_speed = 1953125; // ~1.95MHz
+  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed) < 0) {
+    pimpl_->cleanup();
+    return std::unexpected(Error(ErrorCode::SPIConfigFailed, "Failed to set SPI speed"));
+  }
+
+  // Configure bits per word (8 bits, MSB first)
+  std::uint8_t bits = 8;
+  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0) {
+    pimpl_->cleanup();
+    return std::unexpected(Error(ErrorCode::SPIConfigFailed, "Failed to set SPI bits per word"));
+  }
+
+  pimpl_->spi_initialized = true;
 
   // Set up default pins for e-paper
   set_pin_output(pins::RST);
@@ -70,25 +183,128 @@ auto Device::init() -> std::expected<void, Error> {
   return {};
 }
 
-auto Device::set_pin_output(Pin pin) -> void { bcm2835_gpio_fsel(pin.number(), BCM2835_GPIO_FSEL_OUTP); }
+auto Device::is_initialized() const noexcept -> bool { return pimpl_ && pimpl_->initialized; }
 
-auto Device::set_pin_input(Pin pin) -> void { bcm2835_gpio_fsel(pin.number(), BCM2835_GPIO_FSEL_INPT); }
+auto Device::set_pin_output(Pin pin) -> void {
+  if (!pimpl_->initialized || pimpl_->chip == nullptr) {
+    return;
+  }
 
-auto Device::write_pin(Pin pin, bool value) -> void { bcm2835_gpio_write(pin.number(), value ? HIGH : LOW); }
+  const auto pin_num = pin.number();
+  const unsigned int offset = static_cast<unsigned int>(pin_num);
 
-auto Device::read_pin(Pin pin) -> bool { return bcm2835_gpio_lev(pin.number()) == HIGH; }
+  // Update pin configuration
+  PinConfig config;
+  config.offset = offset;
+  config.is_output = true;
+  config.initial_value = GPIOD_LINE_VALUE_INACTIVE;
+  pimpl_->pin_configs[pin_num] = config;
 
-auto Device::spi_transfer(std::uint8_t value) -> std::uint8_t { return bcm2835_spi_transfer(value); }
-
-auto Device::spi_write(std::span<const std::byte> data) -> void {
-  // BCM2835 library expects char*, so we need to cast
-  for (const auto byte : data) {
-    bcm2835_spi_transfer(static_cast<std::uint8_t>(byte));
+  // Rebuild line request with all pins
+  if (!pimpl_->rebuild_line_request()) {
+    // If rebuild fails, remove the pin we just added to maintain consistency
+    pimpl_->pin_configs.erase(pin_num);
   }
 }
 
-auto Device::delay_ms(std::uint32_t milliseconds) -> void { bcm2835_delay(milliseconds); }
+auto Device::set_pin_input(Pin pin) -> void {
+  if (!pimpl_->initialized || pimpl_->chip == nullptr) {
+    return;
+  }
 
-auto Device::delay_us(std::uint32_t microseconds) -> void { bcm2835_delayMicroseconds(microseconds); }
+  const auto pin_num = pin.number();
+  const unsigned int offset = static_cast<unsigned int>(pin_num);
+
+  // Update pin configuration
+  PinConfig config;
+  config.offset = offset;
+  config.is_output = false;
+  config.initial_value = GPIOD_LINE_VALUE_INACTIVE;
+  pimpl_->pin_configs[pin_num] = config;
+
+  // Rebuild line request with all pins
+  if (!pimpl_->rebuild_line_request()) {
+    // If rebuild fails, remove the pin we just added to maintain consistency
+    pimpl_->pin_configs.erase(pin_num);
+  }
+}
+
+auto Device::write_pin(Pin pin, bool value) -> void {
+  if (!pimpl_->initialized || pimpl_->line_request == nullptr) {
+    return;
+  }
+
+  const auto pin_num = pin.number();
+  if (auto it = pimpl_->pin_configs.find(pin_num); it != pimpl_->pin_configs.end()) {
+    enum gpiod_line_value line_value = value ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE;
+    gpiod_line_request_set_value(pimpl_->line_request, it->second.offset, line_value);
+  }
+}
+
+auto Device::read_pin(Pin pin) -> bool {
+  if (!pimpl_->initialized || pimpl_->line_request == nullptr) {
+    return false;
+  }
+
+  const auto pin_num = pin.number();
+  if (auto it = pimpl_->pin_configs.find(pin_num); it != pimpl_->pin_configs.end()) {
+    enum gpiod_line_value value = gpiod_line_request_get_value(pimpl_->line_request, it->second.offset);
+    return value == GPIOD_LINE_VALUE_ACTIVE;
+  }
+  return false;
+}
+
+auto Device::spi_transfer(std::uint8_t value) -> std::uint8_t {
+  if (!pimpl_->spi_initialized || pimpl_->spi_fd < 0) {
+    return 0;
+  }
+
+  struct spi_ioc_transfer transfer{};
+  std::uint8_t tx_buf = value;
+  std::uint8_t rx_buf = 0;
+
+  transfer.tx_buf = reinterpret_cast<std::uintptr_t>(&tx_buf);
+  transfer.rx_buf = reinterpret_cast<std::uintptr_t>(&rx_buf);
+  transfer.len = 1;
+  transfer.speed_hz = 1953125;
+  transfer.bits_per_word = 8;
+
+  if (ioctl(pimpl_->spi_fd, SPI_IOC_MESSAGE(1), &transfer) < 0) {
+    return 0;
+  }
+
+  return rx_buf;
+}
+
+auto Device::spi_write(std::span<const std::byte> data) -> void {
+  if (!pimpl_->spi_initialized || pimpl_->spi_fd < 0 || data.empty()) {
+    return;
+  }
+
+  struct spi_ioc_transfer transfer{};
+  std::vector<std::uint8_t> tx_buf(data.size());
+  std::vector<std::uint8_t> rx_buf(data.size());
+
+  // Convert std::byte to uint8_t
+  for (std::size_t i = 0; i < data.size(); ++i) {
+    tx_buf[i] = static_cast<std::uint8_t>(data[i]);
+  }
+
+  transfer.tx_buf = reinterpret_cast<std::uintptr_t>(tx_buf.data());
+  transfer.rx_buf = reinterpret_cast<std::uintptr_t>(rx_buf.data());
+  transfer.len = static_cast<std::uint32_t>(data.size());
+  transfer.speed_hz = 1953125;
+  transfer.bits_per_word = 8;
+
+  ioctl(pimpl_->spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+}
+
+auto Device::delay_ms(std::uint32_t milliseconds) -> void {
+  std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+auto Device::delay_us(std::uint32_t microseconds) -> void {
+  std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
+}
 
 } // namespace epaper

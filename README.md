@@ -70,14 +70,19 @@ Run the automated setup script:
 Or manually install dependencies:
 
 ```bash
-sudo apt install cmake g++-14 libbcm2835-dev libcurl4-openssl-dev nlohmann-json3-dev
+sudo apt install cmake g++-14 libgpiod-dev libcurl4-openssl-dev nlohmann-json3-dev pkg-config
 ```
 
-### 2. Enable SPI
+### 2. Enable SPI and Configure Permissions
 
 ```bash
+# Enable SPI interface
 sudo raspi-config
 # Interface Options → SPI → Enable
+
+# Add user to gpio and spi groups (for GPIO/SPI access without sudo)
+sudo usermod -a -G gpio,spi $USER
+# Log out and back in for group changes to take effect
 ```
 
 ### 3. Hardware Connection
@@ -110,23 +115,23 @@ cmake --build build -j$(nproc)
 
 ```bash
 # Run crypto dashboard (live prices with charts)
-sudo ./build/examples/crypto_dashboard/crypto_dashboard
+./build/examples/crypto_dashboard/crypto_dashboard
 
 # Run tests
-sudo ./build/tests/test_auto_sleep
+./build/tests/test_auto_sleep
 ```
 
-**Note:** Root privileges (`sudo`) required for GPIO/SPI access.
+**Note:** No sudo required! The library uses user-space GPIO access via libgpiod. Make sure you're in the `gpio` and `spi` groups (see step 2).
 
 ## 🧪 Testing
 
 ```bash
 # Run all tests
 cd build/tests
-sudo ./run_all_tests.sh
+./run_all_tests.sh
 
 # Run specific test
-sudo ./test_auto_sleep
+./test_auto_sleep
 ```
 
 See [tests/README.md](tests/README.md) for details.
@@ -196,8 +201,9 @@ The abstract driver interface makes it straightforward to add support for other 
 
 - C++23 capable compiler (GCC 14+ or Clang 18+)
 - CMake 3.25+
-- BCM2835 library
+- libgpiod library (user-space GPIO access)
 - Raspberry Pi with SPI enabled
+- User in `gpio` and `spi` groups (no sudo required)
 
 ### Project Structure
 
@@ -220,7 +226,7 @@ libepaper/
 ## 🙏 Acknowledgments
 
 - **Waveshare** for the e-Paper hardware and original library
-- **BCM2835 library authors** for Raspberry Pi GPIO access
+- **libgpiod developers** for modern Linux GPIO access
 - **stb_image library authors** for image loading
 
 ## 📄 License

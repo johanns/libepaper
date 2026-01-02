@@ -253,7 +253,7 @@ auto EPD27::init(DisplayMode mode) -> std::expected<void, Error> {
   }
 
   initialized_ = true;
-  is_asleep_ = false;  // Mark as awake after successful initialization
+  is_asleep_ = false; // Mark as awake after successful initialization
   return {};
 }
 
@@ -283,7 +283,7 @@ auto EPD27::display(std::span<const std::byte> buffer) -> std::expected<void, Er
   if (is_asleep_) {
     auto wake_result = wake();
     if (!wake_result) {
-      return wake_result;  // Propagate wake error
+      return wake_result; // Propagate wake error
     }
   }
 
@@ -387,7 +387,7 @@ auto EPD27::display(std::span<const std::byte> buffer) -> std::expected<void, Er
 
 auto EPD27::sleep() -> void {
   if (is_asleep_) {
-    return;  // Already asleep, no-op
+    return; // Already asleep, no-op
   }
 
   send_command(Command::VCOM_DATA_INTERVAL);
@@ -396,12 +396,12 @@ auto EPD27::sleep() -> void {
   send_command(Command::DEEP_SLEEP);
   send_data(DisplayOps::DEEP_SLEEP_MAGIC);
 
-  is_asleep_ = true;  // Track sleep state
+  is_asleep_ = true; // Track sleep state
 }
 
 auto EPD27::wake() -> std::expected<void, Error> {
   if (!is_asleep_) {
-    return {};  // Already awake, no-op
+    return {}; // Already awake, no-op
   }
 
   // EPD27 requires full re-initialization after deep sleep
@@ -414,7 +414,7 @@ auto EPD27::wake() -> std::expected<void, Error> {
   // Re-initialize with the current mode
   auto result = init(current_mode_);
   if (result) {
-    is_asleep_ = false;  // Track state - awake after successful init
+    is_asleep_ = false; // Track state - awake after successful init
   }
   return result;
 }

@@ -25,10 +25,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
-# Find BCM2835 library
-find_library(BCM2835_LIBRARY bcm2835 REQUIRED)
-if(NOT BCM2835_LIBRARY)
-    message(FATAL_ERROR "BCM2835 library not found. Install with: sudo apt-get install libbcm2835-dev")
+# Find libgpiod library
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBGPIOD REQUIRED libgpiod)
+if(NOT LIBGPIOD_FOUND)
+    message(FATAL_ERROR "libgpiod not found. Install with: sudo apt-get install libgpiod-dev")
 endif()
 
 # Library sources
@@ -61,11 +62,12 @@ target_include_directories(epaper
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/fonts
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+        ${LIBGPIOD_INCLUDE_DIRS}
 )
 
 target_link_libraries(epaper
     PUBLIC
-        ${BCM2835_LIBRARY}
+        ${LIBGPIOD_LIBRARIES}
         m
 )
 

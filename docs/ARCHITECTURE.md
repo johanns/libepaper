@@ -58,7 +58,7 @@ graph TD
     B --> D[Driver Interface]
     D --> E[EPD27 Driver]
     E --> F[Hardware Device Layer]
-    F --> G[BCM2835/SPI/GPIO]
+    F --> G[libgpiod/SPIdev]
 
     style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
     style B fill:#bbdefb,stroke:#1565c0,stroke-width:2px,color:#000
@@ -101,16 +101,17 @@ graph TD
 - Hardware state tracking
 
 **Hardware Device Layer** (`device.hpp`)
-- BCM2835 GPIO/SPI wrapper
+- libgpiod (GPIO) and Linux SPIdev (SPI) wrapper
 - RAII resource management
 - Pin control and SPI transfers
 - Low-level hardware interface
+- User-space access (no sudo required)
 
 ## Component Deep Dive
 
-### Device Layer: BCM2835 Hardware Interface
+### Device Layer: libgpiod/SPIdev Hardware Interface
 
-The `Device` class wraps the BCM2835 library for safe hardware access.
+The `Device` class wraps libgpiod (GPIO) and Linux SPIdev (SPI) for safe hardware access.
 
 ```mermaid
 classDiagram
@@ -127,21 +128,22 @@ classDiagram
 
     class Impl {
         <<Private Implementation>>
-        -BCM2835 library calls
+        -libgpiod GPIO calls
+        -Linux SPIdev SPI calls
     }
 
     Device *-- Impl : contains
 ```
 
 **Key Features:**
-- **RAII**: Constructor/destructor manage BCM2835 library lifecycle
+- **RAII**: Constructor/destructor manage libgpiod and SPIdev resources
 - **Atomic State**: Thread-safe initialization tracking
-- **PImpl**: Hide BCM2835 library details from public interface
+- **PImpl**: Hide libgpiod/SPIdev details from public interface
 - **Error Handling**: Returns `std::expected` for init failures
 
 **Why This Design:**
 - **Testability**: Can mock `Device` for unit tests
-- **Encapsulation**: BCM2835 details don't leak into headers
+- **Encapsulation**: libgpiod/SPIdev details don't leak into headers
 - **Resource Safety**: Automatic cleanup prevents resource leaks
 
 ### Driver Interface: Hardware Abstraction
@@ -432,7 +434,7 @@ sequenceDiagram
     participant Display
 
     App->>Device: init()
-    Device->>Device: BCM2835 initialization
+    Device->>Device: libgpiod/SPIdev initialization
     Device->>Device: SPI setup
     Device-->>App: expected<void, Error>
 
@@ -711,12 +713,12 @@ Approximate refresh times for EPD27:
 
 ### SPI Transfer Rates
 
-The BCM2835 SPI operates at configurable speeds:
-- **Default**: 8 MHz (conservative, reliable)
+The Linux SPIdev operates at configurable speeds:
+- **Current**: ~1.95 MHz (250MHz / 128, equivalent to previous BCM2835 CLOCK_DIVIDER_128)
 - **Maximum**: 32 MHz (may cause errors with long wires)
 
 **Framebuffer Transfer Time:**
-- At 8 MHz: ~6ms for 5,808 bytes (black/white mode)
+- At ~1.95 MHz: ~24ms for 5,808 bytes (black/white mode)
 - Negligible compared to display refresh time (~2s)
 
 ## Error Handling Strategy

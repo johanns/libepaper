@@ -169,8 +169,8 @@ void DashboardRenderer::draw_charts_stacked(const PriceHistory &top_history, con
   // draw_rectangle draws TO (y+height), so y=126 + height=49 draws TO y=175 (last valid pixel)
 
   constexpr size_t chart_start_y = 44;
-  constexpr size_t chart_height = 49;    // 49 pixels to stay within 0-175 bounds
-  constexpr size_t chart_width = 254;    // 264 - 5 (left) - 5 (right) = 254
+  constexpr size_t chart_height = 49; // 49 pixels to stay within 0-175 bounds
+  constexpr size_t chart_width = 254; // 264 - 5 (left) - 5 (right) = 254
   constexpr size_t chart_spacing = 4;
 
   // Top chart (30-day)

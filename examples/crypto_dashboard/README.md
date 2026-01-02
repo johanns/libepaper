@@ -137,7 +137,8 @@ Each module has a single, well-defined responsibility:
 sudo apt-get install \
     libcurl4-openssl-dev \
     nlohmann-json3-dev \
-    libbcm2835-dev
+    libgpiod-dev \
+    pkg-config
 ```
 
 ### Build Commands
@@ -164,16 +165,16 @@ The executable will be at: `build/examples/crypto_dashboard/crypto_dashboard`
 
 ```bash
 # Run with default settings (60s screen flip, 15min data fetch)
-sudo ./crypto_dashboard
+./crypto_dashboard
 
 # Custom screen flip interval (30 seconds)
-sudo ./crypto_dashboard --screen-flip-interval=30
+./crypto_dashboard --screen-flip-interval=30
 
 # Custom data fetch interval (10 minutes)
-sudo ./crypto_dashboard --data-fetch-interval=600
+./crypto_dashboard --data-fetch-interval=600
 
 # Both custom intervals
-sudo ./crypto_dashboard --screen-flip-interval=45 --data-fetch-interval=1200
+./crypto_dashboard --screen-flip-interval=45 --data-fetch-interval=1200
 
 # Show help
 ./crypto_dashboard --help
@@ -226,7 +227,7 @@ cmake --build build --target crypto_dashboard
 ./build/examples/crypto_dashboard/crypto_dashboard --help
 
 # Full test
-sudo ./build/examples/crypto_dashboard/crypto_dashboard
+./build/examples/crypto_dashboard/crypto_dashboard
 ```
 
 ## 🎨 Benefits of This Design

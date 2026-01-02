@@ -21,7 +21,7 @@ This directory contains complete, working examples that demonstrate various feat
 **All examples require:**
 - Raspberry Pi with SPI enabled
 - E-paper display connected (2.7" EPD27)
-- Root privileges (`sudo`) for GPIO/SPI access
+- User in `gpio` and `spi` groups (no sudo required)
 
 ## Quick Start Example
 
@@ -82,10 +82,10 @@ int main() {
 **Save as `hello.cpp`, compile and run:**
 ```bash
 # Compile
-g++-14 -std=c++23 hello.cpp -o hello -lepaper -lbcm2835
+g++-14 -std=c++23 hello.cpp -o hello -lepaper -lgpiod
 
-# Run (requires sudo)
-sudo ./hello
+# Run (no sudo required with proper group membership)
+./hello
 ```
 
 ## Available Examples
@@ -111,7 +111,7 @@ A real-time cryptocurrency price and chart dashboard with multi-screen rotation.
 
 **Run it:**
 ```bash
-sudo ./build/examples/crypto_dashboard/crypto_dashboard
+./build/examples/crypto_dashboard/crypto_dashboard
 ```
 
 **Learn more:** [crypto_dashboard/README.md](crypto_dashboard/README.md)
@@ -224,7 +224,7 @@ A Raspberry Pi system monitor showing CPU, memory, and temperature.
 Start here if you're new to libepaper:
 
 1. **Read the Quick Start** (above)
-2. **Try the Crypto Dashboard**: `sudo ./build/examples/crypto_dashboard/crypto_dashboard`
+2. **Try the Crypto Dashboard**: `./build/examples/crypto_dashboard/crypto_dashboard`
 3. **Read the API documentation**: [docs/API.md](../docs/API.md)
 4. **Experiment**: Modify the crypto dashboard to display different data
 
@@ -266,7 +266,7 @@ ls build/examples/
 cmake --build build --target crypto_dashboard
 
 # Run it
-sudo ./build/examples/crypto_dashboard/crypto_dashboard
+./build/examples/crypto_dashboard/crypto_dashboard
 ```
 
 ### Build Your Own Example
@@ -325,7 +325,7 @@ Brief description of what this example does.
 
 ## Running
 \`\`\`bash
-sudo ./build/examples/your_example/your_example
+./build/examples/your_example/your_example
 \`\`\`
 
 ## Code Structure

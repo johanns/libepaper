@@ -207,7 +207,7 @@ private:
   Device &device_;
   DisplayMode current_mode_ = DisplayMode::BlackWhite;
   bool initialized_ = false;
-  bool is_asleep_ = false;  // Track sleep state for transparent wake management
+  bool is_asleep_ = false; // Track sleep state for transparent wake management
 
   // LUT tables for black/white mode
   static constexpr std::array<std::uint8_t, 44> LUT_VCOM_DC = {

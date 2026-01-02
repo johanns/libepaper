@@ -15,7 +15,11 @@ enum class ErrorCode {
   // Device errors
   DeviceNotInitialized, ///< Device has not been initialized
   DeviceInitFailed,     ///< Device initialization failed
+  GPIOInitFailed,       ///< GPIO initialization failed (libgpiod)
+  GPIORequestFailed,    ///< GPIO line request failed
   SPIInitFailed,        ///< SPI initialization failed
+  SPIDeviceOpenFailed,  ///< SPI device open failed
+  SPIConfigFailed,      ///< SPI configuration failed
   InvalidPin,           ///< Invalid GPIO pin number
   TransferFailed,       ///< SPI/data transfer failed
 
@@ -49,8 +53,16 @@ enum class ErrorCode {
     return "Device not initialized";
   case ErrorCode::DeviceInitFailed:
     return "Device initialization failed";
+  case ErrorCode::GPIOInitFailed:
+    return "GPIO initialization failed";
+  case ErrorCode::GPIORequestFailed:
+    return "GPIO line request failed";
   case ErrorCode::SPIInitFailed:
     return "SPI initialization failed";
+  case ErrorCode::SPIDeviceOpenFailed:
+    return "SPI device open failed";
+  case ErrorCode::SPIConfigFailed:
+    return "SPI configuration failed";
   case ErrorCode::InvalidPin:
     return "Invalid pin number";
   case ErrorCode::TransferFailed:

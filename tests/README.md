@@ -13,19 +13,19 @@ The test suite consists of 11 standalone test programs that exercise both featur
 To run all tests in sequence with automatic pauses between tests:
 
 ```bash
-sudo ./run_all_tests.sh
+./run_all_tests.sh
 ```
 
-**Note:** Root privileges are required for GPIO/SPI access.
+**Note:** No sudo required! Make sure you're in the `gpio` and `spi` groups (see setup instructions).
 
 ### Run Individual Tests
 
 Each test can be run independently:
 
 ```bash
-sudo ./test_display_modes
-sudo ./test_drawing_primitives
-sudo ./test_orientations
+./test_display_modes
+./test_drawing_primitives
+./test_orientations
 # ... etc
 ```
 
@@ -35,16 +35,16 @@ The `run_all_tests.sh` script supports several options:
 
 ```bash
 # Run all tests
-sudo ./run_all_tests.sh
+./run_all_tests.sh
 
 # Skip a specific test
-sudo ./run_all_tests.sh --skip stress
+./run_all_tests.sh --skip stress
 
 # Run only a specific test
-sudo ./run_all_tests.sh test_fonts
+./run_all_tests.sh test_fonts
 
 # Run without pauses (auto mode)
-sudo ./run_all_tests.sh --auto
+./run_all_tests.sh --auto
 ```
 
 ## Test Programs
@@ -173,10 +173,10 @@ All tests should:
 
 ### Permission Denied Errors
 
-Make sure to run tests with `sudo`:
+Make sure you're in the `gpio` and `spi` groups (no sudo required):
 
 ```bash
-sudo ./test_display_modes
+./test_display_modes
 ```
 
 ### SPI Not Enabled
@@ -191,16 +191,17 @@ sudo raspi-config
 ### Display Not Responding
 
 1. Check physical connections
-2. Verify BCM2835 library is installed
+2. Verify libgpiod library is installed (`sudo apt install libgpiod-dev`)
 3. Ensure display is powered
-4. Try running with `sudo`
+4. Verify you're in `gpio` and `spi` groups: `groups` (should show both)
 
 ### Compilation Errors
 
 Ensure you have:
 - GCC 14+ or Clang 18+
 - CMake 3.25+
-- BCM2835 library installed
+- libgpiod library installed
+- User in `gpio` and `spi` groups
 
 ### Test Failures
 

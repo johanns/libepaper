@@ -3,13 +3,13 @@
 # run_all_tests.sh - Run all libepaper manual tests sequentially
 #
 # This script runs all test programs in sequence with optional pauses between tests.
-# Tests must be run with sudo for GPIO/SPI access.
+# No sudo required - make sure you're in the gpio and spi groups.
 #
 # Usage:
-#   sudo ./run_all_tests.sh              # Run all tests with pauses
-#   sudo ./run_all_tests.sh --auto       # Run all tests without pauses
-#   sudo ./run_all_tests.sh --skip TEST  # Skip specific test
-#   sudo ./run_all_tests.sh TEST_NAME    # Run only specific test
+#   ./run_all_tests.sh              # Run all tests with pauses
+#   ./run_all_tests.sh --auto       # Run all tests without pauses
+#   ./run_all_tests.sh --skip TEST  # Skip specific test
+#   ./run_all_tests.sh TEST_NAME    # Run only specific test
 
 set -e  # Exit on error
 
@@ -53,7 +53,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --help)
-            echo "Usage: sudo ./run_all_tests.sh [OPTIONS] [TEST_NAME]"
+            echo "Usage: ./run_all_tests.sh [OPTIONS] [TEST_NAME]"
             echo ""
             echo "Options:"
             echo "  --auto           Run all tests without pauses"
@@ -66,10 +66,12 @@ while [[ $# -gt 0 ]]; do
             done
             echo ""
             echo "Examples:"
-            echo "  sudo ./run_all_tests.sh                    # Run all tests with pauses"
-            echo "  sudo ./run_all_tests.sh --auto             # Run all without pauses"
-            echo "  sudo ./run_all_tests.sh --skip test_stress # Skip stress test"
-            echo "  sudo ./run_all_tests.sh test_fonts         # Run only font test"
+            echo "  ./run_all_tests.sh                    # Run all tests with pauses"
+            echo "  ./run_all_tests.sh --auto             # Run all without pauses"
+            echo "  ./run_all_tests.sh --skip test_stress # Skip stress test"
+            echo "  ./run_all_tests.sh test_fonts         # Run only font test"
+            echo ""
+            echo "Note: Make sure you're in the gpio and spi groups (no sudo required)"
             exit 0
             ;;
         *)
@@ -80,11 +82,18 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}Error: This script must be run as root (use sudo)${NC}"
-   echo "GPIO/SPI access requires root privileges."
-   exit 1
+# Check if user is in required groups
+if ! groups | grep -q "\bgpio\b"; then
+   echo -e "${YELLOW}Warning: You may not be in the gpio group${NC}"
+   echo "Add yourself with: sudo usermod -a -G gpio,spi $USER"
+   echo "Then log out and back in."
+   echo ""
+fi
+if ! groups | grep -q "\bspi\b"; then
+   echo -e "${YELLOW}Warning: You may not be in the spi group${NC}"
+   echo "Add yourself with: sudo usermod -a -G gpio,spi $USER"
+   echo "Then log out and back in."
+   echo ""
 fi
 
 # Function to print section header
