@@ -187,7 +187,12 @@ public:
   [[nodiscard]] auto mode() const noexcept -> DisplayMode override { return current_mode_; }
   [[nodiscard]] auto buffer_size() const noexcept -> std::size_t override;
   [[nodiscard]] auto supports_partial_refresh() const noexcept -> bool override { return false; }
-  [[nodiscard]] auto supports_power_control() const noexcept -> bool override { return true; }
+  [[nodiscard]] auto supports_power_control() const noexcept -> bool override {
+    // EPD27 supports POWER_OFF/POWER_ON commands.
+    // Note: These commands use simple BUSY polling (no GET_STATUS) as the
+    // display doesn't respond to commands during power transitions.
+    return true;
+  }
 
 private:
   // Hardware reset
@@ -199,6 +204,7 @@ private:
 
   // Wait for display to be ready
   auto wait_busy() -> void;
+  auto wait_busy_simple() -> void; // Simple wait without sending commands
 
   // LUT (Look-Up Table) initialization
   auto set_lut_bw() -> void;

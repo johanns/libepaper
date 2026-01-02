@@ -49,6 +49,31 @@ auto EPD27::wait_busy() -> void {
   Device::delay_ms(Timing::BUSY_WAIT_DELAY_MS);
 }
 
+auto EPD27::wait_busy_simple() -> void {
+  // Simple busy wait - just poll BUSY pin without sending commands.
+  // Used after POWER_OFF/POWER_ON when display may not respond to GET_STATUS.
+  // Per datasheet: BUSY_N (active-low) drops LOW when busy, rises HIGH when done.
+  // So we wait while BUSY is LOW (busy state).
+
+  // First, wait for BUSY to go LOW (command accepted)
+  constexpr int initial_timeout = 100; // 1 second
+  int iterations = 0;
+  while (device_.read_pin(pins::BUSY) && iterations < initial_timeout) {
+    Device::delay_ms(10);
+    iterations++;
+  }
+
+  // Then wait for BUSY to go HIGH (command complete)
+  constexpr int max_iterations = 1000; // 10 seconds
+  iterations = 0;
+  while (!device_.read_pin(pins::BUSY) && iterations < max_iterations) {
+    Device::delay_ms(10);
+    iterations++;
+  }
+
+  Device::delay_ms(Timing::BUSY_WAIT_DELAY_MS);
+}
+
 auto EPD27::set_lut_bw() -> void {
   // VCOM LUT
   send_command(Command::LUT_VCOM);
@@ -424,10 +449,10 @@ auto EPD27::power_off() -> std::expected<void, Error> {
     return std::unexpected(Error(ErrorCode::DriverNotInitialized));
   }
 
-  // Try hardware power control first (if PWR pin is configured)
-  // For now, use software power off command
+  // Per datasheet: After POWER_OFF, BUSY_N drops LOW then rises HIGH when done.
+  // We can't send GET_STATUS after POWER_OFF, so use simple BUSY polling.
   send_command(Command::POWER_OFF);
-  wait_busy();
+  wait_busy_simple(); // Use simple wait - don't send commands while display powers off
 
   return {};
 }
@@ -437,10 +462,10 @@ auto EPD27::power_on() -> std::expected<void, Error> {
     return std::unexpected(Error(ErrorCode::DriverNotInitialized));
   }
 
-  // Try hardware power control first (if PWR pin is configured)
-  // For now, use software power on command
+  // Per datasheet: After POWER_ON, BUSY_N drops LOW then rises HIGH when done.
+  // Similar to POWER_OFF, we use simple BUSY polling without GET_STATUS.
   send_command(Command::POWER_ON);
-  wait_busy();
+  wait_busy_simple(); // Use simple wait - display may not respond to commands during power-on
 
   return {};
 }

@@ -98,10 +98,12 @@ auto main() -> int {
     if (display->supports_power_control()) {
       std::cout << "\n=== Test 4: Power Off ===\n";
       std::cout << "Turning display power off...\n";
+      std::cout << "Note: POWER_OFF may not fully power down the display.\n";
+      std::cout << "      Use sleep() for proper power management.\n";
       if (auto result = display->power_off(); !result) {
         std::cerr << "Power off failed: " << result.error().what() << "\n";
       } else {
-        std::cout << "Display power off successful.\n";
+        std::cout << "Power off command sent successfully.\n";
         std::cout << "Waiting 2 seconds...\n";
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
