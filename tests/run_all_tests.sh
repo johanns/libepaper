@@ -41,6 +41,12 @@ SKIP_TEST=""
 SINGLE_TEST=""
 PAUSE_DURATION=3
 
+# Determine script location and build directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BUILD_DIR="$PROJECT_ROOT/build"
+TEST_DIR="$BUILD_DIR/tests"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -83,13 +89,21 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Check if user is in required groups
-if ! groups | grep -q "\bgpio\b"; then
+# Use set +e temporarily to prevent exit on grep failure
+set +e
+groups | grep -q "\bgpio\b"
+GPIO_IN_GROUP=$?
+groups | grep -q "\bspi\b"
+SPI_IN_GROUP=$?
+set -e
+
+if [[ $GPIO_IN_GROUP -ne 0 ]]; then
    echo -e "${YELLOW}Warning: You may not be in the gpio group${NC}"
    echo "Add yourself with: sudo usermod -a -G gpio,spi $USER"
    echo "Then log out and back in."
    echo ""
 fi
-if ! groups | grep -q "\bspi\b"; then
+if [[ $SPI_IN_GROUP -ne 0 ]]; then
    echo -e "${YELLOW}Warning: You may not be in the spi group${NC}"
    echo "Add yourself with: sudo usermod -a -G gpio,spi $USER"
    echo "Then log out and back in."
@@ -142,7 +156,7 @@ pause_between_tests() {
 # Function to run a single test
 run_test() {
     local test_name=$1
-    local test_path="./$test_name"
+    local test_path="$TEST_DIR/$test_name"
 
     # Check if test should be skipped
     if [[ "$test_name" == "$SKIP_TEST" ]]; then
@@ -152,7 +166,8 @@ run_test() {
 
     # Check if test executable exists
     if [[ ! -f "$test_path" ]]; then
-        print_status "fail" "$test_name - Executable not found"
+        print_status "fail" "$test_name - Executable not found at $test_path"
+        print_status "info" "Make sure you've built the tests: ./bin/build tests"
         return 1
     fi
 
@@ -176,10 +191,25 @@ run_test() {
 
 # Main execution
 main() {
+    # Check if build directory exists
+    if [[ ! -d "$BUILD_DIR" ]]; then
+        echo -e "${RED}Error: Build directory not found at $BUILD_DIR${NC}"
+        echo "Please run './bin/build' first to build the tests."
+        exit 1
+    fi
+
+    # Check if test directory exists
+    if [[ ! -d "$TEST_DIR" ]]; then
+        echo -e "${RED}Error: Test directory not found at $TEST_DIR${NC}"
+        echo "Please run './bin/build tests' first to build the tests."
+        exit 1
+    fi
+
     print_header "libepaper Manual Test Suite"
 
     echo "Test suite version: 1.0"
     echo "Date: $(date)"
+    echo "Test directory: $TEST_DIR"
     echo ""
 
     if [[ "$AUTO_MODE" == true ]]; then
@@ -212,18 +242,18 @@ main() {
 
     # Run tests
     for test in "${tests_to_run[@]}"; do
-        ((total_tests++))
+        total_tests=$((total_tests + 1))
 
         if [[ "$test" == "$SKIP_TEST" ]]; then
-            ((skipped_tests++))
+            skipped_tests=$((skipped_tests + 1))
             print_status "skip" "$test"
             continue
         fi
 
         if run_test "$test"; then
-            ((passed_tests++))
+            passed_tests=$((passed_tests + 1))
         else
-            ((failed_tests++))
+            failed_tests=$((failed_tests + 1))
 
             # Ask if user wants to continue after failure
             if [[ "$AUTO_MODE" == false ]]; then
