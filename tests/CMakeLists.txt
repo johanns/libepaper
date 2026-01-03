@@ -13,6 +13,7 @@ set(TEST_PROGRAMS
     test_coordinate_transforms
     test_error_handling
     test_stress
+    test_final
 )
 
 # Create executable for each test program
