@@ -125,7 +125,7 @@ public:
 
   // Non-copyable, movable
   Display(const Display &) = delete;
-  Display &operator=(const Display &) = delete;
+  auto operator=(const Display &) -> Display & = delete;
 
   /**
    * @brief Move constructor.
@@ -142,7 +142,7 @@ public:
    * @return Reference to this display
    * @note Exception Safety: Nothrow guarantee.
    */
-  Display &operator=(Display &&) noexcept = default;
+  auto operator=(Display &&) noexcept -> Display & = default;
 
   /**
    * @brief Destructor.
@@ -322,7 +322,7 @@ public:
    *
    * @return true (always - transparent wake is handled internally)
    */
-  [[nodiscard]] auto supports_wake() const noexcept -> bool { return true; }
+  [[nodiscard]] static auto supports_wake() noexcept -> bool { return true; }
 
   /**
    * @brief Check if power control is supported.
@@ -524,7 +524,7 @@ public:
    * display->refresh();  // Now refresh to display
    * @endcode
    */
-  [[nodiscard]] auto save_framebuffer_to_bmp(std::string_view filename) -> std::expected<void, Error>;
+  [[nodiscard]] auto save_framebuffer_to_bmp(std::string_view filename) const -> std::expected<void, Error>;
 
 private:
   // ========== Helper Methods ==========

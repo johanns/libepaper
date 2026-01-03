@@ -45,13 +45,13 @@ template <typename Driver> struct driver_capabilities {
  */
 template <typename T>
 concept DriverWithCapabilities = requires {
-  { driver_capabilities<T>::color_depth } -> std::convertible_to<ColorDepth>;
-  { driver_capabilities<T>::supports_grayscale } -> std::convertible_to<bool>;
-  { driver_capabilities<T>::supports_partial_refresh } -> std::convertible_to<bool>;
-  { driver_capabilities<T>::supports_power_control } -> std::convertible_to<bool>;
-  { driver_capabilities<T>::supports_wake_from_sleep } -> std::convertible_to<bool>;
-  { driver_capabilities<T>::max_width } -> std::convertible_to<std::size_t>;
-  { driver_capabilities<T>::max_height } -> std::convertible_to<std::size_t>;
+  requires std::convertible_to<decltype(driver_capabilities<T>::color_depth), ColorDepth>;
+  requires std::convertible_to<decltype(driver_capabilities<T>::supports_grayscale), bool>;
+  requires std::convertible_to<decltype(driver_capabilities<T>::supports_partial_refresh), bool>;
+  requires std::convertible_to<decltype(driver_capabilities<T>::supports_power_control), bool>;
+  requires std::convertible_to<decltype(driver_capabilities<T>::supports_wake_from_sleep), bool>;
+  requires std::convertible_to<decltype(driver_capabilities<T>::max_width), std::size_t>;
+  requires std::convertible_to<decltype(driver_capabilities<T>::max_height), std::size_t>;
 };
 
 } // namespace epaper

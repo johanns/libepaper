@@ -20,7 +20,7 @@ public:
       : table_(table), width_(width), height_(height) {}
 
   // Get font metrics
-  [[nodiscard]] constexpr auto metrics() const noexcept -> FontMetrics { return {width_, height_}; }
+  [[nodiscard]] constexpr auto metrics() const noexcept -> FontMetrics { return {.width = width_, .height = height_}; }
 
   [[nodiscard]] constexpr auto width() const noexcept -> std::uint16_t { return width_; }
   [[nodiscard]] constexpr auto height() const noexcept -> std::uint16_t { return height_; }
@@ -30,7 +30,7 @@ public:
 
   // Calculate bytes per character
   [[nodiscard]] constexpr auto bytes_per_char() const noexcept -> std::size_t {
-    const auto width_bytes = static_cast<std::size_t>((width_ % 8 == 0) ? (width_ / 8) : (width_ / 8 + 1));
+    const auto width_bytes = static_cast<std::size_t>((width_ % 8 == 0) ? (width_ / 8) : ((width_ / 8) + 1));
     return width_bytes * static_cast<std::size_t>(height_);
   }
 

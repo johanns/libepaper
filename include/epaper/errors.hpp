@@ -112,7 +112,7 @@ struct Error {
    *
    * @param c Error code
    */
-  constexpr Error(ErrorCode c) : code(c), message{} {}
+  constexpr Error(ErrorCode c) : code(c) {}
 
   /**
    * @brief Construct error with code and message.
@@ -149,9 +149,9 @@ struct Error {
  */
 [[nodiscard]] inline auto make_error(ErrorCode code, std::string_view context = {}) -> Error {
   if (context.empty()) {
-    return Error(code);
+    return {code};
   }
-  return Error(code, std::string(to_string(code)) + ": " + std::string(context));
+  return {code, std::string(to_string(code)) + ": " + std::string(context)};
 }
 
 } // namespace epaper

@@ -64,15 +64,15 @@ auto Display::transform_coordinates(std::size_t x, std::size_t y) const -> std::
 }
 
 auto Display::calculate_bw_position(std::size_t x, std::size_t y) const -> std::pair<std::size_t, std::uint8_t> {
-  const auto width_bytes = (width_ % 8 == 0) ? (width_ / 8) : (width_ / 8 + 1);
-  const auto byte_index = x / 8 + y * width_bytes;
+  const auto width_bytes = (width_ % 8 == 0) ? (width_ / 8) : ((width_ / 8) + 1);
+  const auto byte_index = (x / 8) + (y * width_bytes);
   const auto bit_offset = static_cast<std::uint8_t>(x % 8);
   return {byte_index, bit_offset};
 }
 
 auto Display::calculate_gray_position(std::size_t x, std::size_t y) const -> std::pair<std::size_t, std::uint8_t> {
-  const auto width_bytes = (width_ % 4 == 0) ? (width_ / 4) : (width_ / 4 + 1);
-  const auto byte_index = x / 4 + y * width_bytes;
+  const auto width_bytes = (width_ % 4 == 0) ? (width_ / 4) : ((width_ / 4) + 1);
+  const auto byte_index = (x / 4) + (y * width_bytes);
   const auto pixel_offset = static_cast<std::uint8_t>((x % 4) * 2);
   return {byte_index, pixel_offset};
 }
@@ -141,38 +141,38 @@ auto Display::get_pixel(std::size_t x, std::size_t y) const -> Color {
     const auto byte_val = static_cast<std::uint8_t>(buffer_[byte_index]);
     const std::uint8_t mask = 0x80 >> bit_offset;
 
-    return (byte_val & mask) ? Color::White : Color::Black;
-  } else {
-    // Grayscale mode
-    auto [byte_index, pixel_offset] = calculate_gray_position(phys_x, phys_y);
-
-    if (byte_index >= buffer_.size()) {
-      return Color::White;
-    }
-
-    const auto byte_val = static_cast<std::uint8_t>(buffer_[byte_index]);
-    const std::uint8_t mask = 0xC0 >> pixel_offset;
-    const std::uint8_t color_bits = static_cast<std::uint8_t>((byte_val & mask) << (6U - pixel_offset));
-
-    return static_cast<Color>(color_bits);
+    return ((byte_val & mask) != 0) ? Color::White : Color::Black;
   }
+  
+  // Grayscale mode
+  auto [byte_index, pixel_offset] = calculate_gray_position(phys_x, phys_y);
+
+  if (byte_index >= buffer_.size()) {
+    return Color::White;
+  }
+
+  const auto byte_val = static_cast<std::uint8_t>(buffer_[byte_index]);
+  const std::uint8_t mask = 0xC0 >> pixel_offset;
+  const auto color_bits = static_cast<std::uint8_t>((byte_val & mask) << (6U - pixel_offset));
+
+  return static_cast<Color>(color_bits);
 }
 
 auto Display::clear(Color color) -> void {
   if (mode_ == DisplayMode::BlackWhite) {
     const std::byte fill_byte = (color == Color::White) ? std::byte{0xFF} : std::byte{0x00};
-    std::fill(buffer_.begin(), buffer_.end(), fill_byte);
+    std::ranges::fill(buffer_, fill_byte);
   } else {
     // Grayscale: each byte contains 4 pixels (2 bits each)
     std::uint8_t fill_value = 0;
-    const std::uint8_t color_byte = static_cast<std::uint8_t>(color);
+    const auto color_byte = static_cast<std::uint8_t>(color);
 
     // Replicate the color 4 times in the byte
     for (std::uint8_t i = 0; i < 4; ++i) {
       fill_value |= ((color_byte >> 6) << (6 - static_cast<int>(i) * 2));
     }
 
-    std::fill(buffer_.begin(), buffer_.end(), static_cast<std::byte>(fill_value));
+    std::ranges::fill(buffer_, static_cast<std::byte>(fill_value));
   }
 }
 
@@ -265,8 +265,8 @@ auto Display::draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_
   const std::int32_t y_inc = y_start < y_end ? 1 : -1;
 
   std::int32_t esp = dx - dy;
-  std::int32_t x = static_cast<std::int32_t>(x_start);
-  std::int32_t y = static_cast<std::int32_t>(y_start);
+  auto x = static_cast<std::int32_t>(x_start);
+  auto y = static_cast<std::int32_t>(y_start);
 
   std::size_t dot_count = 0;
 
@@ -327,8 +327,8 @@ auto Display::draw_circle(std::size_t x_center, std::size_t y_center, std::size_
 
   // Midpoint circle algorithm
   std::int32_t x = 0;
-  std::int32_t y = static_cast<std::int32_t>(radius);
-  std::int32_t d = 3 - 2 * static_cast<std::int32_t>(radius);
+  auto y = static_cast<std::int32_t>(radius);
+  std::int32_t d = 3 - (2 * static_cast<std::int32_t>(radius));
 
   const auto cx = static_cast<std::int32_t>(x_center);
   const auto cy = static_cast<std::int32_t>(y_center);
@@ -375,15 +375,15 @@ auto Display::draw_char(std::size_t x, std::size_t y, char character, const Font
   const auto char_data = font.char_data(character);
   const auto char_width = font.width();
   const auto char_height = font.height();
-  const auto width_bytes = static_cast<std::size_t>((char_width % 8 == 0) ? (char_width / 8) : (char_width / 8 + 1));
+  const auto width_bytes = static_cast<std::size_t>((char_width % 8 == 0) ? (char_width / 8) : ((char_width / 8) + 1));
 
   for (std::uint16_t row = 0; row < char_height; ++row) {
     for (std::uint16_t col = 0; col < char_width; ++col) {
-      const auto byte_index = static_cast<std::size_t>(row) * width_bytes + static_cast<std::size_t>(col) / 8;
+      const auto byte_index = (static_cast<std::size_t>(row) * width_bytes) + (static_cast<std::size_t>(col) / 8);
       const auto bit_index = 7U - static_cast<unsigned>(col % 8);
 
       if (byte_index < char_data.size()) {
-        const bool pixel_set = (char_data[byte_index] >> bit_index) & 0x01;
+        const bool pixel_set = ((char_data[byte_index] >> bit_index) & 0x01) != 0;
         const auto color = pixel_set ? foreground : background;
         set_pixel(x + col, y + row, color);
       }
@@ -443,24 +443,25 @@ auto Display::draw_decimal(std::size_t x, std::size_t y, double number, std::uin
 
 auto Display::rgb_to_color(std::uint8_t r, std::uint8_t g, std::uint8_t b) -> Color {
   // Convert RGB to grayscale using standard luminance formula
-  const auto gray = static_cast<std::uint8_t>(0.299 * static_cast<double>(r) + 0.587 * static_cast<double>(g) +
-                                              0.114 * static_cast<double>(b));
+  const auto gray = static_cast<std::uint8_t>((0.299 * static_cast<double>(r)) + (0.587 * static_cast<double>(g)) +
+                                              (0.114 * static_cast<double>(b)));
 
   if (mode_ == DisplayMode::BlackWhite) {
     // Simple threshold for black/white mode
     return gray >= 128 ? Color::White : Color::Black;
-  } else {
-    // 4-level grayscale mode
-    if (gray >= 192) {
-      return Color::White;
-    } else if (gray >= 128) {
-      return Color::Gray1;
-    } else if (gray >= 64) {
-      return Color::Gray2;
-    } else {
-      return Color::Black;
-    }
   }
+  
+  // 4-level grayscale mode
+  if (gray >= 192) {
+    return Color::White;
+  }
+  if (gray >= 128) {
+    return Color::Gray1;
+  }
+  if (gray >= 64) {
+    return Color::Gray2;
+  }
+  return Color::Black;
 }
 
 auto Display::draw_bitmap(std::size_t x, std::size_t y, std::span<const Color> pixels, std::size_t bitmap_width,
@@ -495,7 +496,7 @@ auto Display::draw_bitmap(std::size_t x, std::size_t y, std::span<const Color> p
       }
 
       // Get pixel from source bitmap
-      const auto pixel_index = src_y * bitmap_width + src_x;
+      const auto pixel_index = (src_y * bitmap_width) + src_x;
       if (pixel_index >= pixels.size()) {
         continue;
       }
@@ -575,7 +576,7 @@ auto Display::draw_bitmap_from_file(std::size_t x, std::size_t y, std::string_vi
   return {};
 }
 
-auto Display::save_framebuffer_to_bmp(std::string_view filename) -> std::expected<void, Error> {
+auto Display::save_framebuffer_to_bmp(std::string_view filename) const -> std::expected<void, Error> {
   // Get effective dimensions (accounting for orientation)
   const auto width = effective_width();
   const auto height = effective_height();
@@ -585,7 +586,7 @@ auto Display::save_framebuffer_to_bmp(std::string_view filename) -> std::expecte
   const auto pixel_data_size = row_size * height;
 
   // BMP file header (14 bytes)
-  const std::uint32_t file_size = static_cast<std::uint32_t>(14 + 40 + pixel_data_size);
+  const auto file_size = static_cast<std::uint32_t>(14 + 40 + pixel_data_size);
   std::vector<std::uint8_t> bmp_data;
   bmp_data.reserve(file_size);
 
@@ -657,7 +658,9 @@ auto Display::save_framebuffer_to_bmp(std::string_view filename) -> std::expecte
       const auto color = get_pixel(x, current_y);
 
       // Convert Color enum to RGB values
-      std::uint8_t r, g, b;
+      std::uint8_t r = 0;
+      std::uint8_t g = 0;
+      std::uint8_t b = 0;
       switch (color) {
       case Color::White:
         r = g = b = 255;
@@ -689,7 +692,7 @@ auto Display::save_framebuffer_to_bmp(std::string_view filename) -> std::expecte
 
   // Write to file
   std::FILE *file = std::fopen(filename.data(), "wb");
-  if (!file) {
+  if (file == nullptr) {
     return std::unexpected(
         Error{ErrorCode::FileNotFound, std::string("Failed to create BMP file: ") + std::string(filename)});
   }

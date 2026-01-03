@@ -47,7 +47,7 @@ public:
    * @param orientation Display orientation
    */
   explicit Framebuffer(Driver &driver, Orientation orientation = Orientation::Portrait0)
-      : driver_(driver), physical_width_(driver.width()), physical_height_(driver.height()), orientation_(orientation) {
+      : driver_(&driver), physical_width_(driver.width()), physical_height_(driver.height()), orientation_(orientation) {
     buffer_.resize(driver.buffer_size());
   }
 
@@ -122,13 +122,13 @@ public:
   auto set_raw_byte(std::size_t x, std::size_t y, std::uint8_t value) -> void {
     if constexpr (depth == ColorDepth::Bits1) {
       // 1 bit per pixel (8 pixels per byte)
-      const auto byte_index = x / 8 + y * ((physical_width_ + 7) / 8);
+      const auto byte_index = (x / 8) + (y * ((physical_width_ + 7) / 8));
       if (byte_index < buffer_.size()) {
         buffer_[byte_index] = static_cast<std::byte>(value);
       }
     } else if constexpr (depth == ColorDepth::Bits2) {
       // 2 bits per pixel (4 pixels per byte)
-      const auto byte_index = x / 4 + y * ((physical_width_ + 3) / 4);
+      const auto byte_index = (x / 4) + (y * ((physical_width_ + 3) / 4));
       if (byte_index < buffer_.size()) {
         buffer_[byte_index] = static_cast<std::byte>(value);
       }
@@ -152,12 +152,12 @@ public:
    */
   [[nodiscard]] auto get_raw_byte(std::size_t x, std::size_t y) const -> std::uint8_t {
     if constexpr (depth == ColorDepth::Bits1) {
-      const auto byte_index = x / 8 + y * ((physical_width_ + 7) / 8);
+      const auto byte_index = (x / 8) + (y * ((physical_width_ + 7) / 8));
       if (byte_index < buffer_.size()) {
         return static_cast<std::uint8_t>(buffer_[byte_index]);
       }
     } else if constexpr (depth == ColorDepth::Bits2) {
-      const auto byte_index = x / 4 + y * ((physical_width_ + 3) / 4);
+      const auto byte_index = (x / 4) + (y * ((physical_width_ + 3) / 4));
       if (byte_index < buffer_.size()) {
         return static_cast<std::uint8_t>(buffer_[byte_index]);
       }
@@ -205,12 +205,12 @@ public:
 
     if constexpr (depth == ColorDepth::Bits1) {
       // 1 bit per pixel
-      const auto byte_index = phys_x / 8 + phys_y * ((physical_width_ + 7) / 8);
+      const auto byte_index = (phys_x / 8) + (phys_y * ((physical_width_ + 7) / 8));
       const auto bit_offset = phys_x % 8;
       if (byte_index < buffer_.size()) {
         const auto mask = static_cast<std::uint8_t>(0x80 >> bit_offset);
         auto current = static_cast<std::uint8_t>(buffer_[byte_index]);
-        if (value) {
+        if (value != 0u) {
           current |= mask;
         } else {
           current &= ~mask;
@@ -219,7 +219,7 @@ public:
       }
     } else if constexpr (depth == ColorDepth::Bits2) {
       // 2 bits per pixel (4 pixels per byte)
-      const auto byte_index = phys_x / 4 + phys_y * ((physical_width_ + 3) / 4);
+      const auto byte_index = (phys_x / 4) + (phys_y * ((physical_width_ + 3) / 4));
       const auto pixel_offset = phys_x % 4;
       if (byte_index < buffer_.size()) {
         const auto shift = 6 - (pixel_offset * 2);
@@ -230,7 +230,7 @@ public:
       }
     } else if constexpr (depth == ColorDepth::Bits32) {
       // 32 bits per pixel
-      const auto pixel_index = phys_x + phys_y * physical_width_;
+      const auto pixel_index = phys_x + (phys_y * physical_width_);
       const auto byte_index = pixel_index * 4;
       if (byte_index + 3 < buffer_.size()) {
         buffer_[byte_index] = static_cast<std::byte>(value);
@@ -249,15 +249,15 @@ public:
     const auto [phys_x, phys_y] = transform_coordinates(x, y);
 
     if constexpr (depth == ColorDepth::Bits1) {
-      const auto byte_index = phys_x / 8 + phys_y * ((physical_width_ + 7) / 8);
+      const auto byte_index = (phys_x / 8) + (phys_y * ((physical_width_ + 7) / 8));
       const auto bit_offset = phys_x % 8;
       if (byte_index < buffer_.size()) {
         const auto current = static_cast<std::uint8_t>(buffer_[byte_index]);
         const auto mask = static_cast<std::uint8_t>(0x80 >> bit_offset);
-        return (current & mask) ? 1 : 0;
+        return ((current & mask) != 0) ? 1 : 0;
       }
     } else if constexpr (depth == ColorDepth::Bits2) {
-      const auto byte_index = phys_x / 4 + phys_y * ((physical_width_ + 3) / 4);
+      const auto byte_index = (phys_x / 4) + (phys_y * ((physical_width_ + 3) / 4));
       const auto pixel_offset = phys_x % 4;
       if (byte_index < buffer_.size()) {
         const auto shift = 6 - (pixel_offset * 2);
@@ -265,7 +265,7 @@ public:
         return (current >> shift) & 0x03;
       }
     } else if constexpr (depth == ColorDepth::Bits32) {
-      const auto pixel_index = phys_x + phys_y * physical_width_;
+      const auto pixel_index = phys_x + (phys_y * physical_width_);
       const auto byte_index = pixel_index * 4;
       if (byte_index + 3 < buffer_.size()) {
         return static_cast<std::uint8_t>(buffer_[byte_index]);
@@ -275,7 +275,7 @@ public:
   }
 
 private:
-  Driver &driver_;
+  Driver *driver_;
   std::vector<std::byte> buffer_;
   std::size_t physical_width_;
   std::size_t physical_height_;

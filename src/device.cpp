@@ -12,6 +12,14 @@
 
 namespace epaper {
 
+// SPI configuration constants
+namespace {
+constexpr std::uint32_t SPI_SPEED_HZ = 1953125;         // ~1.95MHz (250MHz / 128)
+constexpr std::uint8_t SPI_BITS_PER_WORD = 8;           // 8 bits per transfer, MSB first
+constexpr std::uint32_t SPI_SINGLE_TRANSFER_LENGTH = 1; // Length for single byte transfers
+constexpr int INVALID_FILE_DESCRIPTOR = -1;             // Invalid file descriptor value
+} // namespace
+
 // Pin configuration tracking
 struct PinConfig {
   unsigned int offset;
@@ -24,9 +32,19 @@ struct DeviceImpl {
   struct gpiod_chip *chip = nullptr;
   struct gpiod_line_request *line_request = nullptr;
   std::unordered_map<std::uint8_t, PinConfig> pin_configs; // Track all configured pins
-  int spi_fd = -1;
+  int spi_fd = INVALID_FILE_DESCRIPTOR;
   bool initialized = false;
   bool spi_initialized = false;
+
+  // Delete copy operations (can't safely copy file descriptors and GPIO resources)
+  DeviceImpl(const DeviceImpl &) = delete;
+  auto operator=(const DeviceImpl &) -> DeviceImpl & = delete;
+
+  // Default move operations
+  DeviceImpl(DeviceImpl &&) = default;
+  auto operator=(DeviceImpl &&) -> DeviceImpl & = default;
+
+  DeviceImpl() = default;
 
   // Rebuild line request with all configured pins
   auto rebuild_line_request() -> bool {
@@ -108,7 +126,7 @@ struct DeviceImpl {
     // Close SPI device
     if (spi_fd >= 0) {
       ::close(spi_fd);
-      spi_fd = -1;
+      spi_fd = INVALID_FILE_DESCRIPTOR;
     }
 
     initialized = false;
@@ -124,7 +142,7 @@ Device::Device(Device &&other) noexcept : pimpl_(std::move(other.pimpl_)) {
   other.pimpl_ = std::make_unique<DeviceImpl>();
 }
 
-Device &Device::operator=(Device &&other) noexcept {
+auto Device::operator=(Device &&other) noexcept -> Device & {
   if (this != &other) {
     pimpl_ = std::move(other.pimpl_);
     other.pimpl_ = std::make_unique<DeviceImpl>();
@@ -158,16 +176,14 @@ auto Device::init() -> std::expected<void, Error> {
     return std::unexpected(Error(ErrorCode::SPIConfigFailed, "Failed to set SPI mode"));
   }
 
-  // Configure SPI speed (250MHz / 128 ≈ 1.95MHz)
-  constexpr std::uint32_t spi_speed = 1953125; // ~1.95MHz
-  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed) < 0) {
+  // Configure SPI speed
+  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &SPI_SPEED_HZ) < 0) {
     pimpl_->cleanup();
     return std::unexpected(Error(ErrorCode::SPIConfigFailed, "Failed to set SPI speed"));
   }
 
-  // Configure bits per word (8 bits, MSB first)
-  std::uint8_t bits = 8;
-  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_BITS_PER_WORD, &bits) < 0) {
+  // Configure bits per word
+  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_BITS_PER_WORD, &SPI_BITS_PER_WORD) < 0) {
     pimpl_->cleanup();
     return std::unexpected(Error(ErrorCode::SPIConfigFailed, "Failed to set SPI bits per word"));
   }
@@ -191,10 +207,10 @@ auto Device::set_pin_output(Pin pin) -> void {
   }
 
   const auto pin_num = pin.number();
-  const unsigned int offset = static_cast<unsigned int>(pin_num);
+  const auto offset = static_cast<unsigned int>(pin_num);
 
   // Update pin configuration
-  PinConfig config;
+  PinConfig config{};
   config.offset = offset;
   config.is_output = true;
   config.initial_value = GPIOD_LINE_VALUE_INACTIVE;
@@ -213,10 +229,10 @@ auto Device::set_pin_input(Pin pin) -> void {
   }
 
   const auto pin_num = pin.number();
-  const unsigned int offset = static_cast<unsigned int>(pin_num);
+  const auto offset = static_cast<unsigned int>(pin_num);
 
   // Update pin configuration
-  PinConfig config;
+  PinConfig config{};
   config.offset = offset;
   config.is_output = false;
   config.initial_value = GPIOD_LINE_VALUE_INACTIVE;
@@ -265,9 +281,9 @@ auto Device::spi_transfer(std::uint8_t value) -> std::uint8_t {
 
   transfer.tx_buf = reinterpret_cast<std::uintptr_t>(&tx_buf);
   transfer.rx_buf = reinterpret_cast<std::uintptr_t>(&rx_buf);
-  transfer.len = 1;
-  transfer.speed_hz = 1953125;
-  transfer.bits_per_word = 8;
+  transfer.len = SPI_SINGLE_TRANSFER_LENGTH;
+  transfer.speed_hz = SPI_SPEED_HZ;
+  transfer.bits_per_word = SPI_BITS_PER_WORD;
 
   if (ioctl(pimpl_->spi_fd, SPI_IOC_MESSAGE(1), &transfer) < 0) {
     return 0;
@@ -293,8 +309,8 @@ auto Device::spi_write(std::span<const std::byte> data) -> void {
   transfer.tx_buf = reinterpret_cast<std::uintptr_t>(tx_buf.data());
   transfer.rx_buf = reinterpret_cast<std::uintptr_t>(rx_buf.data());
   transfer.len = static_cast<std::uint32_t>(data.size());
-  transfer.speed_hz = 1953125;
-  transfer.bits_per_word = 8;
+  transfer.speed_hz = SPI_SPEED_HZ;
+  transfer.bits_per_word = SPI_BITS_PER_WORD;
 
   ioctl(pimpl_->spi_fd, SPI_IOC_MESSAGE(1), &transfer);
 }

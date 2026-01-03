@@ -60,7 +60,7 @@ public:
 
   // Non-copyable, movable
   Device(const Device &) = delete;
-  Device &operator=(const Device &) = delete;
+  auto operator=(const Device &) -> Device & = delete;
 
   /**
    * @brief Move constructor.
@@ -77,7 +77,7 @@ public:
    * @return Reference to this device
    * @note Exception Safety: Nothrow guarantee.
    */
-  Device &operator=(Device &&other) noexcept;
+  auto operator=(Device &&other) noexcept -> Device &;
 
   /**
    * @brief Initialize the GPIO (libgpiod) and SPI (SPIdev) interfaces.
