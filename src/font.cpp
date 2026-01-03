@@ -3,24 +3,19 @@
 // Include the original font data files
 extern "C" {
 #include "../fonts/fonts.h"
-
-// External font declarations from Waveshare library
-extern sFONT Font8;
-extern sFONT Font12;
-extern sFONT Font16;
-extern sFONT Font20;
-extern sFONT Font24;
 }
 
 namespace epaper {
 
 auto Font::char_data(char c) const -> std::span<const std::uint8_t> {
   // ASCII characters start at 0x20 (space)
-  const auto char_offset = static_cast<std::uint8_t>(c) - 0x20;
+  const auto char_offset = static_cast<std::size_t>(static_cast<std::uint8_t>(c) - 0x20);
   const auto bytes = bytes_per_char();
-  const auto *data_ptr = table_ + (char_offset * bytes);
+  const auto offset = char_offset * bytes;
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) - Interfacing with C font data
+  const auto *data_ptr = &table_[offset];
 
-  return std::span<const std::uint8_t>(data_ptr, bytes);
+  return {data_ptr, bytes};
 }
 
 auto Font::font8() -> const Font & {
