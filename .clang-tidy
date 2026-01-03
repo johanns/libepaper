@@ -2,11 +2,10 @@ Checks: >
   modernize-*,
   cppcoreguidelines-*,
   readability-*,
-  -modernize-use-trailing-return-type,
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-avoid-magic-numbers,
-  -readability-magic-numbers,
+  readability-magic-numbers,
   -readability-identifier-length,
   -cppcoreguidelines-owning-memory
 WarningsAsErrors: '*'
