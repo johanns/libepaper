@@ -7,13 +7,12 @@ EPD27::EPD27(Device &device) : device_(device) {}
 auto EPD27::buffer_size() const noexcept -> std::size_t {
   if (current_mode_ == DisplayMode::BlackWhite) {
     // 1 bit per pixel, packed into bytes
-    const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : (WIDTH / 8 + 1);
-    return width_bytes * HEIGHT;
-  } else {
-    // 2 bits per pixel for 4-level grayscale
-    const auto width_bytes = (WIDTH % 4 == 0) ? (WIDTH / 4) : (WIDTH / 4 + 1);
+    const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : ((WIDTH / 8) + 1);
     return width_bytes * HEIGHT;
   }
+  // 2 bits per pixel for 4-level grayscale
+  const auto width_bytes = (WIDTH % 4 == 0) ? (WIDTH / 4) : ((WIDTH / 4) + 1);
+  return width_bytes * HEIGHT;
 }
 
 auto EPD27::reset() -> void {
@@ -40,12 +39,12 @@ auto EPD27::send_data(std::uint8_t data) -> void {
 }
 
 auto EPD27::wait_busy() -> void {
-  bool busy = false;
-  do {
+  bool busy = true;
+  while (busy) {
     send_command(Command::GET_STATUS);
-    busy = device_.read_pin(pins::BUSY);
-    busy = !(busy & DisplayOps::BUSY_STATUS_MASK);
-  } while (busy);
+    const bool busy_pin = device_.read_pin(pins::BUSY);
+    busy = ((busy_pin ? 1 : 0) & DisplayOps::BUSY_STATUS_MASK) == 0;
+  }
   Device::delay_ms(Timing::BUSY_WAIT_DELAY_MS);
 }
 
@@ -59,7 +58,7 @@ auto EPD27::wait_busy_simple() -> void {
   constexpr int initial_timeout = 100; // 1 second
   int iterations = 0;
   while (device_.read_pin(pins::BUSY) && iterations < initial_timeout) {
-    Device::delay_ms(10);
+    Device::delay_ms(Timing::BUSY_POLL_DELAY_MS);
     iterations++;
   }
 
@@ -67,11 +66,61 @@ auto EPD27::wait_busy_simple() -> void {
   constexpr int max_iterations = 1000; // 10 seconds
   iterations = 0;
   while (!device_.read_pin(pins::BUSY) && iterations < max_iterations) {
-    Device::delay_ms(10);
+    Device::delay_ms(Timing::BUSY_POLL_DELAY_MS);
     iterations++;
   }
 
   Device::delay_ms(Timing::BUSY_WAIT_DELAY_MS);
+}
+
+// Helper function to convert grayscale pixel data for display transmission
+// Processes 4 pixels (2 bytes input) into EPD format (1 byte output)
+// is_old_data: true for DATA_START_TRANSMISSION_1, false for DATA_START_TRANSMISSION_2
+// NOLINTNEXTLINE(readability-function-cognitive-complexity) - Hardware-specific pixel format conversion
+auto EPD27::convert_grayscale_pixel(std::uint8_t byte1, std::uint8_t byte2, bool is_old_data) -> std::uint8_t {
+  std::uint8_t result = 0;
+
+  for (std::size_t j = 0; j < 2; ++j) {
+    auto temp1 = (j == 0) ? byte1 : byte2;
+    for (std::size_t k = 0; k < 2; ++k) {
+      const std::uint8_t temp2 = temp1 & Grayscale::PIXEL_MASK;
+
+      // Convert pixel based on old/new data mode
+      if (is_old_data) {
+        // Old data: WHITE and GRAY1 map to 0x01, BLACK and GRAY2 map to 0x00
+        if (temp2 == Grayscale::WHITE_MASK || temp2 == Grayscale::GRAY1_MASK) {
+          result |= 0x01;
+        }
+      } else {
+        // New data: WHITE and GRAY2 map to 0x01, BLACK and GRAY1 map to 0x00
+        if (temp2 == Grayscale::WHITE_MASK || temp2 == Grayscale::GRAY2_MASK) {
+          result |= 0x01;
+        }
+      }
+      result <<= 1;
+
+      temp1 <<= Grayscale::BIT_SHIFT;
+      const std::uint8_t temp2_2 = temp1 & Grayscale::PIXEL_MASK;
+
+      if (is_old_data) {
+        if (temp2_2 == Grayscale::WHITE_MASK || temp2_2 == Grayscale::GRAY1_MASK) {
+          result |= 0x01;
+        }
+      } else {
+        if (temp2_2 == Grayscale::WHITE_MASK || temp2_2 == Grayscale::GRAY2_MASK) {
+          result |= 0x01;
+        }
+      }
+
+      if (j != 1 || k != 1) {
+        result <<= 1;
+      }
+
+      temp1 <<= Grayscale::BIT_SHIFT;
+    }
+  }
+
+  return result;
 }
 
 auto EPD27::set_lut_bw() -> void {
@@ -283,7 +332,7 @@ auto EPD27::init(DisplayMode mode) -> std::expected<void, Error> {
 }
 
 auto EPD27::clear() -> void {
-  const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : (WIDTH / 8 + 1);
+  const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : ((WIDTH / 8) + 1);
 
   send_command(Command::DATA_START_TRANSMISSION_1);
   for (std::size_t j = 0; j < HEIGHT; ++j) {
@@ -313,93 +362,40 @@ auto EPD27::display(std::span<const std::byte> buffer) -> std::expected<void, Er
   }
 
   if (current_mode_ == DisplayMode::BlackWhite) {
-    const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : (WIDTH / 8 + 1);
+    const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : ((WIDTH / 8) + 1);
 
     send_command(Command::DATA_START_TRANSMISSION_2);
     for (std::size_t j = 0; j < HEIGHT; ++j) {
       for (std::size_t i = 0; i < width_bytes; ++i) {
-        const auto index = i + j * width_bytes;
+        const auto index = i + (j * width_bytes);
         send_data(static_cast<std::uint8_t>(buffer[index]));
       }
     }
     send_command(Command::DISPLAY_REFRESH);
     wait_busy();
-  } else {
+    return {};
+  }
+
+  {
     // Grayscale display
     constexpr std::size_t total_pixels = Grayscale::TOTAL_PIXELS;
 
-    // Old data
+    // Old data (DATA_START_TRANSMISSION_1)
     send_command(Command::DATA_START_TRANSMISSION_1);
     for (std::size_t i = 0; i < total_pixels; ++i) {
-      std::uint8_t temp3 = 0;
-      for (std::size_t j = 0; j < 2; ++j) {
-        std::uint8_t temp1 = static_cast<std::uint8_t>(buffer[i * 2 + j]);
-        for (std::size_t k = 0; k < 2; ++k) {
-          const std::uint8_t temp2 = temp1 & Grayscale::PIXEL_MASK;
-          if (temp2 == Grayscale::WHITE_MASK)
-            temp3 |= 0x01; // white
-          else if (temp2 == Grayscale::BLACK_MASK)
-            temp3 |= 0x00; // black
-          else if (temp2 == Grayscale::GRAY1_MASK)
-            temp3 |= 0x01; // gray1
-          else             // GRAY2_MASK
-            temp3 |= 0x00; // gray2
-          temp3 <<= 1;
-
-          temp1 <<= Grayscale::BIT_SHIFT;
-          const std::uint8_t temp2_2 = temp1 & Grayscale::PIXEL_MASK;
-          if (temp2_2 == Grayscale::WHITE_MASK)
-            temp3 |= 0x01;
-          else if (temp2_2 == Grayscale::BLACK_MASK)
-            temp3 |= 0x00;
-          else if (temp2_2 == Grayscale::GRAY1_MASK)
-            temp3 |= 0x01;
-          else
-            temp3 |= 0x00;
-          if (j != 1 || k != 1)
-            temp3 <<= 1;
-
-          temp1 <<= Grayscale::BIT_SHIFT;
-        }
-      }
-      send_data(temp3);
+      const auto byte1 = static_cast<std::uint8_t>(buffer[(i * 2)]);
+      const auto byte2 = static_cast<std::uint8_t>(buffer[(i * 2) + 1]);
+      const auto converted_pixel = convert_grayscale_pixel(byte1, byte2, true);
+      send_data(converted_pixel);
     }
 
-    // New data
+    // New data (DATA_START_TRANSMISSION_2)
     send_command(Command::DATA_START_TRANSMISSION_2);
     for (std::size_t i = 0; i < total_pixels; ++i) {
-      std::uint8_t temp3 = 0;
-      for (std::size_t j = 0; j < 2; ++j) {
-        std::uint8_t temp1 = static_cast<std::uint8_t>(buffer[i * 2 + j]);
-        for (std::size_t k = 0; k < 2; ++k) {
-          const std::uint8_t temp2 = temp1 & Grayscale::PIXEL_MASK;
-          if (temp2 == Grayscale::WHITE_MASK)
-            temp3 |= 0x01; // white
-          else if (temp2 == Grayscale::BLACK_MASK)
-            temp3 |= 0x00; // black
-          else if (temp2 == Grayscale::GRAY1_MASK)
-            temp3 |= 0x00; // gray1
-          else             // GRAY2_MASK
-            temp3 |= 0x01; // gray2
-          temp3 <<= 1;
-
-          temp1 <<= Grayscale::BIT_SHIFT;
-          const std::uint8_t temp2_2 = temp1 & Grayscale::PIXEL_MASK;
-          if (temp2_2 == Grayscale::WHITE_MASK)
-            temp3 |= 0x01;
-          else if (temp2_2 == Grayscale::BLACK_MASK)
-            temp3 |= 0x00;
-          else if (temp2_2 == Grayscale::GRAY1_MASK)
-            temp3 |= 0x00;
-          else
-            temp3 |= 0x01;
-          if (j != 1 || k != 1)
-            temp3 <<= 1;
-
-          temp1 <<= Grayscale::BIT_SHIFT;
-        }
-      }
-      send_data(temp3);
+      const auto byte1 = static_cast<std::uint8_t>(buffer[(i * 2)]);
+      const auto byte2 = static_cast<std::uint8_t>(buffer[(i * 2) + 1]);
+      const auto converted_pixel = convert_grayscale_pixel(byte1, byte2, false);
+      send_data(converted_pixel);
     }
 
     set_lut_grayscale();

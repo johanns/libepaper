@@ -48,6 +48,7 @@ constexpr std::uint32_t BUSY_WAIT_DELAY_MS = 200;       ///< Delay after busy wa
 constexpr std::uint32_t DISPLAY_REFRESH_DELAY_MS = 200; ///< Delay after display refresh
 constexpr std::uint32_t RESET_DELAY_MS = 200;           ///< Reset signal delay
 constexpr std::uint32_t RESET_PULSE_MS = 2;             ///< Reset pulse duration
+constexpr std::uint32_t BUSY_POLL_DELAY_MS = 10;        ///< Polling delay when checking busy status
 } // namespace Timing
 
 /**
@@ -209,6 +210,9 @@ private:
   // LUT (Look-Up Table) initialization
   auto set_lut_bw() -> void;
   auto set_lut_grayscale() -> void;
+
+  // Helper function for grayscale pixel format conversion
+  static auto convert_grayscale_pixel(std::uint8_t byte1, std::uint8_t byte2, bool is_old_data) -> std::uint8_t;
 
   Device &device_;
   DisplayMode current_mode_ = DisplayMode::BlackWhite;
