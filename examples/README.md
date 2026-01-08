@@ -60,13 +60,24 @@ int main() {
     // 3. Draw something
     display->clear(Color::White);
 
-    display->draw_rectangle(0, 0,
-        display->effective_width() - 1,
-        display->effective_height() - 1,
-        Color::Black, DrawFill::Empty);
+    display->draw(
+        display->rectangle()
+            .top_left(0, 0)
+            .bottom_right(display->effective_width() - 1,
+                         display->effective_height() - 1)
+            .color(Color::Black)
+            .fill(DrawFill::Empty)
+            .build()
+    );
 
-    display->draw_string(20, 70, "Hello, libepaper!",
-        Font::font24(), Color::Black, Color::White);
+    display->draw(
+        display->text("Hello, libepaper!")
+            .at(20, 70)
+            .font(&Font::font24())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
 
     // 4. Refresh to show
     if (auto result = display->refresh(); !result) {
@@ -153,7 +164,14 @@ A demonstration of exporting framebuffer contents to BMP files for debugging.
 ```cpp
 // Draw content
 display.clear(Color::White);
-display.draw_string(10, 10, "Test", Font::font16(), Color::Black, Color::White);
+display.draw(
+    display.text("Test")
+        .at(10, 10)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 
 // Export to BMP (instant!)
 display.save_framebuffer_to_bmp("debug.bmp");
@@ -414,19 +432,36 @@ void render_error(Display& display, const std::string& message) {
     display->clear(Color::White);
 
     // Error border
-    display->draw_rectangle(5, 5,
-        display->effective_width() - 6,
-        display->effective_height() - 6,
-        Color::Black, DrawFill::Empty);
+    display->draw(
+        display->rectangle()
+            .top_left(5, 5)
+            .bottom_right(display->effective_width() - 6,
+                         display->effective_height() - 6)
+            .color(Color::Black)
+            .fill(DrawFill::Empty)
+            .build()
+    );
 
     // Error title
-    display->draw_string(20, 20, "Error",
-        Font::font20(), Color::Black, Color::White);
+    display->draw(
+        display->text("Error")
+            .at(20, 20)
+            .font(&Font::font20())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
 
     // Error message (word-wrap manually)
     size_t y = 50;
-    display->draw_string(20, y, message.substr(0, 30),
-        Font::font12(), Color::Black, Color::White);
+    display->draw(
+        display->text(message.substr(0, 30))
+            .at(20, y)
+            .font(&Font::font12())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
 
     display->refresh();
 }
@@ -488,8 +523,14 @@ void show_loading(Display& display, const std::string& message) {
     size_t x = (display->effective_width() - message.length() * 7) / 2;
     size_t y = display->effective_height() / 2;
 
-    display->draw_string(x, y, message,
-        Font::font12(), Color::Black, Color::White);
+    display->draw(
+        display->text(message)
+            .at(x, y)
+            .font(&Font::font12())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
 
     display->refresh();
 }
@@ -525,9 +566,9 @@ render(display, data);
 **Visual Hierarchy:**
 ```cpp
 // Good: Clear hierarchy
-display->draw_string(10, 5, "TITLE", Font::font24(), ...);       // Large
-display->draw_string(10, 35, "Subtitle", Font::font16(), ...);   // Medium
-display->draw_string(10, 60, "Detail text", Font::font12(), ...); // Small
+display->draw(display->text("TITLE").at(10, 5).font(&Font::font24())...);       // Large
+display->draw(display->text("Subtitle").at(10, 35).font(&Font::font16())...);   // Medium
+display->draw(display->text("Detail text").at(10, 60).font(&Font::font12())...); // Small
 ```
 
 ### Debugging Examples
@@ -535,7 +576,7 @@ display->draw_string(10, 60, "Detail text", Font::font12(), ...); // Small
 **BMP Export (NEW!):**
 ```cpp
 // Save framebuffer to BMP for instant visual inspection
-display->draw_string(10, 10, "Test Layout", Font::font16(), ...);
+display->draw(display->text("Test Layout").at(10, 10).font(&Font::font16())...);
 display->save_framebuffer_to_bmp("debug_layout.bmp");
 
 // Review BMP on your computer - no display hardware needed!
@@ -559,8 +600,8 @@ try {
     risky_operation();
 } catch (const std::exception& e) {
     display->clear(Color::White);
-    display->draw_string(10, 10, "Exception:", Font::font12(), ...);
-    display->draw_string(10, 30, e.what(), Font::font12(), ...);
+    display->draw(display->text("Exception:").at(10, 10).font(&Font::font12())...);
+    display->draw(display->text(e.what()).at(10, 30).font(&Font::font12())...);
     display->refresh();
 }
 ```
@@ -600,7 +641,7 @@ display->refresh();  // 2s
 ```cpp
 // Draw all elements before refresh
 for (const auto& item : items) {
-    display->draw_string(item.x, item.y, item.text, ...);
+    display->draw(display->text(item.text).at(item.x, item.y)...);
 }
 display->refresh();  // Once at the end
 ```

@@ -209,11 +209,16 @@ classDiagram
         -Framebuffer framebuffer_
         -Orientation orientation_
         -bool auto_sleep_enabled_
-        +draw_point(x, y, color) void
-        +draw_line(x1, y1, x2, y2, color) void
-        +draw_rectangle(x, y, w, h, color, fill) void
-        +draw_circle(x, y, r, color, fill) void
-        +draw_string(x, y, text, font, fg, bg) void
+        +line() LineBuilder
+        +rectangle() RectangleBuilder
+        +circle() CircleBuilder
+        +point() PointBuilder
+        +text(string) TextBuilder
+        +draw(LineCommand) void
+        +draw(RectangleCommand) void
+        +draw(CircleCommand) void
+        +draw(PointCommand) void
+        +draw(TextCommand) void
         +draw_bitmap(x, y, data, w, h) void
         +clear(color) void
         +refresh() expected~void, Error~
@@ -412,7 +417,7 @@ sequenceDiagram
     participant Display
     participant Framebuffer
 
-    App->>Display: draw_line(x1, y1, x2, y2, color)
+    App->>Display: draw(line().from(x1,y1).to(x2,y2).color(c).build())
     Display->>Display: Transform coordinates (orientation)
     Display->>Display: Bresenham line algorithm
     loop For each point
@@ -782,7 +787,7 @@ if (!result) {
 **3. Benign Errors:**
 ```cpp
 // Drawing operations never fail - out of bounds is clipped
-display->draw_point(1000, 1000, Color::Black);  // Safely ignored
+display->draw(display->point().at(1000, 1000).color(Color::Black).build());  // Safely ignored
 ```
 
 ## Testing Architecture

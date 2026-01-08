@@ -57,8 +57,14 @@ int main() {
 
     // 3. Draw something
     display->clear(Color::White);
-    display->draw_string(10, 10, "Hello World!", Font::font16(),
-                        Color::Black, Color::White);
+    display->draw(
+        display->text("Hello World!")
+            .at(10, 10)
+            .font(&Font::font16())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
 
     // 4. Refresh display (will auto-sleep after)
     if (auto result = display->refresh(); !result) {
@@ -105,23 +111,45 @@ int main() {
     display->clear(Color::White);
 
     // Draw a border rectangle
-    display->draw_rectangle(0, 0,
-        display->effective_width() - 1,
-        display->effective_height() - 1,
-        Color::Black,
-        DrawFill::Empty);
+    display->draw(
+        display->rectangle()
+            .top_left(0, 0)
+            .bottom_right(display->effective_width() - 1,
+                         display->effective_height() - 1)
+            .color(Color::Black)
+            .fill(DrawFill::Empty)
+            .build()
+    );
 
     // Draw title
-    display->draw_string(10, 10, "My First E-Paper App",
-        Font::font20(), Color::Black, Color::White);
+    display->draw(
+        display->text("My First E-Paper App")
+            .at(10, 10)
+            .font(&Font::font20())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
 
     // Draw a filled rectangle
-    display->draw_rectangle(10, 40, 100, 80,
-        Color::Black, DrawFill::Full);
+    display->draw(
+        display->rectangle()
+            .top_left(10, 40)
+            .bottom_right(100, 80)
+            .color(Color::Black)
+            .fill(DrawFill::Full)
+            .build()
+    );
 
     // Draw text on black background
-    display->draw_string(15, 50, "libepaper",
-        Font::font12(), Color::White, Color::Black);
+    display->draw(
+        display->text("libepaper")
+            .at(15, 50)
+            .font(&Font::font12())
+            .foreground(Color::White)
+            .background(Color::Black)
+            .build()
+    );
 
     // Refresh display
     if (auto result = display->refresh(); !result) {
@@ -167,7 +195,7 @@ if (!display) {
 }
 
 // Use with -> operator
-display->draw_point(10, 10, Color::Black);
+display->draw(display->point().at(10, 10).color(Color::Black).build());
 ```
 
 ### Display Modes
@@ -186,12 +214,12 @@ auto display = create_display<EPD27>(
 );
 
 // Only these colors work in BlackWhite mode:
-display->draw_point(10, 10, Color::White);  // White pixel
-display->draw_point(20, 20, Color::Black);  // Black pixel
+display->draw(display->point().at(10, 10).color(Color::White).build());  // White pixel
+display->draw(display->point().at(20, 20).color(Color::Black).build());  // Black pixel
 
 // Gray colors will be converted to black
-display->draw_point(30, 30, Color::Gray1);  // → Black
-display->draw_point(40, 40, Color::Gray2);  // → Black
+display->draw(display->point().at(30, 30).color(Color::Gray1).build());  // → Black
+display->draw(display->point().at(40, 40).color(Color::Gray2).build());  // → Black
 ```
 
 **When to use:**
@@ -212,10 +240,10 @@ auto display = create_display<EPD27>(
 );
 
 // All four gray levels available:
-display->draw_point(10, 10, Color::White);  // Lightest
-display->draw_point(20, 20, Color::Gray1);  // Light gray
-display->draw_point(30, 30, Color::Gray2);  // Dark gray
-display->draw_point(40, 40, Color::Black);  // Darkest
+display->draw(display->point().at(10, 10).color(Color::White).build());  // Lightest
+display->draw(display->point().at(20, 20).color(Color::Gray1).build());  // Light gray
+display->draw(display->point().at(30, 30).color(Color::Gray2).build());  // Dark gray
+display->draw(display->point().at(40, 40).color(Color::Black).build());  // Darkest
 ```
 
 **When to use:**
@@ -264,10 +292,17 @@ auto width = display->effective_width();    // 264 (rotated!)
 auto height = display->effective_height();  // 176 (rotated!)
 
 // Draw at "top-left" in rotated space
-display->draw_point(0, 0, Color::Black);  // Appears at actual top-left
+display->draw(display->point().at(0, 0).color(Color::Black).build());  // Appears at actual top-left
 
 // All drawing operations use rotated coordinates
-display->draw_rectangle(0, 0, width - 1, height - 1, Color::Black, DrawFill::Empty);
+display->draw(
+    display->rectangle()
+        .top_left(0, 0)
+        .bottom_right(width - 1, height - 1)
+        .color(Color::Black)
+        .fill(DrawFill::Empty)
+        .build()
+);
 ```
 
 **Orientation Summary:**
@@ -287,13 +322,13 @@ All drawing operations are **noexcept** and never fail. Out-of-bounds coordinate
 
 ```cpp
 // Draw a single pixel
-display->draw_point(x, y, Color::Black);
+display->draw(display->point().at(x, y).color(Color::Black).build());
 
 // Draw a larger point (2x2, 3x3, 4x4, 5x5 pixels)
-display->draw_point(x, y, Color::Black, DotPixel::Pixel2x2);
-display->draw_point(x, y, Color::Black, DotPixel::Pixel3x3);
-display->draw_point(x, y, Color::Black, DotPixel::Pixel4x4);
-display->draw_point(x, y, Color::Black, DotPixel::Pixel5x5);
+display->draw(display->point().at(x, y).color(Color::Black).size(DotPixel::Pixel2x2).build());
+display->draw(display->point().at(x, y).color(Color::Black).size(DotPixel::Pixel3x3).build());
+display->draw(display->point().at(x, y).color(Color::Black).size(DotPixel::Pixel4x4).build());
+display->draw(display->point().at(x, y).color(Color::Black).size(DotPixel::Pixel5x5).build());
 ```
 
 **DotPixel enum:**
@@ -307,17 +342,44 @@ display->draw_point(x, y, Color::Black, DotPixel::Pixel5x5);
 
 ```cpp
 // Draw a line from (x1, y1) to (x2, y2)
-display->draw_line(x1, y1, x2, y2, Color::Black);
+display->draw(
+    display->line()
+        .from(x1, y1)
+        .to(x2, y2)
+        .color(Color::Black)
+        .build()
+);
 
 // Thicker lines
-display->draw_line(x1, y1, x2, y2, Color::Black, DotPixel::Pixel2x2);
+display->draw(
+    display->line()
+        .from(x1, y1)
+        .to(x2, y2)
+        .color(Color::Black)
+        .width(DotPixel::Pixel2x2)
+        .build()
+);
 
 // Dotted or dashed lines
-display->draw_line(x1, y1, x2, y2, Color::Black,
-                  DotPixel::Pixel1x1, LineStyle::Dotted);
+display->draw(
+    display->line()
+        .from(x1, y1)
+        .to(x2, y2)
+        .color(Color::Black)
+        .width(DotPixel::Pixel1x1)
+        .style(LineStyle::Dotted)
+        .build()
+);
 
-display->draw_line(x1, y1, x2, y2, Color::Black,
-                  DotPixel::Pixel1x1, LineStyle::Dashed);
+display->draw(
+    display->line()
+        .from(x1, y1)
+        .to(x2, y2)
+        .color(Color::Black)
+        .width(DotPixel::Pixel1x1)
+        .style(LineStyle::Dashed)
+        .build()
+);
 ```
 
 **LineStyle enum:**
@@ -329,10 +391,22 @@ display->draw_line(x1, y1, x2, y2, Color::Black,
 ```cpp
 // Draw a grid
 for (size_t x = 0; x < display->effective_width(); x += 20) {
-    display->draw_line(x, 0, x, display->effective_height() - 1, Color::Black);
+    display->draw(
+        display->line()
+            .from(x, 0)
+            .to(x, display->effective_height() - 1)
+            .color(Color::Black)
+            .build()
+    );
 }
 for (size_t y = 0; y < display->effective_height(); y += 20) {
-    display->draw_line(0, y, display->effective_width() - 1, y, Color::Black);
+    display->draw(
+        display->line()
+            .from(0, y)
+            .to(display->effective_width() - 1, y)
+            .color(Color::Black)
+            .build()
+    );
 }
 ```
 
@@ -340,14 +414,35 @@ for (size_t y = 0; y < display->effective_height(); y += 20) {
 
 ```cpp
 // Draw a rectangle outline
-display->draw_rectangle(x, y, width, height, Color::Black, DrawFill::Empty);
+display->draw(
+    display->rectangle()
+        .top_left(x, y)
+        .bottom_right(width, height)
+        .color(Color::Black)
+        .fill(DrawFill::Empty)
+        .build()
+);
 
 // Draw a filled rectangle
-display->draw_rectangle(x, y, width, height, Color::Black, DrawFill::Full);
+display->draw(
+    display->rectangle()
+        .top_left(x, y)
+        .bottom_right(width, height)
+        .color(Color::Black)
+        .fill(DrawFill::Full)
+        .build()
+);
 
 // Thicker borders
-display->draw_rectangle(x, y, width, height, Color::Black,
-                       DrawFill::Empty, DotPixel::Pixel2x2);
+display->draw(
+    display->rectangle()
+        .top_left(x, y)
+        .bottom_right(width, height)
+        .color(Color::Black)
+        .fill(DrawFill::Empty)
+        .border_width(DotPixel::Pixel2x2)
+        .build()
+);
 ```
 
 **Parameters:**
@@ -360,41 +455,95 @@ display->draw_rectangle(x, y, width, height, Color::Black,
 **Examples:**
 ```cpp
 // Draw a button
-display->draw_rectangle(10, 10, 100, 40, Color::Black, DrawFill::Empty);
-display->draw_string(30, 20, "OK", Font::font16(), Color::Black, Color::White);
+display->draw(
+    display->rectangle()
+        .top_left(10, 10)
+        .bottom_right(100, 40)
+        .color(Color::Black)
+        .fill(DrawFill::Empty)
+        .build()
+);
+display->draw(
+    display->text("OK")
+        .at(30, 20)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 
 // Draw a filled header bar
-display->draw_rectangle(0, 0, display->effective_width(), 30,
-                       Color::Black, DrawFill::Full);
-display->draw_string(10, 8, "Dashboard", Font::font16(),
-                    Color::White, Color::Black);
+display->draw(
+    display->rectangle()
+        .top_left(0, 0)
+        .bottom_right(display->effective_width(), 30)
+        .color(Color::Black)
+        .fill(DrawFill::Full)
+        .build()
+);
+display->draw(
+    display->text("Dashboard")
+        .at(10, 8)
+        .font(&Font::font16())
+        .foreground(Color::White)
+        .background(Color::Black)
+        .build()
+);
 ```
 
 ### Circles
 
 ```cpp
 // Draw a circle outline
-display->draw_circle(center_x, center_y, radius, Color::Black, DrawFill::Empty);
+display->draw(
+    display->circle()
+        .center(center_x, center_y)
+        .radius(radius)
+        .color(Color::Black)
+        .fill(DrawFill::Empty)
+        .build()
+);
 
 // Draw a filled circle
-display->draw_circle(center_x, center_y, radius, Color::Black, DrawFill::Full);
+display->draw(
+    display->circle()
+        .center(center_x, center_y)
+        .radius(radius)
+        .color(Color::Black)
+        .fill(DrawFill::Full)
+        .build()
+);
 
 // Thicker outline
-display->draw_circle(center_x, center_y, radius, Color::Black,
-                    DrawFill::Empty, DotPixel::Pixel2x2);
+display->draw(
+    display->circle()
+        .center(center_x, center_y)
+        .radius(radius)
+        .color(Color::Black)
+        .fill(DrawFill::Empty)
+        .border_width(DotPixel::Pixel2x2)
+        .build()
+);
 ```
 
 **Examples:**
 ```cpp
 // Draw a bullseye
-display->draw_circle(88, 132, 50, Color::Black, DrawFill::Empty);
-display->draw_circle(88, 132, 40, Color::Black, DrawFill::Empty);
-display->draw_circle(88, 132, 30, Color::Black, DrawFill::Empty);
-display->draw_circle(88, 132, 10, Color::Black, DrawFill::Full);
+display->draw(display->circle().center(88, 132).radius(50).color(Color::Black).fill(DrawFill::Empty).build());
+display->draw(display->circle().center(88, 132).radius(40).color(Color::Black).fill(DrawFill::Empty).build());
+display->draw(display->circle().center(88, 132).radius(30).color(Color::Black).fill(DrawFill::Empty).build());
+display->draw(display->circle().center(88, 132).radius(10).color(Color::Black).fill(DrawFill::Full).build());
 
 // Draw a status indicator (filled dot)
 if (connected) {
-    display->draw_circle(250, 10, 5, Color::Black, DrawFill::Full);
+    display->draw(
+        display->circle()
+            .center(250, 10)
+            .radius(5)
+            .color(Color::Black)
+            .fill(DrawFill::Full)
+            .build()
+    );
 }
 ```
 
@@ -402,20 +551,21 @@ if (connected) {
 
 ```cpp
 // Draw text
-display->draw_string(x, y, "Hello World!", Font::font16(),
-                    Color::Black, Color::White);
+display->draw(
+    display->text("Hello World!")
+        .at(x, y)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 
 // Different font sizes
-display->draw_string(10, 10, "Tiny", Font::font8(),
-                    Color::Black, Color::White);
-display->draw_string(10, 30, "Small", Font::font12(),
-                    Color::Black, Color::White);
-display->draw_string(10, 50, "Medium", Font::font16(),
-                    Color::Black, Color::White);
-display->draw_string(10, 80, "Large", Font::font20(),
-                    Color::Black, Color::White);
-display->draw_string(10, 110, "XLarge", Font::font24(),
-                    Color::Black, Color::White);
+display->draw(display->text("Tiny").at(10, 10).font(&Font::font8()).foreground(Color::Black).background(Color::White).build());
+display->draw(display->text("Small").at(10, 30).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
+display->draw(display->text("Medium").at(10, 50).font(&Font::font16()).foreground(Color::Black).background(Color::White).build());
+display->draw(display->text("Large").at(10, 80).font(&Font::font20()).foreground(Color::Black).background(Color::White).build());
+display->draw(display->text("XLarge").at(10, 110).font(&Font::font24()).foreground(Color::Black).background(Color::White).build());
 ```
 
 **Available Fonts:**
@@ -428,16 +578,34 @@ display->draw_string(10, 110, "XLarge", Font::font24(),
 **Foreground/Background Colors:**
 ```cpp
 // Black text on white background
-display->draw_string(10, 10, "Normal", Font::font16(),
-                    Color::Black, Color::White);
+display->draw(
+    display->text("Normal")
+        .at(10, 10)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 
 // White text on black background (inverse)
-display->draw_string(10, 30, "Inverse", Font::font16(),
-                    Color::White, Color::Black);
+display->draw(
+    display->text("Inverse")
+        .at(10, 30)
+        .font(&Font::font16())
+        .foreground(Color::White)
+        .background(Color::Black)
+        .build()
+);
 
 // Gray text (in grayscale mode)
-display->draw_string(10, 50, "Gray", Font::font16(),
-                    Color::Gray2, Color::White);
+display->draw(
+    display->text("Gray")
+        .at(10, 50)
+        .font(&Font::font16())
+        .foreground(Color::Gray2)
+        .background(Color::White)
+        .build()
+);
 ```
 
 **Multi-line Text:**
@@ -447,11 +615,11 @@ const size_t x = 10;
 size_t y = 10;
 const size_t line_height = 20;
 
-display->draw_string(x, y, "Line 1", Font::font16(), Color::Black, Color::White);
+display->draw(display->text("Line 1").at(x, y).font(&Font::font16()).foreground(Color::Black).background(Color::White).build());
 y += line_height;
-display->draw_string(x, y, "Line 2", Font::font16(), Color::Black, Color::White);
+display->draw(display->text("Line 2").at(x, y).font(&Font::font16()).foreground(Color::Black).background(Color::White).build());
 y += line_height;
-display->draw_string(x, y, "Line 3", Font::font16(), Color::Black, Color::White);
+display->draw(display->text("Line 3").at(x, y).font(&Font::font16()).foreground(Color::Black).background(Color::White).build());
 ```
 
 ### Numbers
@@ -477,17 +645,46 @@ display->draw_number(200, y, price, Font::font12(),
 **Formatting Examples:**
 ```cpp
 // Display sensor readings
-display->draw_string(10, 10, "Temperature:", Font::font12(),
-                    Color::Black, Color::White);
-display->draw_decimal(110, 10, temperature, 1, Font::font12(),
-                     Color::Black, Color::White);
-display->draw_string(150, 10, "C", Font::font12(),
-                    Color::Black, Color::White);
+display->draw(
+    display->text("Temperature:")
+        .at(10, 10)
+        .font(&Font::font12())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
+display->draw(
+    display->text("")
+        .at(110, 10)
+        .decimal(temperature, 1)
+        .font(&Font::font12())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
+display->draw(
+    display->text("C")
+        .at(150, 10)
+        .font(&Font::font12())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 
 // Display prices
-display->draw_string(10, 30, "$", Font::font16(),
-                    Color::Black, Color::White);
-display->draw_decimal(20, 30, price, 2, Font::font16(),
+display->draw(
+    display->text("$")
+        .at(10, 30)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
+display->draw(
+    display->text("")
+        .at(20, 30)
+        .decimal(price, 2)
+        .font(&Font::font16())
                      Color::Black, Color::White);
 ```
 
@@ -579,7 +776,13 @@ for (size_t x = 0; x < display->effective_width(); x++) {
     else if (x < 132) shade = Color::Gray2;
     else shade = Color::Black;
 
-    display->draw_line(x, 0, x, display->effective_height() - 1, shade);
+    display->draw(
+        display->line()
+            .from(x, 0)
+            .to(x, display->effective_height() - 1)
+            .color(shade)
+            .build()
+    );
 }
 
 // Draw anti-aliased graphics
@@ -594,8 +797,22 @@ Call `refresh()` to update the physical display with the framebuffer contents.
 
 ```cpp
 // Draw operations modify the framebuffer
-display->draw_string(10, 10, "Hello", Font::font16(), Color::Black, Color::White);
-display->draw_circle(88, 132, 30, Color::Black, DrawFill::Full);
+display->draw(
+    display->text("Hello")
+        .at(10, 10)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
+display->draw(
+    display->circle()
+        .center(88, 132)
+        .radius(30)
+        .color(Color::Black)
+        .fill(DrawFill::Full)
+        .build()
+);
 
 // Nothing appears on screen yet...
 
@@ -620,13 +837,13 @@ auto display = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Portrait0, true);
 
 // First render
-display->draw_string(10, 10, "Frame 1", Font::font16(), Color::Black, Color::White);
+display->draw(display->text("Frame 1").at(10, 10).font(&Font::font16()).foreground(Color::Black).background(Color::White).build());
 display->refresh();  // Display automatically enters sleep mode after refresh
 
 // ... minutes or hours later ...
 
 // Second render - transparent wake!
-display->draw_string(10, 10, "Frame 2", Font::font16(), Color::Black, Color::White);
+display->draw(display->text("Frame 2").at(10, 10).font(&Font::font16()).foreground(Color::Black).background(Color::White).build());
 display->refresh();  // Library auto-wakes if needed, then refreshes ✨
 
 // No manual wake() calls needed!
@@ -763,10 +980,22 @@ auto result = display->refresh();
 if (!result) {
     // Clear and show error
     display->clear(Color::White);
-    display->draw_string(10, 10, "Error:", Font::font16(),
-                        Color::Black, Color::White);
-    display->draw_string(10, 30, result.error().what(), Font::font12(),
-                        Color::Black, Color::White);
+    display->draw(
+        display->text("Error:")
+            .at(10, 10)
+            .font(&Font::font16())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
+    display->draw(
+        display->text(result.error().what())
+            .at(10, 30)
+            .font(&Font::font12())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
     display->refresh();  // Try again with error message
 }
 ```
@@ -776,8 +1005,14 @@ if (!result) {
 auto result = display->draw_bitmap_from_file(10, 10, "logo.png");
 if (!result) {
     // Fall back to text
-    display->draw_string(10, 10, "LOGO", Font::font24(),
-                        Color::Black, Color::White);
+    display->draw(
+        display->text("LOGO")
+            .at(10, 10)
+            .font(&Font::font24())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
 }
 ```
 
@@ -863,15 +1098,15 @@ Build your own drawing primitives on top of `set_pixel()`:
 // Draw a triangle
 void draw_triangle(Display& display, size_t x1, size_t y1,
                   size_t x2, size_t y2, size_t x3, size_t y3, Color color) {
-    display.draw_line(x1, y1, x2, y2, color);
-    display.draw_line(x2, y2, x3, y3, color);
-    display.draw_line(x3, y3, x1, y1, color);
+    display.draw(display.line().from(x1, y1).to(x2, y2).color(color).build());
+    display.draw(display.line().from(x2, y2).to(x3, y3).color(color).build());
+    display.draw(display.line().from(x3, y3).to(x1, y1).color(color).build());
 }
 
 // Draw a star
 void draw_star(Display& display, size_t cx, size_t cy, size_t r, Color color) {
     // ... calculate star points ...
-    // ... use draw_line() ...
+    // ... use display.line().from().to().color().build() ...
 }
 ```
 
@@ -882,15 +1117,27 @@ void draw_star(Display& display, size_t cx, size_t cy, size_t r, Color color) {
 // Good: Batch all drawing, then refresh once
 display->clear(Color::White);
 for (const auto& item : items) {
-    display->draw_string(10, item.y, item.text, Font::font12(),
-                        Color::Black, Color::White);
+    display->draw(
+        display->text(item.text)
+            .at(10, item.y)
+            .font(&Font::font12())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
 }
 display->refresh();  // Single refresh
 
 // Bad: Refresh after each draw (very slow!)
 for (const auto& item : items) {
-    display->draw_string(10, item.y, item.text, Font::font12(),
-                        Color::Black, Color::White);
+    display->draw(
+        display->text(item.text)
+            .at(10, item.y)
+            .font(&Font::font12())
+            .foreground(Color::Black)
+            .background(Color::White)
+            .build()
+    );
     display->refresh();  // ❌ Don't do this! ~2s each!
 }
 ```
@@ -968,12 +1215,12 @@ display->refresh();
 
 ```cpp
 // ✅ Good: Font size matches purpose
-display->draw_string(10, 10, "Title", Font::font24(), ...);      // Large title
-display->draw_string(10, 40, "Body text", Font::font12(), ...);  // Body text
-display->draw_string(10, 150, "Footer", Font::font8(), ...);     // Small footer
+display->draw(display->text("Title").at(10, 10).font(&Font::font24())...);      // Large title
+display->draw(display->text("Body text").at(10, 40).font(&Font::font12())...);  // Body text
+display->draw(display->text("Footer").at(10, 150).font(&Font::font8())...);     // Small footer
 
 // ❌ Bad: Wrong font sizes
-display->draw_string(10, 10, "Title", Font::font8(), ...);  // Too small!
+display->draw(display->text("Title").at(10, 10).font(&Font::font8())...);  // Too small!
 ```
 
 ### 5. Handle Errors Gracefully
@@ -983,7 +1230,7 @@ display->draw_string(10, 10, "Title", Font::font8(), ...);  // Too small!
 auto result = display->draw_bitmap_from_file(10, 10, "icon.png");
 if (!result) {
     // Fallback to text
-    display->draw_string(10, 10, "[IMG]", Font::font16(), ...);
+    display->draw(display->text("[IMG]").at(10, 10).font(&Font::font16())...);
 }
 
 // ❌ Bad: Crash on error
@@ -999,27 +1246,44 @@ void render_dashboard(Display& display, const SystemStatus& status) {
     display->clear(Color::White);
 
     // Title bar
-    display->draw_rectangle(0, 0, display->effective_width(), 30,
-                           Color::Black, DrawFill::Full);
-    display->draw_string(10, 8, "System Status", Font::font16(),
-                        Color::White, Color::Black);
+    display->draw(
+        display->rectangle()
+            .top_left(0, 0)
+            .bottom_right(display->effective_width(), 30)
+            .color(Color::Black)
+            .fill(DrawFill::Full)
+            .build()
+    );
+    display->draw(
+        display->text("System Status")
+            .at(10, 8)
+            .font(&Font::font16())
+            .foreground(Color::White)
+            .background(Color::Black)
+            .build()
+    );
 
     // Status indicators
     size_t y = 40;
-    display->draw_string(10, y, "CPU:", Font::font12(), Color::Black, Color::White);
-    display->draw_decimal(80, y, status.cpu_usage, 1, Font::font12(),
-                         Color::Black, Color::White);
-    display->draw_string(120, y, "%", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("CPU:").at(10, y).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
+    display->draw(display->text("").at(80, y).decimal(status.cpu_usage, 1).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
+    display->draw(display->text("%").at(120, y).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
 
     y += 20;
-    display->draw_string(10, y, "Temp:", Font::font12(), Color::Black, Color::White);
-    display->draw_decimal(80, y, status.temperature, 1, Font::font12(),
-                         Color::Black, Color::White);
-    display->draw_string(120, y, "C", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Temp:").at(10, y).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
+    display->draw(display->text("").at(80, y).decimal(status.temperature, 1).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
+    display->draw(display->text("C").at(120, y).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
 
     // Connection indicator
     if (status.connected) {
-        display->draw_circle(250, 10, 5, Color::White, DrawFill::Full);
+        display->draw(
+            display->circle()
+                .center(250, 10)
+                .radius(5)
+                .color(Color::White)
+                .fill(DrawFill::Full)
+                .build()
+        );
     }
 
     display->refresh();
@@ -1080,9 +1344,22 @@ See the [crypto dashboard example](../examples/crypto_dashboard/) for a complete
 ```cpp
 // Draw your content
 display->clear(Color::White);
-display->draw_string(10, 10, "Layout Test", Font::font16(),
-                    Color::Black, Color::White);
-display->draw_rectangle(5, 5, 250, 170, Color::Black, DrawFill::Empty);
+display->draw(
+    display->text("Layout Test")
+        .at(10, 10)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
+display->draw(
+    display->rectangle()
+        .top_left(5, 5)
+        .bottom_right(250, 170)
+        .color(Color::Black)
+        .fill(DrawFill::Empty)
+        .build()
+);
 
 // Save to BMP for debugging (instant!)
 auto result = display->save_framebuffer_to_bmp("debug_layout.bmp");
