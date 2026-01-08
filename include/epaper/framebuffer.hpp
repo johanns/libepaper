@@ -47,7 +47,8 @@ public:
    * @param orientation Display orientation
    */
   explicit Framebuffer(Driver &driver, Orientation orientation = Orientation::Portrait0)
-      : driver_(&driver), physical_width_(driver.width()), physical_height_(driver.height()), orientation_(orientation) {
+      : driver_(&driver), physical_width_(driver.width()), physical_height_(driver.height()),
+        orientation_(orientation) {
     buffer_.resize(driver.buffer_size());
   }
 

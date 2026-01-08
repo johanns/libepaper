@@ -1,4 +1,8 @@
 #include "epaper/display.hpp"
+#include "epaper/draw/builders.hpp"
+#include "epaper/draw/commands.hpp"
+#include "epaper/draw/styles.hpp"
+#include "epaper/geometry.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -143,7 +147,7 @@ auto Display::get_pixel(std::size_t x, std::size_t y) const -> Color {
 
     return ((byte_val & mask) != 0) ? Color::White : Color::Black;
   }
-  
+
   // Grayscale mode
   auto [byte_index, pixel_offset] = calculate_gray_position(phys_x, phys_y);
 
@@ -245,7 +249,7 @@ auto Display::draw_vertical_line(std::size_t x, std::size_t y_start, std::size_t
   }
 }
 
-auto Display::draw_point(std::size_t x, std::size_t y, Color color, DotPixel pixel_size) -> void {
+auto Display::draw_point_impl(std::size_t x, std::size_t y, Color color, DotPixel pixel_size) -> void {
   const auto size = static_cast<std::size_t>(pixel_size);
 
   for (std::size_t dy = 0; dy < size; ++dy) {
@@ -255,8 +259,8 @@ auto Display::draw_point(std::size_t x, std::size_t y, Color color, DotPixel pix
   }
 }
 
-auto Display::draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color,
-                        DotPixel line_width, LineStyle style) -> void {
+auto Display::draw_line_impl(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
+                             Color color, DotPixel line_width, LineStyle style) -> void {
   // Bresenham's line algorithm
   const auto dx = static_cast<std::int32_t>(x_end > x_start ? x_end - x_start : x_start - x_end);
   const auto dy = static_cast<std::int32_t>(y_end > y_start ? y_end - y_start : y_start - y_end);
@@ -274,7 +278,7 @@ auto Display::draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_
     const bool should_draw = (style == LineStyle::Solid) || ((dot_count % 6) < 3);
 
     if (should_draw) {
-      draw_point(static_cast<std::size_t>(x), static_cast<std::size_t>(y), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(x), static_cast<std::size_t>(y), color, line_width);
     }
     ++dot_count;
 
@@ -294,8 +298,8 @@ auto Display::draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_
   }
 }
 
-auto Display::draw_rectangle(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
-                             Color color, DotPixel line_width, DrawFill fill) -> void {
+auto Display::draw_rectangle_impl(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
+                                  Color color, DotPixel line_width, DrawFill fill) -> void {
   if (x_start > x_end) {
     std::swap(x_start, x_end);
   }
@@ -319,8 +323,8 @@ auto Display::draw_rectangle(std::size_t x_start, std::size_t y_start, std::size
   }
 }
 
-auto Display::draw_circle(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color,
-                          DotPixel line_width, DrawFill fill) -> void {
+auto Display::draw_circle_impl(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color,
+                               DotPixel line_width, DrawFill fill) -> void {
   if (radius == 0) {
     return;
   }
@@ -342,14 +346,14 @@ auto Display::draw_circle(std::size_t x_center, std::size_t y_center, std::size_
                            static_cast<std::size_t>(cy - py), color, line_width);
     } else {
       // Draw 8 symmetric points
-      draw_point(static_cast<std::size_t>(cx + px), static_cast<std::size_t>(cy + py), color, line_width);
-      draw_point(static_cast<std::size_t>(cx - px), static_cast<std::size_t>(cy + py), color, line_width);
-      draw_point(static_cast<std::size_t>(cx + px), static_cast<std::size_t>(cy - py), color, line_width);
-      draw_point(static_cast<std::size_t>(cx - px), static_cast<std::size_t>(cy - py), color, line_width);
-      draw_point(static_cast<std::size_t>(cx + py), static_cast<std::size_t>(cy + px), color, line_width);
-      draw_point(static_cast<std::size_t>(cx - py), static_cast<std::size_t>(cy + px), color, line_width);
-      draw_point(static_cast<std::size_t>(cx + py), static_cast<std::size_t>(cy - px), color, line_width);
-      draw_point(static_cast<std::size_t>(cx - py), static_cast<std::size_t>(cy - px), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(cx + px), static_cast<std::size_t>(cy + py), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(cx - px), static_cast<std::size_t>(cy + py), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(cx + px), static_cast<std::size_t>(cy - py), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(cx - px), static_cast<std::size_t>(cy - py), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(cx + py), static_cast<std::size_t>(cy + px), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(cx - py), static_cast<std::size_t>(cy + px), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(cx + py), static_cast<std::size_t>(cy - px), color, line_width);
+      draw_point_impl(static_cast<std::size_t>(cx - py), static_cast<std::size_t>(cy - px), color, line_width);
     }
   };
 
@@ -366,8 +370,8 @@ auto Display::draw_circle(std::size_t x_center, std::size_t y_center, std::size_
   }
 }
 
-auto Display::draw_char(std::size_t x, std::size_t y, char character, const Font &font, Color foreground,
-                        Color background) -> void {
+auto Display::draw_char_impl(std::size_t x, std::size_t y, char character, const Font &font, Color foreground,
+                             Color background) -> void {
   if (character < 0x20 || character > 0x7E) {
     return; // Only support printable ASCII
   }
@@ -391,8 +395,8 @@ auto Display::draw_char(std::size_t x, std::size_t y, char character, const Font
   }
 }
 
-auto Display::draw_string(std::size_t x, std::size_t y, std::string_view text, const Font &font, Color foreground,
-                          Color background) -> void {
+auto Display::draw_string_impl(std::size_t x, std::size_t y, std::string_view text, const Font &font, Color foreground,
+                               Color background) -> void {
   std::size_t current_x = x;
   std::size_t current_y = y;
 
@@ -403,20 +407,20 @@ auto Display::draw_string(std::size_t x, std::size_t y, std::string_view text, c
     } else if (c == '\r') {
       current_x = x;
     } else {
-      draw_char(current_x, current_y, c, font, foreground, background);
+      draw_char_impl(current_x, current_y, c, font, foreground, background);
       current_x += font.width();
     }
   }
 }
 
-auto Display::draw_number(std::size_t x, std::size_t y, std::int32_t number, const Font &font, Color foreground,
-                          Color background) -> void {
+auto Display::draw_number_impl(std::size_t x, std::size_t y, std::int32_t number, const Font &font, Color foreground,
+                               Color background) -> void {
   const auto text = std::to_string(number);
-  draw_string(x, y, text, font, foreground, background);
+  draw_string_impl(x, y, text, font, foreground, background);
 }
 
-auto Display::draw_decimal(std::size_t x, std::size_t y, double number, std::uint8_t decimal_places, const Font &font,
-                           Color foreground, Color background) -> void {
+auto Display::draw_decimal_impl(std::size_t x, std::size_t y, double number, std::uint8_t decimal_places,
+                                const Font &font, Color foreground, Color background) -> void {
   // Simple decimal formatting
   const auto integer_part = static_cast<std::int64_t>(number);
   const auto fractional_part = std::abs(number - static_cast<double>(integer_part));
@@ -438,7 +442,7 @@ auto Display::draw_decimal(std::size_t x, std::size_t y, double number, std::uin
   }
 
   text += fraction_str;
-  draw_string(x, y, text, font, foreground, background);
+  draw_string_impl(x, y, text, font, foreground, background);
 }
 
 auto Display::rgb_to_color(std::uint8_t r, std::uint8_t g, std::uint8_t b) -> Color {
@@ -450,7 +454,7 @@ auto Display::rgb_to_color(std::uint8_t r, std::uint8_t g, std::uint8_t b) -> Co
     // Simple threshold for black/white mode
     return gray >= 128 ? Color::White : Color::Black;
   }
-  
+
   // 4-level grayscale mode
   if (gray >= 192) {
     return Color::White;
@@ -705,6 +709,52 @@ auto Display::save_framebuffer_to_bmp(std::string_view filename) const -> std::e
   }
 
   return {};
+}
+
+// ========== Builder Factory Methods ==========
+
+auto Display::line() -> LineBuilder { return LineBuilder{}; }
+
+auto Display::rectangle() -> RectangleBuilder { return RectangleBuilder{}; }
+
+auto Display::circle() -> CircleBuilder { return CircleBuilder{}; }
+
+auto Display::point() -> PointBuilder { return PointBuilder{}; }
+
+auto Display::text(std::string_view content) -> TextBuilder { return TextBuilder{content}; }
+
+// ========== Draw Command Overloads ==========
+
+auto Display::draw(const LineCommand &cmd) -> void {
+  draw_line_impl(cmd.from.x, cmd.from.y, cmd.to.x, cmd.to.y, cmd.color, cmd.width, cmd.style);
+}
+
+auto Display::draw(const RectangleCommand &cmd) -> void {
+  draw_rectangle_impl(cmd.top_left.x, cmd.top_left.y, cmd.bottom_right.x, cmd.bottom_right.y, cmd.color,
+                      cmd.border_width, cmd.fill);
+}
+
+auto Display::draw(const CircleCommand &cmd) -> void {
+  draw_circle_impl(cmd.center.x, cmd.center.y, cmd.radius, cmd.color, cmd.border_width, cmd.fill);
+}
+
+auto Display::draw(const PointCommand &cmd) -> void {
+  draw_point_impl(cmd.position.x, cmd.position.y, cmd.color, cmd.pixel_size);
+}
+
+auto Display::draw(const TextCommand &cmd) -> void {
+  switch (cmd.content_type) {
+  case TextContent::String:
+    draw_string_impl(cmd.position.x, cmd.position.y, cmd.text, *cmd.font, cmd.foreground, cmd.background);
+    break;
+  case TextContent::Number:
+    draw_number_impl(cmd.position.x, cmd.position.y, cmd.number, *cmd.font, cmd.foreground, cmd.background);
+    break;
+  case TextContent::Decimal:
+    draw_decimal_impl(cmd.position.x, cmd.position.y, cmd.decimal, cmd.decimal_places, *cmd.font, cmd.foreground,
+                      cmd.background);
+    break;
+  }
 }
 
 } // namespace epaper

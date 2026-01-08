@@ -4,6 +4,7 @@
 #include "epaper/drivers/driver.hpp"
 #include "epaper/errors.hpp"
 #include "epaper/font.hpp"
+#include "epaper/geometry.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <expected>
@@ -13,6 +14,18 @@
 #include <vector>
 
 namespace epaper {
+
+// Forward declarations for types defined later
+struct LineCommand;
+struct RectangleCommand;
+struct CircleCommand;
+struct PointCommand;
+struct TextCommand;
+class LineBuilder;
+class RectangleBuilder;
+class CircleBuilder;
+class PointBuilder;
+class TextBuilder;
 
 /**
  * @brief Color representation for e-paper displays.
@@ -331,128 +344,170 @@ public:
    */
   [[nodiscard]] auto supports_power_control() const noexcept -> bool;
 
-  // ========== Drawing Operations ==========
+  // ========== Drawing Operations (Builder API) ==========
   //
-  // All drawing operations follow the GDI pattern:
+  // Modern fluent builder interface for drawing operations.
+  // All drawing operations:
   // - Out-of-bounds coordinates are silently clipped (no errors)
   // - Operations never fail or throw exceptions
   // - Coordinates are in logical space (accounting for display orientation)
   // - Drawing is performed on the framebuffer; call refresh() to update the display
+  //
+  // Use the factory methods (line(), rectangle(), etc.) to create builders,
+  // then call build() to produce a command, and pass it to draw().
+  //
+  // @example
+  // @code{.cpp}
+  // display.draw(
+  //     display.line()
+  //         .from({10, 10})
+  //         .to({100, 100})
+  //         .color(Color::Black)
+  //         .width(DotPixel::Pixel2x2)
+  //         .build()
+  // );
+  // @endcode
 
   /**
-   * @brief Draw a point with specified size.
+   * @brief Create a line builder for fluent line drawing.
    *
-   * Out-of-bounds coordinates are silently clipped.
+   * @return LineBuilder for constructing a line command
    *
-   * @param x X coordinate
-   * @param y Y coordinate
-   * @param color Point color
-   * @param pixel_size Size of the point (default: 1x1)
-   * @note Exception Safety: Nothrow guarantee - never throws.
+   * @example
+   * @code{.cpp}
+   * display.draw(
+   *     display.line()
+   *         .from({10, 10})
+   *         .to({100, 100})
+   *         .color(Color::Black)
+   *         .build()
+   * );
+   * @endcode
    */
-  auto draw_point(std::size_t x, std::size_t y, Color color, DotPixel pixel_size = DotPixel::Pixel1x1) -> void;
+  [[nodiscard]] auto line() -> LineBuilder;
 
   /**
-   * @brief Draw a line between two points.
+   * @brief Create a rectangle builder for fluent rectangle drawing.
+   *
+   * @return RectangleBuilder for constructing a rectangle command
+   *
+   * @example
+   * @code{.cpp}
+   * display.draw(
+   *     display.rectangle()
+   *         .top_left({10, 10})
+   *         .bottom_right({100, 50})
+   *         .color(Color::Black)
+   *         .fill(DrawFill::Empty)
+   *         .build()
+   * );
+   * @endcode
+   */
+  [[nodiscard]] auto rectangle() -> RectangleBuilder;
+
+  /**
+   * @brief Create a circle builder for fluent circle drawing.
+   *
+   * @return CircleBuilder for constructing a circle command
+   *
+   * @example
+   * @code{.cpp}
+   * display.draw(
+   *     display.circle()
+   *         .center({50, 50})
+   *         .radius(25)
+   *         .color(Color::Black)
+   *         .fill(DrawFill::Full)
+   *         .build()
+   * );
+   * @endcode
+   */
+  [[nodiscard]] auto circle() -> CircleBuilder;
+
+  /**
+   * @brief Create a point builder for fluent point drawing.
+   *
+   * @return PointBuilder for constructing a point command
+   *
+   * @example
+   * @code{.cpp}
+   * display.draw(
+   *     display.point()
+   *         .at({10, 10})
+   *         .color(Color::Black)
+   *         .size(DotPixel::Pixel3x3)
+   *         .build()
+   * );
+   * @endcode
+   */
+  [[nodiscard]] auto point() -> PointBuilder;
+
+  /**
+   * @brief Create a text builder for fluent text drawing.
+   *
+   * @param content Text content (optional, can be set via builder)
+   * @return TextBuilder for constructing a text command
+   *
+   * @example
+   * @code{.cpp}
+   * display.draw(
+   *     display.text("Hello")
+   *         .at({10, 20})
+   *         .font(&Font::font16())
+   *         .foreground(Color::Black)
+   *         .background(Color::White)
+   *         .build()
+   * );
+   * @endcode
+   */
+  [[nodiscard]] auto text(std::string_view content = "") -> TextBuilder;
+
+  /**
+   * @brief Draw a line using a command.
    *
    * Uses Bresenham's line algorithm for efficient rendering.
    *
-   * @param x_start Starting X coordinate
-   * @param y_start Starting Y coordinate
-   * @param x_end Ending X coordinate
-   * @param y_end Ending Y coordinate
-   * @param color Line color
-   * @param line_width Line width (default: 1x1)
-   * @param style Line style (default: Solid)
+   * @param cmd LineCommand produced by LineBuilder
+   * @note Exception Safety: Nothrow guarantee - never throws.
    */
-  auto draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color,
-                 DotPixel line_width = DotPixel::Pixel1x1, LineStyle style = LineStyle::Solid) -> void;
+  auto draw(const LineCommand &cmd) -> void;
 
   /**
-   * @brief Draw a rectangle.
+   * @brief Draw a rectangle using a command.
    *
-   * @param x_start Top-left X coordinate
-   * @param y_start Top-left Y coordinate
-   * @param x_end Bottom-right X coordinate
-   * @param y_end Bottom-right Y coordinate
-   * @param color Rectangle color
-   * @param line_width Border width (default: 1x1)
-   * @param fill Fill mode (default: Empty)
+   * @param cmd RectangleCommand produced by RectangleBuilder
+   * @note Exception Safety: Nothrow guarantee - never throws.
    */
-  auto draw_rectangle(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color,
-                      DotPixel line_width = DotPixel::Pixel1x1, DrawFill fill = DrawFill::Empty) -> void;
+  auto draw(const RectangleCommand &cmd) -> void;
 
   /**
-   * @brief Draw a circle.
+   * @brief Draw a circle using a command.
    *
    * Uses midpoint circle algorithm for efficient rendering.
    *
-   * @param x_center Center X coordinate
-   * @param y_center Center Y coordinate
-   * @param radius Circle radius in pixels
-   * @param color Circle color
-   * @param line_width Border width (default: 1x1)
-   * @param fill Fill mode (default: Empty)
+   * @param cmd CircleCommand produced by CircleBuilder
+   * @note Exception Safety: Nothrow guarantee - never throws.
    */
-  auto draw_circle(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color,
-                   DotPixel line_width = DotPixel::Pixel1x1, DrawFill fill = DrawFill::Empty) -> void;
-
-  // ========== Text Operations ==========
+  auto draw(const CircleCommand &cmd) -> void;
 
   /**
-   * @brief Draw a single character.
+   * @brief Draw a point using a command.
    *
-   * @param x X coordinate
-   * @param y Y coordinate
-   * @param character Character to draw (printable ASCII only)
-   * @param font Font to use
-   * @param foreground Foreground color
-   * @param background Background color
+   * @param cmd PointCommand produced by PointBuilder
+   * @note Exception Safety: Nothrow guarantee - never throws.
    */
-  auto draw_char(std::size_t x, std::size_t y, char character, const Font &font, Color foreground, Color background)
-      -> void;
+  auto draw(const PointCommand &cmd) -> void;
 
   /**
-   * @brief Draw a text string.
+   * @brief Draw text using a command.
    *
-   * Supports newline (\n) and carriage return (\r) characters.
+   * Supports strings, numbers, and decimal numbers.
+   * Text supports newline (\n) and carriage return (\r) characters.
    *
-   * @param x Starting X coordinate
-   * @param y Starting Y coordinate
-   * @param text Text to draw
-   * @param font Font to use
-   * @param foreground Foreground color
-   * @param background Background color
+   * @param cmd TextCommand produced by TextBuilder
+   * @note Exception Safety: Nothrow guarantee - never throws.
    */
-  auto draw_string(std::size_t x, std::size_t y, std::string_view text, const Font &font, Color foreground,
-                   Color background) -> void;
-
-  /**
-   * @brief Draw an integer number.
-   *
-   * @param x X coordinate
-   * @param y Y coordinate
-   * @param number Number to draw
-   * @param font Font to use
-   * @param foreground Foreground color
-   * @param background Background color
-   */
-  auto draw_number(std::size_t x, std::size_t y, std::int32_t number, const Font &font, Color foreground,
-                   Color background) -> void;
-
-  /**
-   * @brief Draw a decimal number with specified precision.
-   *
-   * @param x X coordinate
-   * @param y Y coordinate
-   * @param number Number to draw
-   * @param decimal_places Number of decimal places
-   * @param font Font to use
-   * @param foreground Foreground color
-   * @param background Background color
-   */
-  auto draw_decimal(std::size_t x, std::size_t y, double number, std::uint8_t decimal_places, const Font &font,
-                    Color foreground, Color background) -> void;
+  auto draw(const TextCommand &cmd) -> void;
 
   // ========== Bitmap Operations ==========
 
@@ -548,6 +603,25 @@ private:
   // Helper: convert RGB to Color enum
   auto rgb_to_color(std::uint8_t r, std::uint8_t g, std::uint8_t b) -> Color;
 
+  // ========== Internal Drawing Implementations ==========
+
+  // Internal implementations used by draw() overloads
+  auto draw_point_impl(std::size_t x, std::size_t y, Color color, DotPixel pixel_size) -> void;
+  auto draw_line_impl(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color,
+                      DotPixel line_width, LineStyle style) -> void;
+  auto draw_rectangle_impl(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color,
+                           DotPixel line_width, DrawFill fill) -> void;
+  auto draw_circle_impl(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color,
+                        DotPixel line_width, DrawFill fill) -> void;
+  auto draw_char_impl(std::size_t x, std::size_t y, char character, const Font &font, Color foreground,
+                      Color background) -> void;
+  auto draw_string_impl(std::size_t x, std::size_t y, std::string_view text, const Font &font, Color foreground,
+                        Color background) -> void;
+  auto draw_number_impl(std::size_t x, std::size_t y, std::int32_t number, const Font &font, Color foreground,
+                        Color background) -> void;
+  auto draw_decimal_impl(std::size_t x, std::size_t y, double number, std::uint8_t decimal_places, const Font &font,
+                         Color foreground, Color background) -> void;
+
   // ========== Member Variables ==========
 
   std::unique_ptr<Driver> driver_;
@@ -604,3 +678,7 @@ template <typename DriverType>
 }
 
 } // namespace epaper
+
+// Include builder definitions after Display class is complete
+#include "epaper/draw/builders.hpp"
+#include "epaper/draw/commands.hpp"
