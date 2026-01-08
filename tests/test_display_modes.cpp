@@ -25,40 +25,114 @@ auto test_blackwhite_mode(Device &device) -> bool {
   display->clear(Color::White);
 
   // Title
-  display->draw_string(10, 5, "BLACK & WHITE MODE", Font::font16(), Color::Black, Color::White);
+  display->draw(display->text("BLACK & WHITE MODE")
+                    .at(10, 5)
+                    .font(&Font::font16())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Test pure black
-  display->draw_rectangle(10, 30, 80, 80, Color::Black, DotPixel::Pixel1x1, DrawFill::Full);
-  display->draw_string(10, 85, "Black", Font::font12(), Color::Black, Color::White);
+  display->draw(display->rectangle()
+                    .top_left(10, 30)
+                    .bottom_right(80, 80)
+                    .color(Color::Black)
+                    .border_width(DotPixel::Pixel1x1)
+                    .fill(DrawFill::Full)
+                    .build());
+  display->draw(display->text("Black")
+                    .at(10, 85)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Test pure white
-  display->draw_rectangle(90, 30, 160, 80, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-  display->draw_rectangle(92, 32, 158, 78, Color::White, DotPixel::Pixel1x1, DrawFill::Full);
-  display->draw_string(100, 85, "White", Font::font12(), Color::Black, Color::White);
+  display->draw(display->rectangle()
+                    .top_left(90, 30)
+                    .bottom_right(160, 80)
+                    .color(Color::Black)
+                    .border_width(DotPixel::Pixel1x1)
+                    .fill(DrawFill::Empty)
+                    .build());
+  display->draw(display->rectangle()
+                    .top_left(92, 32)
+                    .bottom_right(158, 78)
+                    .color(Color::White)
+                    .border_width(DotPixel::Pixel1x1)
+                    .fill(DrawFill::Full)
+                    .build());
+  display->draw(display->text("White")
+                    .at(100, 85)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Test patterns
-  display->draw_string(10, 105, "Patterns:", Font::font12(), Color::Black, Color::White);
+  display->draw(display->text("Patterns:")
+                    .at(10, 105)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Checkerboard pattern
   for (std::size_t y = 0; y < 40; y += 4) {
     for (std::size_t x = 0; x < 80; x += 4) {
       const bool is_black = ((x / 4) + (y / 4)) % 2 == 0;
-      display->draw_rectangle(10 + x, 120 + y, 13 + x, 123 + y, is_black ? Color::Black : Color::White,
-                              DotPixel::Pixel1x1, DrawFill::Full);
+      display->draw(display->rectangle()
+                        .top_left(10 + x, 120 + y)
+                        .bottom_right(13 + x, 123 + y)
+                        .color(is_black ? Color::Black : Color::White)
+                        .border_width(DotPixel::Pixel1x1)
+                        .fill(DrawFill::Full)
+                        .build());
     }
   }
-  display->draw_string(10, 165, "Checkerboard", Font::font8(), Color::Black, Color::White);
+  display->draw(display->text("Checkerboard")
+                    .at(10, 165)
+                    .font(&Font::font8())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Line patterns
   for (std::size_t i = 0; i < 40; i += 2) {
-    display->draw_line(100, 120 + i, 160, 120 + i, Color::Black, DotPixel::Pixel1x1, LineStyle::Solid);
+    display->draw(display->line()
+                      .from(100, 120 + i)
+                      .to(160, 120 + i)
+                      .color(Color::Black)
+                      .width(DotPixel::Pixel1x1)
+                      .style(LineStyle::Solid)
+                      .build());
   }
-  display->draw_string(100, 165, "Lines", Font::font8(), Color::Black, Color::White);
+  display->draw(display->text("Lines")
+                    .at(100, 165)
+                    .font(&Font::font8())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Test text rendering
-  display->draw_string(10, 180, "Text Test:", Font::font12(), Color::Black, Color::White);
-  display->draw_string(10, 195, "ABCDEFGHIJKLM", Font::font12(), Color::Black, Color::White);
-  display->draw_string(10, 210, "0123456789", Font::font12(), Color::Black, Color::White);
+  display->draw(display->text("Text Test:")
+                    .at(10, 180)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  display->draw(display->text("ABCDEFGHIJKLM")
+                    .at(10, 195)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  display->draw(display->text("0123456789")
+                    .at(10, 210)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Refresh display
   std::cout << "Refreshing display...\n";
@@ -89,7 +163,12 @@ auto test_grayscale_mode(Device &device) -> bool {
   display->clear(Color::White);
 
   // Title
-  display->draw_string(10, 5, "GRAYSCALE MODE", Font::font16(), Color::Black, Color::White);
+  display->draw(display->text("GRAYSCALE MODE")
+                    .at(10, 5)
+                    .font(&Font::font16())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Display all 4 gray levels
   const std::size_t box_width = 35;
@@ -97,29 +176,79 @@ auto test_grayscale_mode(Device &device) -> bool {
   const std::size_t start_y = 30;
 
   // White
-  display->draw_rectangle(10, start_y, 10 + box_width, start_y + box_height, Color::Black, DotPixel::Pixel1x1,
-                          DrawFill::Empty);
-  display->draw_rectangle(12, start_y + 2, 10 + box_width - 2, start_y + box_height - 2, Color::White,
-                          DotPixel::Pixel1x1, DrawFill::Full);
-  display->draw_string(13, start_y + box_height + 5, "White", Font::font8(), Color::Black, Color::White);
+  display->draw(display->rectangle()
+                    .top_left(10, start_y)
+                    .bottom_right(10 + box_width, start_y + box_height)
+                    .color(Color::Black)
+                    .border_width(DotPixel::Pixel1x1)
+                    .fill(DrawFill::Empty)
+                    .build());
+  display->draw(display->rectangle()
+                    .top_left(12, start_y + 2)
+                    .bottom_right(10 + box_width - 2, start_y + box_height - 2)
+                    .color(Color::White)
+                    .border_width(DotPixel::Pixel1x1)
+                    .fill(DrawFill::Full)
+                    .build());
+  display->draw(display->text("White")
+                    .at(13, start_y + box_height + 5)
+                    .font(&Font::font8())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Gray1 (lighter)
-  display->draw_rectangle(50, start_y, 50 + box_width, start_y + box_height, Color::Gray1, DotPixel::Pixel1x1,
-                          DrawFill::Full);
-  display->draw_string(53, start_y + box_height + 5, "Gray1", Font::font8(), Color::Black, Color::White);
+  display->draw(display->rectangle()
+                    .top_left(50, start_y)
+                    .bottom_right(50 + box_width, start_y + box_height)
+                    .color(Color::Gray1)
+                    .border_width(DotPixel::Pixel1x1)
+                    .fill(DrawFill::Full)
+                    .build());
+  display->draw(display->text("Gray1")
+                    .at(53, start_y + box_height + 5)
+                    .font(&Font::font8())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Gray2 (darker)
-  display->draw_rectangle(90, start_y, 90 + box_width, start_y + box_height, Color::Gray2, DotPixel::Pixel1x1,
-                          DrawFill::Full);
-  display->draw_string(93, start_y + box_height + 5, "Gray2", Font::font8(), Color::Black, Color::White);
+  display->draw(display->rectangle()
+                    .top_left(90, start_y)
+                    .bottom_right(90 + box_width, start_y + box_height)
+                    .color(Color::Gray2)
+                    .border_width(DotPixel::Pixel1x1)
+                    .fill(DrawFill::Full)
+                    .build());
+  display->draw(display->text("Gray2")
+                    .at(93, start_y + box_height + 5)
+                    .font(&Font::font8())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Black
-  display->draw_rectangle(130, start_y, 130 + box_width, start_y + box_height, Color::Black, DotPixel::Pixel1x1,
-                          DrawFill::Full);
-  display->draw_string(133, start_y + box_height + 5, "Black", Font::font8(), Color::Black, Color::White);
+  display->draw(display->rectangle()
+                    .top_left(130, start_y)
+                    .bottom_right(130 + box_width, start_y + box_height)
+                    .color(Color::Black)
+                    .border_width(DotPixel::Pixel1x1)
+                    .fill(DrawFill::Full)
+                    .build());
+  display->draw(display->text("Black")
+                    .at(133, start_y + box_height + 5)
+                    .font(&Font::font8())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Gradient demonstration
-  display->draw_string(10, 100, "Gradient:", Font::font12(), Color::Black, Color::White);
+  display->draw(display->text("Gradient:")
+                    .at(10, 100)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   const std::size_t gradient_width = 160;
   const std::size_t gradient_height = 30;
@@ -142,16 +271,46 @@ auto test_grayscale_mode(Device &device) -> bool {
       break;
     }
 
-    display->draw_rectangle(10 + i * segment_width, 115, 10 + (i + 1) * segment_width, 115 + gradient_height, color,
-                            DotPixel::Pixel1x1, DrawFill::Full);
+    display->draw(display->rectangle()
+                      .top_left(10 + i * segment_width, 115)
+                      .bottom_right(10 + (i + 1) * segment_width, 115 + gradient_height)
+                      .color(color)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Full)
+                      .build());
   }
 
   // Test text in different colors
-  display->draw_string(10, 155, "Text Test:", Font::font12(), Color::Black, Color::White);
-  display->draw_string(10, 170, "Black on White", Font::font12(), Color::Black, Color::White);
-  display->draw_string(10, 185, "Gray1 on White", Font::font12(), Color::Gray1, Color::White);
-  display->draw_string(10, 200, "Gray2 on White", Font::font12(), Color::Gray2, Color::White);
-  display->draw_string(10, 215, "White on Black", Font::font12(), Color::White, Color::Black);
+  display->draw(display->text("Text Test:")
+                    .at(10, 155)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  display->draw(display->text("Black on White")
+                    .at(10, 170)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  display->draw(display->text("Gray1 on White")
+                    .at(10, 185)
+                    .font(&Font::font12())
+                    .foreground(Color::Gray1)
+                    .background(Color::White)
+                    .build());
+  display->draw(display->text("Gray2 on White")
+                    .at(10, 200)
+                    .font(&Font::font12())
+                    .foreground(Color::Gray2)
+                    .background(Color::White)
+                    .build());
+  display->draw(display->text("White on Black")
+                    .at(10, 215)
+                    .font(&Font::font12())
+                    .foreground(Color::White)
+                    .background(Color::Black)
+                    .build());
 
   // Refresh display
   std::cout << "Refreshing display...\n";

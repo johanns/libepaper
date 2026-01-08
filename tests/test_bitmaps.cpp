@@ -35,11 +35,21 @@ auto main() -> int {
     display->clear(Color::White);
 
     // Title
-    display->draw_string(5, 5, "BITMAP TEST", Font::font16(), Color::Black, Color::White);
+    display->draw(display->text("BITMAP TEST")
+                      .at(5, 5)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Test 1: Simple checkerboard pattern from memory
     std::cout << "Creating checkerboard bitmap from memory...\n";
-    display->draw_string(5, 25, "Checkerboard (32x32):", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Checkerboard (32x32):")
+                      .at(5, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::vector<Color> checkerboard;
     const std::size_t checker_size = 32;
@@ -53,7 +63,12 @@ auto main() -> int {
 
     // Test 2: Gradient pattern
     std::cout << "Creating gradient bitmap from memory...\n";
-    display->draw_string(45, 25, "Gradient (32x32):", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Gradient (32x32):")
+                      .at(45, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::vector<Color> gradient;
     for (std::size_t y = 0; y < checker_size; ++y) {
@@ -67,20 +82,36 @@ auto main() -> int {
 
     // Test 3: Solid patterns
     std::cout << "Creating solid pattern bitmaps...\n";
-    display->draw_string(85, 25, "Solid (16x16):", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Solid (16x16):")
+                      .at(85, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // All black
     std::vector<Color> solid_black(16 * 16, Color::Black);
     display->draw_bitmap(85, 40, solid_black, 16, 16);
 
     // All white (with border)
-    display->draw_rectangle(105, 40, 121, 56, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
+    display->draw(display->rectangle()
+                      .top_left(105, 40)
+                      .bottom_right(121, 56)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Empty)
+                      .build());
     std::vector<Color> solid_white(16 * 16, Color::White);
     display->draw_bitmap(106, 41, solid_white, 14, 14);
 
     // Test 4: Stripe pattern
     std::cout << "Creating stripe pattern bitmap...\n";
-    display->draw_string(5, 80, "Stripes (64x32):", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Stripes (64x32):")
+                      .at(5, 80)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::vector<Color> stripes;
     const std::size_t stripe_width = 64;
@@ -95,7 +126,12 @@ auto main() -> int {
 
     // Test 5: Scaling test
     std::cout << "Testing bitmap scaling...\n";
-    display->draw_string(5, 135, "Scaling:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Scaling:")
+                      .at(5, 135)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Small checkerboard
     std::vector<Color> small_checker;
@@ -108,37 +144,78 @@ auto main() -> int {
     }
 
     // Draw original
-    display->draw_string(5, 150, "8x8", Font::font8(), Color::Black, Color::White);
+    display->draw(
+        display->text("8x8").at(5, 150).font(&Font::font8()).foreground(Color::Black).background(Color::White).build());
     display->draw_bitmap(5, 160, small_checker, small_size, small_size);
 
     // Draw scaled 2x
-    display->draw_string(20, 150, "16x16", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("16x16")
+                      .at(20, 150)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     display->draw_bitmap(20, 160, small_checker, small_size, small_size, 16, 16);
 
     // Draw scaled 4x
-    display->draw_string(45, 150, "32x32", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("32x32")
+                      .at(45, 150)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     display->draw_bitmap(45, 160, small_checker, small_size, small_size, 32, 32);
 
     // Test 6: Attempt to load image from file (if available)
     std::cout << "Testing bitmap from file...\n";
-    display->draw_string(85, 80, "File Loading:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("File Loading:")
+                      .at(85, 80)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Try to load a test image (this may fail if no image exists)
     const char *test_image_path = "../examples/images/test.png";
     auto result = display->draw_bitmap_from_file(85, 95, test_image_path, 50, 50);
     if (result) {
-      display->draw_string(85, 150, "PNG: OK", Font::font8(), Color::Black, Color::White);
+      display->draw(display->text("PNG: OK")
+                        .at(85, 150)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
       std::cout << "Successfully loaded test image.\n";
     } else {
-      display->draw_string(85, 95, "No test image", Font::font8(), Color::Black, Color::White);
-      display->draw_string(85, 105, "available.", Font::font8(), Color::Black, Color::White);
-      display->draw_string(85, 115, "(Expected)", Font::font8(), Color::Black, Color::White);
+      display->draw(display->text("No test image")
+                        .at(85, 95)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
+      display->draw(display->text("available.")
+                        .at(85, 105)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
+      display->draw(display->text("(Expected)")
+                        .at(85, 115)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
       std::cout << "Note: Test image not found (this is OK for this test).\n";
     }
 
     // Test 7: Boundary clipping
     std::cout << "Testing boundary clipping...\n";
-    display->draw_string(5, 200, "Clipping test:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Clipping test:")
+                      .at(5, 200)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Draw bitmap that extends beyond display bounds
     std::vector<Color> large_pattern;
@@ -155,7 +232,12 @@ auto main() -> int {
     const auto display_height = display->effective_height();
     display->draw_bitmap(display_width - 20, display_height - 20, large_pattern, large_size, large_size);
 
-    display->draw_string(5, 215, "(Bottom-right corner clipped)", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("(Bottom-right corner clipped)")
+                      .at(5, 215)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Refresh display
     std::cout << "Refreshing display...\n";

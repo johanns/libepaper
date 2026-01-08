@@ -42,13 +42,49 @@ auto main() -> int {
 
     // Display test message
     display->clear(Color::White);
-    display->draw_string(10, 10, "AUTO-SLEEP TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(10, 30, "Test 1: Enabled", Font::font12(), Color::Black, Color::White);
-    display->draw_string(10, 50, "Auto-sleep: ON", Font::font12(), Color::Black, Color::White);
-    display->draw_rectangle(10, 70, 166, 110, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-    display->draw_string(15, 80, "Display will sleep", Font::font8(), Color::Black, Color::White);
-    display->draw_string(15, 92, "automatically after", Font::font8(), Color::Black, Color::White);
-    display->draw_string(15, 104, "this refresh.", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("AUTO-SLEEP TEST")
+                      .at(10, 10)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Test 1: Enabled")
+                      .at(10, 30)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Auto-sleep: ON")
+                      .at(10, 50)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->rectangle()
+                      .top_left(10, 70)
+                      .bottom_right(166, 110)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Empty)
+                      .build());
+    display->draw(display->text("Display will sleep")
+                      .at(15, 80)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("automatically after")
+                      .at(15, 92)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("this refresh.")
+                      .at(15, 104)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "Refreshing (should auto-sleep after)...\n";
     if (auto result = display->refresh(); !result) {
@@ -71,13 +107,49 @@ auto main() -> int {
 
     // Display test message
     display->clear(Color::White);
-    display->draw_string(10, 10, "AUTO-SLEEP TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(10, 30, "Test 2: Disabled", Font::font12(), Color::Black, Color::White);
-    display->draw_string(10, 50, "Auto-sleep: OFF", Font::font12(), Color::Black, Color::White);
-    display->draw_rectangle(10, 70, 166, 110, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-    display->draw_string(15, 80, "Display will NOT", Font::font8(), Color::Black, Color::White);
-    display->draw_string(15, 92, "sleep automatically", Font::font8(), Color::Black, Color::White);
-    display->draw_string(15, 104, "after this refresh.", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("AUTO-SLEEP TEST")
+                      .at(10, 10)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Test 2: Disabled")
+                      .at(10, 30)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Auto-sleep: OFF")
+                      .at(10, 50)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->rectangle()
+                      .top_left(10, 70)
+                      .bottom_right(166, 110)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Empty)
+                      .build());
+    display->draw(display->text("Display will NOT")
+                      .at(15, 80)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("sleep automatically")
+                      .at(15, 92)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("after this refresh.")
+                      .at(15, 104)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "Refreshing (should NOT auto-sleep)...\n";
     if (auto result = display->refresh(); !result) {
@@ -94,13 +166,39 @@ auto main() -> int {
 
     for (int i = 1; i <= 3; ++i) {
       display->clear(Color::White);
-      display->draw_string(10, 10, "AUTO-SLEEP TEST", Font::font16(), Color::Black, Color::White);
-      display->draw_string(10, 30, "Test 3: Multiple", Font::font12(), Color::Black, Color::White);
-      display->draw_string(10, 50, "Auto-sleep: OFF", Font::font12(), Color::Black, Color::White);
+      display->draw(display->text("AUTO-SLEEP TEST")
+                        .at(10, 10)
+                        .font(&Font::font16())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
+      display->draw(display->text("Test 3: Multiple")
+                        .at(10, 30)
+                        .font(&Font::font12())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
+      display->draw(display->text("Auto-sleep: OFF")
+                        .at(10, 50)
+                        .font(&Font::font12())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
 
       std::string refresh_msg = "Refresh " + std::to_string(i) + " of 3";
-      display->draw_rectangle(10, 70, 166, 120, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
-      display->draw_string(20, 85, refresh_msg, Font::font12(), Color::Black, Color::White);
+      display->draw(display->rectangle()
+                        .top_left(10, 70)
+                        .bottom_right(166, 120)
+                        .color(Color::Black)
+                        .border_width(DotPixel::Pixel2x2)
+                        .fill(DrawFill::Empty)
+                        .build());
+      display->draw(display->text(refresh_msg)
+                        .at(20, 85)
+                        .font(&Font::font12())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
 
       std::cout << "  Refresh " << i << " of 3...\n";
       if (auto result = display->refresh(); !result) {
@@ -123,13 +221,49 @@ auto main() -> int {
 
     // Display test message
     display->clear(Color::White);
-    display->draw_string(10, 10, "AUTO-SLEEP TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(10, 30, "Test 4: Re-enabled", Font::font12(), Color::Black, Color::White);
-    display->draw_string(10, 50, "Auto-sleep: ON", Font::font12(), Color::Black, Color::White);
-    display->draw_rectangle(10, 70, 166, 110, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-    display->draw_string(15, 80, "Display will sleep", Font::font8(), Color::Black, Color::White);
-    display->draw_string(15, 92, "automatically after", Font::font8(), Color::Black, Color::White);
-    display->draw_string(15, 104, "this refresh.", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("AUTO-SLEEP TEST")
+                      .at(10, 10)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Test 4: Re-enabled")
+                      .at(10, 30)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Auto-sleep: ON")
+                      .at(10, 50)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->rectangle()
+                      .top_left(10, 70)
+                      .bottom_right(166, 110)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Empty)
+                      .build());
+    display->draw(display->text("Display will sleep")
+                      .at(15, 80)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("automatically after")
+                      .at(15, 92)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("this refresh.")
+                      .at(15, 104)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "Refreshing (should auto-sleep after)...\n";
     if (auto result = display->refresh(); !result) {
@@ -151,40 +285,116 @@ auto main() -> int {
     }
 
     display->clear(Color::White);
-    display->draw_string(10, 5, "AUTO-SLEEP TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(10, 25, "Complete!", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("AUTO-SLEEP TEST")
+                      .at(10, 5)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Complete!")
+                      .at(10, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
-    display->draw_rectangle(5, 45, 171, 230, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
+    display->draw(display->rectangle()
+                      .top_left(5, 45)
+                      .bottom_right(171, 230)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Empty)
+                      .build());
 
     std::size_t y_pos = 55;
-    display->draw_string(10, y_pos, "Tests Completed:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Tests Completed:")
+                      .at(10, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 15;
 
-    display->draw_string(10, y_pos, "1. Default: ENABLED", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("1. Default: ENABLED")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "Auto-sleep on by default", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Auto-sleep on by default")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 15;
 
-    display->draw_string(10, y_pos, "2. Disabled: OFF", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("2. Disabled: OFF")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "Can be turned off", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Can be turned off")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 15;
 
-    display->draw_string(10, y_pos, "3. Multiple refreshes", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("3. Multiple refreshes")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "Works without auto-sleep", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Works without auto-sleep")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 15;
 
-    display->draw_string(10, y_pos, "4. Re-enabled: ON", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("4. Re-enabled: ON")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "Can be turned back on", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Can be turned back on")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 20;
 
-    display->draw_string(10, y_pos, "Recommendation:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Recommendation:")
+                      .at(10, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 15;
-    display->draw_string(10, y_pos, "Keep auto-sleep ENABLED", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Keep auto-sleep ENABLED")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 10;
-    display->draw_string(10, y_pos, "to prevent burn-in.", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("to prevent burn-in.")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "Final refresh...\n";
     if (auto result = display->refresh(); !result) {
@@ -217,9 +427,24 @@ auto main() -> int {
 
     std::cout << "First render (display will sleep after)...\n";
     display2->clear();
-    display2->draw_string(10, 10, "FIRST RENDER", Font::font16(), Color::Black, Color::White);
-    display2->draw_string(10, 30, "Display sleeps", Font::font12(), Color::Black, Color::White);
-    display2->draw_string(10, 45, "after this", Font::font12(), Color::Black, Color::White);
+    display2->draw(display2->text("FIRST RENDER")
+                       .at(10, 10)
+                       .font(&Font::font16())
+                       .foreground(Color::Black)
+                       .background(Color::White)
+                       .build());
+    display2->draw(display2->text("Display sleeps")
+                       .at(10, 30)
+                       .font(&Font::font12())
+                       .foreground(Color::Black)
+                       .background(Color::White)
+                       .build());
+    display2->draw(display2->text("after this")
+                       .at(10, 45)
+                       .font(&Font::font12())
+                       .foreground(Color::Black)
+                       .background(Color::White)
+                       .build());
     if (auto result = display2->refresh(); !result) {
       std::cerr << "First refresh failed: " << result.error().what() << "\n";
       return EXIT_FAILURE;
@@ -230,9 +455,24 @@ auto main() -> int {
 
     std::cout << "\nSecond render (should auto-wake transparently)...\n";
     display2->clear();
-    display2->draw_string(10, 10, "SECOND RENDER", Font::font16(), Color::Black, Color::White);
-    display2->draw_string(10, 30, "Auto-wake", Font::font12(), Color::Black, Color::White);
-    display2->draw_string(10, 45, "worked!", Font::font12(), Color::Black, Color::White);
+    display2->draw(display2->text("SECOND RENDER")
+                       .at(10, 10)
+                       .font(&Font::font16())
+                       .foreground(Color::Black)
+                       .background(Color::White)
+                       .build());
+    display2->draw(display2->text("Auto-wake")
+                       .at(10, 30)
+                       .font(&Font::font12())
+                       .foreground(Color::Black)
+                       .background(Color::White)
+                       .build());
+    display2->draw(display2->text("worked!")
+                       .at(10, 45)
+                       .font(&Font::font12())
+                       .foreground(Color::Black)
+                       .background(Color::White)
+                       .build());
     if (auto result = display2->refresh(); !result) {
       std::cerr << "Second refresh failed: " << result.error().what() << "\n";
       return EXIT_FAILURE;

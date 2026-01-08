@@ -41,10 +41,31 @@ auto main() -> int {
     // Test 1: Basic display operation
     std::cout << "\n=== Test 1: Initial Display ===\n";
     display->clear(Color::White);
-    display->draw_string(10, 10, "POWER MANAGEMENT TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(10, 30, "Test 1: Initial State", Font::font12(), Color::Black, Color::White);
-    display->draw_rectangle(10, 50, 166, 100, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
-    display->draw_string(20, 65, "Display Active", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("POWER MANAGEMENT TEST")
+                      .at(10, 10)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Test 1: Initial State")
+                      .at(10, 30)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->rectangle()
+                      .top_left(10, 50)
+                      .bottom_right(166, 100)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel2x2)
+                      .fill(DrawFill::Empty)
+                      .build());
+    display->draw(display->text("Display Active")
+                      .at(20, 65)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "Refreshing display...\n";
     if (auto result = display->refresh(); !result) {
@@ -80,10 +101,31 @@ auto main() -> int {
 
     // Redraw to verify wake
     display->clear(Color::White);
-    display->draw_string(10, 10, "POWER MANAGEMENT TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(10, 30, "Test 3: After Wake", Font::font12(), Color::Black, Color::White);
-    display->draw_rectangle(10, 50, 166, 100, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
-    display->draw_string(20, 65, "Display Awake", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("POWER MANAGEMENT TEST")
+                      .at(10, 10)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Test 3: After Wake")
+                      .at(10, 30)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->rectangle()
+                      .top_left(10, 50)
+                      .bottom_right(166, 100)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel2x2)
+                      .fill(DrawFill::Empty)
+                      .build());
+    display->draw(display->text("Display Awake")
+                      .at(20, 65)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "Refreshing display after wake...\n";
     if (auto result = display->refresh(); !result) {
@@ -117,10 +159,31 @@ auto main() -> int {
 
         // Redraw to verify power on
         display->clear(Color::White);
-        display->draw_string(10, 10, "POWER MANAGEMENT TEST", Font::font16(), Color::Black, Color::White);
-        display->draw_string(10, 30, "Test 5: After Power On", Font::font12(), Color::Black, Color::White);
-        display->draw_rectangle(10, 50, 166, 100, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
-        display->draw_string(20, 65, "Power Restored", Font::font12(), Color::Black, Color::White);
+        display->draw(display->text("POWER MANAGEMENT TEST")
+                          .at(10, 10)
+                          .font(&Font::font16())
+                          .foreground(Color::Black)
+                          .background(Color::White)
+                          .build());
+        display->draw(display->text("Test 5: After Power On")
+                          .at(10, 30)
+                          .font(&Font::font12())
+                          .foreground(Color::Black)
+                          .background(Color::White)
+                          .build());
+        display->draw(display->rectangle()
+                          .top_left(10, 50)
+                          .bottom_right(166, 100)
+                          .color(Color::Black)
+                          .border_width(DotPixel::Pixel2x2)
+                          .fill(DrawFill::Empty)
+                          .build());
+        display->draw(display->text("Power Restored")
+                          .at(20, 65)
+                          .font(&Font::font12())
+                          .foreground(Color::Black)
+                          .background(Color::White)
+                          .build());
 
         std::cout << "Refreshing display after power on...\n";
         if (auto result = display->refresh(); !result) {
@@ -138,25 +201,76 @@ auto main() -> int {
     // Final display
     std::cout << "\n=== Final State ===\n";
     display->clear(Color::White);
-    display->draw_string(10, 10, "POWER MANAGEMENT TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(10, 30, "All Tests Complete", Font::font12(), Color::Black, Color::White);
-    display->draw_rectangle(10, 50, 166, 140, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
+    display->draw(display->text("POWER MANAGEMENT TEST")
+                      .at(10, 10)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("All Tests Complete")
+                      .at(10, 30)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->rectangle()
+                      .top_left(10, 50)
+                      .bottom_right(166, 140)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel2x2)
+                      .fill(DrawFill::Empty)
+                      .build());
 
     std::size_t y_pos = 60;
-    display->draw_string(20, y_pos, "Tests Completed:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Tests Completed:")
+                      .at(20, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 15;
-    display->draw_string(20, y_pos, "1. Initial display", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("1. Initial display")
+                      .at(20, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 10;
-    display->draw_string(20, y_pos, "2. Manual sleep", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("2. Manual sleep")
+                      .at(20, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 10;
-    display->draw_string(20, y_pos, "3. Wake from sleep", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("3. Wake from sleep")
+                      .at(20, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 10;
     if (display->supports_power_control()) {
-      display->draw_string(20, y_pos, "4. Power off", Font::font8(), Color::Black, Color::White);
+      display->draw(display->text("4. Power off")
+                        .at(20, y_pos)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
       y_pos += 10;
-      display->draw_string(20, y_pos, "5. Power on", Font::font8(), Color::Black, Color::White);
+      display->draw(display->text("5. Power on")
+                        .at(20, y_pos)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
     } else {
-      display->draw_string(20, y_pos, "4-5. Not supported", Font::font8(), Color::Black, Color::White);
+      display->draw(display->text("4-5. Not supported")
+                        .at(20, y_pos)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
     }
 
     std::cout << "Final refresh...\n";

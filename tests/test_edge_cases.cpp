@@ -37,137 +37,331 @@ auto main() -> int {
     std::cout << "Display size: " << width << "x" << height << "\n\n";
 
     display->clear(Color::White);
-    display->draw_string(5, 5, "EDGE CASES TEST", Font::font16(), Color::Black, Color::White);
+    display->draw(display->text("EDGE CASES TEST")
+                      .at(5, 5)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Test 1: Out-of-bounds coordinates
     std::cout << "=== Test 1: Out-of-Bounds Coordinates ===\n";
-    display->draw_string(5, 25, "1. Out-of-bounds:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("1. Out-of-bounds:")
+                      .at(5, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Far out of bounds (should be silently clipped)
     std::cout << "  Drawing far out of bounds...\n";
     display->set_pixel(width + 1000, height + 1000, Color::Black);
-    display->draw_point(width + 100, height + 100, Color::Black, DotPixel::Pixel5x5);
-    display->draw_line(width + 50, height + 50, width + 100, height + 100, Color::Black);
+    display->draw(display->point().at(width + 100, height + 100).color(Color::Black).size(DotPixel::Pixel5x5).build());
+    display->draw(
+        display->line().from(width + 50, height + 50).to(width + 100, height + 100).color(Color::Black).build());
 
     // Negative-like (wrapped around due to std::size_t)
     std::cout << "  Drawing with wrapped coordinates...\n";
     constexpr std::size_t very_large = std::numeric_limits<std::size_t>::max() - 10;
     display->set_pixel(very_large, very_large, Color::Black);
-    display->draw_point(very_large, very_large, Color::Black, DotPixel::Pixel3x3);
+    display->draw(display->point().at(very_large, very_large).color(Color::Black).size(DotPixel::Pixel3x3).build());
 
-    display->draw_string(5, 40, "No crash (OK)", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("No crash (OK)")
+                      .at(5, 40)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Out-of-bounds coordinates handled gracefully.\n\n";
 
     // Test 2: Boundary coordinates
     std::cout << "=== Test 2: Boundary Coordinates ===\n";
-    display->draw_string(5, 55, "2. Boundaries:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("2. Boundaries:")
+                      .at(5, 55)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "  Drawing at exact boundaries...\n";
     // Draw at all four corners
-    display->draw_point(0, 0, Color::Black, DotPixel::Pixel2x2);
-    display->draw_point(width - 1, 0, Color::Black, DotPixel::Pixel2x2);
-    display->draw_point(0, height - 1, Color::Black, DotPixel::Pixel2x2);
-    display->draw_point(width - 1, height - 1, Color::Black, DotPixel::Pixel2x2);
+    display->draw(display->point().at(0, 0).color(Color::Black).size(DotPixel::Pixel2x2).build());
+    display->draw(display->point().at(width - 1, 0).color(Color::Black).size(DotPixel::Pixel2x2).build());
+    display->draw(display->point().at(0, height - 1).color(Color::Black).size(DotPixel::Pixel2x2).build());
+    display->draw(display->point().at(width - 1, height - 1).color(Color::Black).size(DotPixel::Pixel2x2).build());
 
     // Draw lines along edges
-    display->draw_line(0, 0, width - 1, 0, Color::Black);
-    display->draw_line(0, 0, 0, height - 1, Color::Black);
+    display->draw(display->line().from(0, 0).to(width - 1, 0).color(Color::Black).build());
+    display->draw(display->line().from(0, 0).to(0, height - 1).color(Color::Black).build());
 
-    display->draw_string(5, 70, "Corners marked", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Corners marked")
+                      .at(5, 70)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Boundary coordinates handled correctly.\n\n";
 
     // Test 3: Empty strings
     std::cout << "=== Test 3: Empty Strings ===\n";
-    display->draw_string(5, 85, "3. Empty strings:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("3. Empty strings:")
+                      .at(5, 85)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "  Drawing empty string...\n";
-    display->draw_string(5, 100, "", Font::font12(), Color::Black, Color::White);
+    display->draw(
+        display->text("").at(5, 100).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
 
-    display->draw_string(5, 100, "No crash (OK)", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("No crash (OK)")
+                      .at(5, 100)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Empty string handled gracefully.\n\n";
 
     // Test 4: Very large numbers
     std::cout << "=== Test 4: Large Numbers ===\n";
-    display->draw_string(5, 115, "4. Large numbers:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("4. Large numbers:")
+                      .at(5, 115)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "  Drawing very large numbers...\n";
-    display->draw_number(5, 130, std::numeric_limits<std::int32_t>::max(), Font::font8(), Color::Black, Color::White);
-    display->draw_number(5, 140, std::numeric_limits<std::int32_t>::min(), Font::font8(), Color::Black, Color::White);
-    display->draw_number(5, 150, 0, Font::font8(), Color::Black, Color::White);
+    display->draw(display->text()
+                      .number(std::numeric_limits<std::int32_t>::max())
+                      .at(5, 130)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text()
+                      .number(std::numeric_limits<std::int32_t>::min())
+                      .at(5, 140)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text()
+                      .number(0)
+                      .at(5, 150)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "✓ Large numbers handled correctly.\n\n";
 
     // Test 5: Zero-size shapes
     std::cout << "=== Test 5: Zero-Size Shapes ===\n";
-    display->draw_string(95, 25, "5. Zero sizes:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("5. Zero sizes:")
+                      .at(95, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "  Drawing zero-radius circle...\n";
-    display->draw_circle(120, 45, 0, Color::Black, DotPixel::Pixel1x1, DrawFill::Full);
+    display->draw(display->circle()
+                      .center(120, 45)
+                      .radius(0)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Full)
+                      .build());
 
     std::cout << "  Drawing zero-width rectangle...\n";
-    display->draw_rectangle(130, 40, 130, 50, Color::Black, DotPixel::Pixel1x1, DrawFill::Full);
+    display->draw(display->rectangle()
+                      .top_left(130, 40)
+                      .bottom_right(130, 50)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Full)
+                      .build());
 
     std::cout << "  Drawing zero-length line...\n";
-    display->draw_line(140, 45, 140, 45, Color::Black, DotPixel::Pixel1x1, LineStyle::Solid);
+    display->draw(display->line()
+                      .from(140, 45)
+                      .to(140, 45)
+                      .color(Color::Black)
+                      .width(DotPixel::Pixel1x1)
+                      .style(LineStyle::Solid)
+                      .build());
 
-    display->draw_string(95, 60, "No crash (OK)", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("No crash (OK)")
+                      .at(95, 60)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Zero-size shapes handled gracefully.\n\n";
 
     // Test 6: Empty bitmap
     std::cout << "=== Test 6: Empty Bitmap ===\n";
-    display->draw_string(95, 75, "6. Empty bitmap:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("6. Empty bitmap:")
+                      .at(95, 75)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "  Drawing empty bitmap...\n";
     std::vector<Color> empty_bitmap;
     display->draw_bitmap(95, 90, empty_bitmap, 0, 0);
 
-    display->draw_string(95, 90, "No crash (OK)", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("No crash (OK)")
+                      .at(95, 90)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Empty bitmap handled gracefully.\n\n";
 
     // Test 7: Overlapping operations
     std::cout << "=== Test 7: Overlapping Operations ===\n";
-    display->draw_string(95, 105, "7. Overlaps:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("7. Overlaps:")
+                      .at(95, 105)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "  Drawing overlapping shapes...\n";
-    display->draw_rectangle(95, 120, 130, 145, Color::Black, DotPixel::Pixel1x1, DrawFill::Full);
-    display->draw_circle(110, 132, 10, Color::White, DotPixel::Pixel1x1, DrawFill::Full);
-    display->draw_line(95, 120, 130, 145, Color::Black, DotPixel::Pixel2x2, LineStyle::Solid);
+    display->draw(display->rectangle()
+                      .top_left(95, 120)
+                      .bottom_right(130, 145)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Full)
+                      .build());
+    display->draw(display->circle()
+                      .center(110, 132)
+                      .radius(10)
+                      .color(Color::White)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Full)
+                      .build());
+    display->draw(display->line()
+                      .from(95, 120)
+                      .to(130, 145)
+                      .color(Color::Black)
+                      .width(DotPixel::Pixel2x2)
+                      .style(LineStyle::Solid)
+                      .build());
 
-    display->draw_string(95, 150, "Overlap OK", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Overlap OK")
+                      .at(95, 150)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Overlapping operations work correctly.\n\n";
 
     // Test 8: Inverted rectangles
     std::cout << "=== Test 8: Inverted Coordinates ===\n";
-    display->draw_string(5, 165, "8. Inverted coords:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("8. Inverted coords:")
+                      .at(5, 165)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "  Drawing with start > end...\n";
     // Rectangle with inverted coordinates (end before start)
-    display->draw_rectangle(60, 200, 20, 180, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
+    display->draw(display->rectangle()
+                      .top_left(60, 200)
+                      .bottom_right(20, 180)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Empty)
+                      .build());
 
     // Line with inverted coordinates
-    display->draw_line(100, 200, 70, 180, Color::Black, DotPixel::Pixel1x1, LineStyle::Solid);
+    display->draw(display->line()
+                      .from(100, 200)
+                      .to(70, 180)
+                      .color(Color::Black)
+                      .width(DotPixel::Pixel1x1)
+                      .style(LineStyle::Solid)
+                      .build());
 
-    display->draw_string(5, 210, "Handled OK", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Handled OK")
+                      .at(5, 210)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Inverted coordinates handled correctly.\n\n";
 
     // Test 9: Special characters
     std::cout << "=== Test 9: Special Characters ===\n";
-    display->draw_string(95, 165, "9. Special chars:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("9. Special chars:")
+                      .at(95, 165)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "  Drawing special characters...\n";
-    display->draw_string(95, 180, "!@#$%^&*()", Font::font8(), Color::Black, Color::White);
-    display->draw_string(95, 190, "[]{}|\\<>?/", Font::font8(), Color::Black, Color::White);
-    display->draw_string(95, 200, "~`-_=+:;\"',.", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("!@#$%^&*()")
+                      .at(95, 180)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("[]{}|\\<>?/")
+                      .at(95, 190)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("~`-_=+:;\"\047,.")
+                      .at(95, 200)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
-    display->draw_string(95, 210, "Chars OK", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Chars OK")
+                      .at(95, 210)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Special characters handled correctly.\n\n";
 
     // Summary
     std::cout << "=== All Edge Cases Tested ===\n";
-    display->draw_rectangle(3, 223, 173, 260, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-    display->draw_string(10, 230, "All edge cases handled:", Font::font8(), Color::Black, Color::White);
-    display->draw_string(10, 240, "No crashes or exceptions!", Font::font8(), Color::Black, Color::White);
-    display->draw_string(10, 250, "System is robust.", Font::font8(), Color::Black, Color::White);
+    display->draw(display->rectangle()
+                      .top_left(3, 223)
+                      .bottom_right(173, 260)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel1x1)
+                      .fill(DrawFill::Empty)
+                      .build());
+    display->draw(display->text("All edge cases handled:")
+                      .at(10, 230)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("No crashes or exceptions!")
+                      .at(10, 240)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("System is robust.")
+                      .at(10, 250)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Refresh display
     std::cout << "Refreshing display...\n";

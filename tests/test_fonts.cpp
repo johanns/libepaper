@@ -34,58 +34,163 @@ auto main() -> int {
     display->clear(Color::White);
 
     // Title
-    display->draw_string(5, 2, "FONT SIZE TEST", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("FONT SIZE TEST")
+                      .at(5, 2)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::size_t y_pos = 20;
 
     // Font8 test
     std::cout << "Testing Font8...\n";
-    display->draw_string(5, y_pos, "Font8:", Font::font8(), Color::Black, Color::White);
-    display->draw_string(50, y_pos, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Font8:")
+                      .at(5, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                      .at(50, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 10;
-    display->draw_string(50, y_pos, "abcdefghijklmnopqrstuvwxyz", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("abcdefghijklmnopqrstuvwxyz")
+                      .at(50, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 10;
-    display->draw_string(50, y_pos, "0123456789 !@#$%^&*()", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("0123456789 !@#$%^&*()")
+                      .at(50, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 15;
 
     // Font12 test
     std::cout << "Testing Font12...\n";
-    display->draw_string(5, y_pos, "Font12:", Font::font12(), Color::Black, Color::White);
-    display->draw_string(60, y_pos, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Font12:")
+                      .at(5, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                      .at(60, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 14;
-    display->draw_string(60, y_pos, "abcdefghijklmnopqrstuvwxyz", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("abcdefghijklmnopqrstuvwxyz")
+                      .at(60, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 14;
-    display->draw_string(60, y_pos, "0123456789 !@#$%", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("0123456789 !@#$%")
+                      .at(60, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 18;
 
     // Font16 test
     std::cout << "Testing Font16...\n";
-    display->draw_string(5, y_pos, "Font16:", Font::font16(), Color::Black, Color::White);
-    display->draw_string(70, y_pos, "ABCDEFGHIJKLMNOPQRST", Font::font16(), Color::Black, Color::White);
+    display->draw(display->text("Font16:")
+                      .at(5, y_pos)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("ABCDEFGHIJKLMNOPQRST")
+                      .at(70, y_pos)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 18;
-    display->draw_string(70, y_pos, "abcdefghijklmnopqrst", Font::font16(), Color::Black, Color::White);
+    display->draw(display->text("abcdefghijklmnopqrst")
+                      .at(70, y_pos)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 18;
-    display->draw_string(70, y_pos, "0123456789 !@#$", Font::font16(), Color::Black, Color::White);
+    display->draw(display->text("0123456789 !@#$")
+                      .at(70, y_pos)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 22;
 
     // Font20 test
     std::cout << "Testing Font20...\n";
-    display->draw_string(5, y_pos, "Font20:", Font::font20(), Color::Black, Color::White);
-    display->draw_string(85, y_pos, "ABCDEFGHIJKLMNO", Font::font20(), Color::Black, Color::White);
+    display->draw(display->text("Font20:")
+                      .at(5, y_pos)
+                      .font(&Font::font20())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("ABCDEFGHIJKLMNO")
+                      .at(85, y_pos)
+                      .font(&Font::font20())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 22;
-    display->draw_string(85, y_pos, "abcdefghijklmno", Font::font20(), Color::Black, Color::White);
+    display->draw(display->text("abcdefghijklmno")
+                      .at(85, y_pos)
+                      .font(&Font::font20())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 22;
-    display->draw_string(85, y_pos, "0123456789", Font::font20(), Color::Black, Color::White);
+    display->draw(display->text("0123456789")
+                      .at(85, y_pos)
+                      .font(&Font::font20())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 26;
 
     // Font24 test
     std::cout << "Testing Font24...\n";
-    display->draw_string(5, y_pos, "Font24:", Font::font24(), Color::Black, Color::White);
-    display->draw_string(95, y_pos, "ABCDEFGHIJKLM", Font::font24(), Color::Black, Color::White);
+    display->draw(display->text("Font24:")
+                      .at(5, y_pos)
+                      .font(&Font::font24())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("ABCDEFGHIJKLM")
+                      .at(95, y_pos)
+                      .font(&Font::font24())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 26;
-    display->draw_string(95, y_pos, "abcdefghijklm", Font::font24(), Color::Black, Color::White);
+    display->draw(display->text("abcdefghijklm")
+                      .at(95, y_pos)
+                      .font(&Font::font24())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 26;
-    display->draw_string(95, y_pos, "0123456789", Font::font24(), Color::Black, Color::White);
+    display->draw(display->text("0123456789")
+                      .at(95, y_pos)
+                      .font(&Font::font24())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Refresh display
     std::cout << "Refreshing display...\n";

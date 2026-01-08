@@ -16,30 +16,110 @@ auto test_corner_markers(Display &display, std::string_view orientation_name) ->
   display.clear(Color::White);
 
   // Title
-  display.draw_string(5, 5, orientation_name, Font::font12(), Color::Black, Color::White);
-  display.draw_string(5, 20, "Corner Transform Test", Font::font8(), Color::Black, Color::White);
+  display.draw(display.text(orientation_name)
+                   .at(5, 5)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text("Corner Transform Test")
+                   .at(5, 20)
+                   .font(&Font::font8())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
 
   // Draw corners with distinctive patterns
   // Top-left (0, 0)
-  display.draw_rectangle(0, 0, 20, 20, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
-  display.draw_string(3, 6, "TL", Font::font8(), Color::Black, Color::White);
-  display.draw_line(0, 0, 10, 10, Color::Black, DotPixel::Pixel1x1, LineStyle::Solid);
+  display.draw(display.rectangle()
+                   .top_left(0, 0)
+                   .bottom_right(20, 20)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel2x2)
+                   .fill(DrawFill::Empty)
+                   .build());
+  display.draw(
+      display.text("TL").at(3, 6).font(&Font::font8()).foreground(Color::Black).background(Color::White).build());
+  display.draw(display.line()
+                   .from(0, 0)
+                   .to(10, 10)
+                   .color(Color::Black)
+                   .width(DotPixel::Pixel1x1)
+                   .style(LineStyle::Solid)
+                   .build());
 
   // Top-right (width-1, 0)
-  display.draw_rectangle(width - 21, 0, width - 1, 20, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
-  display.draw_string(width - 18, 6, "TR", Font::font8(), Color::Black, Color::White);
-  display.draw_line(width - 1, 0, width - 11, 10, Color::Black, DotPixel::Pixel1x1, LineStyle::Solid);
+  display.draw(display.rectangle()
+                   .top_left(width - 21, 0)
+                   .bottom_right(width - 1, 20)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel2x2)
+                   .fill(DrawFill::Empty)
+                   .build());
+  display.draw(display.text("TR")
+                   .at(width - 18, 6)
+                   .font(&Font::font8())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.line()
+                   .from(width - 1, 0)
+                   .to(width - 11, 10)
+                   .color(Color::Black)
+                   .width(DotPixel::Pixel1x1)
+                   .style(LineStyle::Solid)
+                   .build());
 
   // Bottom-left (0, height-1)
-  display.draw_rectangle(0, height - 21, 20, height - 1, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
-  display.draw_string(3, height - 15, "BL", Font::font8(), Color::Black, Color::White);
-  display.draw_line(0, height - 1, 10, height - 11, Color::Black, DotPixel::Pixel1x1, LineStyle::Solid);
+  display.draw(display.rectangle()
+                   .top_left(0, height - 21)
+                   .bottom_right(20, height - 1)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel2x2)
+                   .fill(DrawFill::Empty)
+                   .build());
+  display.draw(display.text("BL")
+                   .at(3, height - 15)
+                   .font(&Font::font8())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.line()
+                   .from(0, height - 1)
+                   .to(10, height - 11)
+                   .color(Color::Black)
+                   .width(DotPixel::Pixel1x1)
+                   .style(LineStyle::Solid)
+                   .build());
 
   // Bottom-right (width-1, height-1)
-  display.draw_rectangle(width - 21, height - 21, width - 1, height - 1, Color::Black, DotPixel::Pixel2x2,
-                         DrawFill::Empty);
-  display.draw_string(width - 18, height - 15, "BR", Font::font8(), Color::Black, Color::White);
-  display.draw_line(width - 1, height - 1, width - 11, height - 11, Color::Black, DotPixel::Pixel1x1, LineStyle::Solid);
+  display.draw(display.rectangle()
+                   .top_left(width - 21, height - 21)
+                   .bottom_right(width - 1, height - 1)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel2x2)
+                   .fill(DrawFill::Empty)
+                   .build());
+  display.draw(display.rectangle()
+                   .top_left(width - 21, height - 21)
+                   .bottom_right(width - 1, height - 1)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel2x2)
+                   .fill(DrawFill::Empty)
+                   .build());
+  display.draw(display.text("BR")
+                   .at(width - 18, height - 15)
+                   .font(&Font::font8())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.line()
+                   .from(width - 1, height - 1)
+                   .to(width - 11, height - 11)
+                   .color(Color::Black)
+                   .width(DotPixel::Pixel1x1)
+                   .style(LineStyle::Solid)
+                   .build());
 
   // Test edge coordinates
   // Draw pixels along all four edges
@@ -55,15 +135,50 @@ auto test_corner_markers(Display &display, std::string_view orientation_name) ->
   // Draw center cross
   const auto center_x = width / 2;
   const auto center_y = height / 2;
-  display.draw_line(center_x - 15, center_y, center_x + 15, center_y, Color::Black, DotPixel::Pixel2x2,
-                    LineStyle::Solid);
-  display.draw_line(center_x, center_y - 15, center_x, center_y + 15, Color::Black, DotPixel::Pixel2x2,
-                    LineStyle::Solid);
-  display.draw_circle(center_x, center_y, 10, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
+  display.draw(display.line()
+                   .from(center_x - 15, center_y)
+                   .to(center_x + 15, center_y)
+                   .color(Color::Black)
+                   .width(DotPixel::Pixel2x2)
+                   .style(LineStyle::Solid)
+                   .build());
+  display.draw(display.line()
+                   .from(center_x - 15, center_y)
+                   .to(center_x + 15, center_y)
+                   .color(Color::Black)
+                   .width(DotPixel::Pixel2x2)
+                   .style(LineStyle::Solid)
+                   .build());
+  display.draw(display.line()
+                   .from(center_x, center_y - 15)
+                   .to(center_x, center_y + 15)
+                   .color(Color::Black)
+                   .width(DotPixel::Pixel2x2)
+                   .style(LineStyle::Solid)
+                   .build());
+  display.draw(display.line()
+                   .from(center_x, center_y - 15)
+                   .to(center_x, center_y + 15)
+                   .color(Color::Black)
+                   .width(DotPixel::Pixel2x2)
+                   .style(LineStyle::Solid)
+                   .build());
+  display.draw(display.circle()
+                   .center(center_x, center_y)
+                   .radius(10)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel1x1)
+                   .fill(DrawFill::Empty)
+                   .build());
 
   // Draw dimension information
   std::string dim_str = std::to_string(width) + "x" + std::to_string(height);
-  display.draw_string(center_x - 25, center_y + 20, dim_str, Font::font8(), Color::Black, Color::White);
+  display.draw(display.text(dim_str)
+                   .at(center_x - 25, center_y + 20)
+                   .font(&Font::font8())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
 }
 
 auto main() -> int {
@@ -187,7 +302,12 @@ auto main() -> int {
 
       std::cout << "Testing intensive boundary operations...\n";
       display->clear(Color::White);
-      display->draw_string(5, 5, "BOUNDARY STRESS", Font::font12(), Color::Black, Color::White);
+      display->draw(display->text("BOUNDARY STRESS")
+                        .at(5, 5)
+                        .font(&Font::font12())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
 
       // Draw many points along all edges
       std::cout << "  Drawing points along edges...\n";
@@ -202,25 +322,71 @@ auto main() -> int {
 
       // Draw diagonal lines from corners
       std::cout << "  Drawing diagonal lines from corners...\n";
-      display->draw_line(0, 0, width - 1, height - 1, Color::Black, DotPixel::Pixel1x1, LineStyle::Solid);
-      display->draw_line(width - 1, 0, 0, height - 1, Color::Black, DotPixel::Pixel1x1, LineStyle::Dotted);
+      display->draw(display->line()
+                        .from(0, 0)
+                        .to(width - 1, height - 1)
+                        .color(Color::Black)
+                        .width(DotPixel::Pixel1x1)
+                        .style(LineStyle::Solid)
+                        .build());
+      display->draw(display->line()
+                        .from(width - 1, 0)
+                        .to(0, height - 1)
+                        .color(Color::Black)
+                        .width(DotPixel::Pixel1x1)
+                        .style(LineStyle::Dotted)
+                        .build());
 
       // Draw circles at corners
       std::cout << "  Drawing circles at corners...\n";
-      display->draw_circle(15, 15, 10, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-      display->draw_circle(width - 16, 15, 10, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-      display->draw_circle(15, height - 16, 10, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-      display->draw_circle(width - 16, height - 16, 10, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
+      display->draw(display->circle()
+                        .center(15, 15)
+                        .radius(10)
+                        .color(Color::Black)
+                        .border_width(DotPixel::Pixel1x1)
+                        .fill(DrawFill::Empty)
+                        .build());
+      display->draw(display->circle()
+                        .center(width - 16, 15)
+                        .radius(10)
+                        .color(Color::Black)
+                        .border_width(DotPixel::Pixel1x1)
+                        .fill(DrawFill::Empty)
+                        .build());
+      display->draw(display->circle()
+                        .center(15, height - 16)
+                        .radius(10)
+                        .color(Color::Black)
+                        .border_width(DotPixel::Pixel1x1)
+                        .fill(DrawFill::Empty)
+                        .build());
+      display->draw(display->circle()
+                        .center(width - 16, height - 16)
+                        .radius(10)
+                        .color(Color::Black)
+                        .border_width(DotPixel::Pixel1x1)
+                        .fill(DrawFill::Empty)
+                        .build());
 
       // Test exact boundary coordinates
       std::cout << "  Testing exact boundary pixels...\n";
-      display->draw_point(0, 0, Color::Black, DotPixel::Pixel3x3);
-      display->draw_point(width - 1, 0, Color::Black, DotPixel::Pixel3x3);
-      display->draw_point(0, height - 1, Color::Black, DotPixel::Pixel3x3);
-      display->draw_point(width - 1, height - 1, Color::Black, DotPixel::Pixel3x3);
+      display->draw(display->point().at(0, 0).color(Color::Black).size(DotPixel::Pixel3x3).build());
+      display->draw(display->point().at(width - 1, 0).color(Color::Black).size(DotPixel::Pixel3x3).build());
+      display->draw(display->point().at(0, height - 1).color(Color::Black).size(DotPixel::Pixel3x3).build());
+      display->draw(display->point().at(width - 1, height - 1).color(Color::Black).size(DotPixel::Pixel3x3).build());
 
-      display->draw_string(5, 25, "All boundaries tested", Font::font8(), Color::Black, Color::White);
-      display->draw_string(5, 35, "No artifacts expected", Font::font8(), Color::Black, Color::White);
+      display->draw(display->text("All boundaries tested")
+                        .at(5, 25)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
+      display->draw(display->text("No artifacts expected")
+                        .at(5, 35)
+                        .font(&Font::font8())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
 
       std::cout << "Refreshing display...\n";
       if (auto result = display->refresh(); !result) {

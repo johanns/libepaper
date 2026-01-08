@@ -45,8 +45,18 @@ auto main() -> int {
     auto start_time = std::chrono::steady_clock::now();
 
     display->clear(Color::White);
-    display->draw_string(5, 5, "STRESS TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(5, 25, "Test 1: Rapid Draws", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("STRESS TEST")
+                      .at(5, 5)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Test 1: Rapid Draws")
+                      .at(5, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     for (int i = 0; i < 1000; ++i) {
       const auto x = static_cast<std::size_t>(i % width);
@@ -62,7 +72,12 @@ auto main() -> int {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
     std::cout << "\n  Completed in " << duration.count() << " ms\n";
-    display->draw_string(5, 150, "1000 draws: OK", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("1000 draws: OK")
+                      .at(5, 150)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     std::cout << "✓ Rapid drawing operations completed.\n\n";
 
     // Test 2: Multiple refreshes
@@ -76,19 +91,52 @@ auto main() -> int {
       std::cout << "  Refresh " << i << "/5...\n";
 
       display->clear(Color::White);
-      display->draw_string(5, 5, "STRESS TEST", Font::font16(), Color::Black, Color::White);
-      display->draw_string(5, 25, "Test 2: Refreshes", Font::font12(), Color::Black, Color::White);
+      display->draw(display->text("STRESS TEST")
+                        .at(5, 5)
+                        .font(&Font::font16())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
+      display->draw(display->text("Test 2: Refreshes")
+                        .at(5, 25)
+                        .font(&Font::font12())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
 
       std::string refresh_msg = "Refresh " + std::to_string(i) + " of 5";
-      display->draw_rectangle(5, 45, 171, 100, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
-      display->draw_string(20, 60, refresh_msg, Font::font16(), Color::Black, Color::White);
+      display->draw(display->rectangle()
+                        .top_left(5, 45)
+                        .bottom_right(171, 100)
+                        .color(Color::Black)
+                        .border_width(DotPixel::Pixel2x2)
+                        .fill(DrawFill::Empty)
+                        .build());
+      display->draw(display->text(refresh_msg)
+                        .at(20, 60)
+                        .font(&Font::font16())
+                        .foreground(Color::Black)
+                        .background(Color::White)
+                        .build());
 
       // Draw progress bar
       const std::size_t bar_width = 140;
       const std::size_t filled_width = (bar_width * i) / 5;
-      display->draw_rectangle(20, 85, 20 + bar_width, 95, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
+      display->draw(display->rectangle()
+                        .top_left(20, 85)
+                        .bottom_right(20 + bar_width, 95)
+                        .color(Color::Black)
+                        .border_width(DotPixel::Pixel1x1)
+                        .fill(DrawFill::Empty)
+                        .build());
       if (filled_width > 0) {
-        display->draw_rectangle(21, 86, 20 + filled_width, 94, Color::Black, DotPixel::Pixel1x1, DrawFill::Full);
+        display->draw(display->rectangle()
+                          .top_left(21, 86)
+                          .bottom_right(20 + filled_width, 94)
+                          .color(Color::Black)
+                          .border_width(DotPixel::Pixel1x1)
+                          .fill(DrawFill::Full)
+                          .build());
       }
 
       if (auto result = display->refresh(); !result) {
@@ -110,14 +158,30 @@ auto main() -> int {
     start_time = std::chrono::steady_clock::now();
 
     display->clear(Color::White);
-    display->draw_string(5, 5, "STRESS TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(5, 25, "Test 3: Complex Scene", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("STRESS TEST")
+                      .at(5, 5)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Test 3: Complex Scene")
+                      .at(5, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Draw grid of circles
     std::cout << "  Drawing circles...\n";
     for (std::size_t y = 50; y < height - 20; y += 20) {
       for (std::size_t x = 10; x < width - 10; x += 20) {
-        display->draw_circle(x, y, 5, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
+        display->draw(display->circle()
+                          .center(x, y)
+                          .radius(5)
+                          .color(Color::Black)
+                          .border_width(DotPixel::Pixel1x1)
+                          .fill(DrawFill::Empty)
+                          .build());
       }
     }
 
@@ -125,7 +189,13 @@ auto main() -> int {
     std::cout << "  Drawing rectangles...\n";
     for (std::size_t y = 55; y < height - 20; y += 20) {
       for (std::size_t x = 15; x < width - 10; x += 20) {
-        display->draw_rectangle(x, y, x + 8, y + 8, Color::Black, DotPixel::Pixel1x1, DrawFill::Full);
+        display->draw(display->rectangle()
+                          .top_left(x, y)
+                          .bottom_right(x + 8, y + 8)
+                          .color(Color::Black)
+                          .border_width(DotPixel::Pixel1x1)
+                          .fill(DrawFill::Full)
+                          .build());
       }
     }
 
@@ -148,8 +218,18 @@ auto main() -> int {
     start_time = std::chrono::steady_clock::now();
 
     display->clear(Color::White);
-    display->draw_string(5, 5, "STRESS TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(5, 25, "Test 4: Memory Stress", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("STRESS TEST")
+                      .at(5, 5)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Test 4: Memory Stress")
+                      .at(5, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     // Create a large bitmap (as large as the display)
     std::cout << "  Allocating large bitmap (" << width << "x" << height << " pixels)...\n";
@@ -205,41 +285,117 @@ auto main() -> int {
     // Final summary display
     std::cout << "=== All Stress Tests Complete ===\n";
     display->clear(Color::White);
-    display->draw_string(5, 5, "STRESS TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(5, 25, "All Tests Complete!", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("STRESS TEST")
+                      .at(5, 5)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("All Tests Complete!")
+                      .at(5, 25)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
-    display->draw_rectangle(5, 45, 171, 220, Color::Black, DotPixel::Pixel2x2, DrawFill::Empty);
+    display->draw(display->rectangle()
+                      .top_left(5, 45)
+                      .bottom_right(171, 220)
+                      .color(Color::Black)
+                      .border_width(DotPixel::Pixel2x2)
+                      .fill(DrawFill::Empty)
+                      .build());
 
     std::size_t y_pos = 55;
-    display->draw_string(10, y_pos, "Completed Tests:", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("Completed Tests:")
+                      .at(10, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 18;
 
-    display->draw_string(10, y_pos, "1. Rapid drawing", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("1. Rapid drawing")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "1000 operations", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("1000 operations")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 18;
 
-    display->draw_string(10, y_pos, "2. Multiple refreshes", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("2. Multiple refreshes")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "5 consecutive", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("5 consecutive")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 18;
 
-    display->draw_string(10, y_pos, "3. Complex scene", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("3. Complex scene")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "Many elements", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Many elements")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 18;
 
-    display->draw_string(10, y_pos, "4. Memory stress", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("4. Memory stress")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "Large bitmap", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("Large bitmap")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 18;
 
-    display->draw_string(10, y_pos, "5. Rapid clears", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("5. Rapid clears")
+                      .at(10, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 12;
-    display->draw_string(15, y_pos, "100 operations", Font::font8(), Color::Black, Color::White);
+    display->draw(display->text("100 operations")
+                      .at(15, y_pos)
+                      .font(&Font::font8())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
     y_pos += 20;
 
-    display->draw_string(10, y_pos, "System stable!", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("System stable!")
+                      .at(10, y_pos)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "Final refresh...\n";
     if (auto result = display->refresh(); !result) {

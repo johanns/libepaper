@@ -40,9 +40,24 @@ auto main() -> int {
     std::cout << "Screen cleared to white.\n";
 
     // Optionally show a message before clearing (for visual confirmation)
-    display->draw_string(10, 10, "FINAL TEST", Font::font16(), Color::Black, Color::White);
-    display->draw_string(10, 30, "Clearing screen...", Font::font12(), Color::Black, Color::White);
-    display->draw_string(10, 50, "Powering off...", Font::font12(), Color::Black, Color::White);
+    display->draw(display->text("FINAL TEST")
+                      .at(10, 10)
+                      .font(&Font::font16())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Clearing screen...")
+                      .at(10, 30)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
+    display->draw(display->text("Powering off...")
+                      .at(10, 50)
+                      .font(&Font::font12())
+                      .foreground(Color::Black)
+                      .background(Color::White)
+                      .build());
 
     std::cout << "Refreshing display with final message...\n";
     if (auto result = display->refresh(); !result) {
