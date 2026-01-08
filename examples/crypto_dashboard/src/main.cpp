@@ -103,7 +103,7 @@ auto main(int argc, char *argv[]) -> int {
 
     // Create display using factory function in landscape mode
     // Auto-sleep enabled - transparent wake management handles multiple refreshes automatically
-    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape90, true);
+    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape270, true);
     if (!display) {
       std::cerr << "Failed to initialize display: " << display.error().what() << "\n";
       return EXIT_FAILURE;

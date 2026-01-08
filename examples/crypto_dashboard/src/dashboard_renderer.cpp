@@ -52,13 +52,24 @@ void DashboardRenderer::render_error(const std::string &error_message) {
   display_.clear();
 
   // Draw error title
-  display_.draw_string(5, 5, "Error", Font::font16(), Color::Black, Color::White);
+  display_.draw(
+      display_.text("Error").at(5, 5).font(&Font::font16()).foreground(Color::Black).background(Color::White).build());
 
   // Draw error message (word wrap if needed)
-  display_.draw_string(5, 30, error_message, Font::font12(), Color::Black, Color::White);
+  display_.draw(display_.text(error_message)
+                    .at(5, 30)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Draw retry message
-  display_.draw_string(5, 60, "Retrying...", Font::font12(), Color::Black, Color::White);
+  display_.draw(display_.text("Retrying...")
+                    .at(5, 60)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   if (auto result = display_.refresh(); !result) {
     std::cerr << "Warning: Failed to refresh display: " << result.error().what() << "\n";
@@ -74,23 +85,48 @@ void DashboardRenderer::clear() {
 
 void DashboardRenderer::draw_header() {
   // Title
-  display_.draw_string(5, 2, "CRYPTO DASHBOARD", Font::font16(), Color::Black, Color::White);
+  display_.draw(display_.text("CRYPTO DASHBOARD")
+                    .at(5, 2)
+                    .font(&Font::font16())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 
   // Horizontal line under title
-  display_.draw_line(0, 20, display_.effective_width(), 20, Color::Black);
+  display_.draw(display_.line().from(0, 20).to(display_.effective_width(), 20).color(Color::Black).build());
 }
 
 void DashboardRenderer::draw_price_section(const CryptoPrice &btc, const CryptoPrice &eth) {
   constexpr size_t section_y = 24;
 
   // Bitcoin price
-  display_.draw_string(5, section_y, "BTC", Font::font12(), Color::Black, Color::White);
-  display_.draw_string(40, section_y, format_price(btc.price), Font::font12(), Color::Black, Color::White);
+  display_.draw(display_.text("BTC")
+                    .at(5, section_y)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  display_.draw(display_.text(format_price(btc.price))
+                    .at(40, section_y)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
   draw_price_indicator(120, section_y, btc.is_positive_change(), btc.change_24h);
 
   // Ethereum price
-  display_.draw_string(5, section_y + 14, "ETH", Font::font12(), Color::Black, Color::White);
-  display_.draw_string(40, section_y + 14, format_price(eth.price), Font::font12(), Color::Black, Color::White);
+  display_.draw(display_.text("ETH")
+                    .at(5, section_y + 14)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  display_.draw(display_.text(format_price(eth.price))
+                    .at(40, section_y + 14)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
   draw_price_indicator(120, section_y + 14, eth.is_positive_change(), eth.change_24h);
 }
 
@@ -100,14 +136,21 @@ void DashboardRenderer::draw_price_indicator(size_t x, size_t y, bool positive, 
   // Draw arrow indicator
   if (positive) {
     // Up arrow (▲)
-    display_.draw_string(x, y, "^", Font::font12(), Color::Black, Color::White);
+    display_.draw(
+        display_.text("^").at(x, y).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
   } else {
     // Down arrow (▼)
-    display_.draw_string(x, y, "v", Font::font12(), Color::Black, Color::White);
+    display_.draw(
+        display_.text("v").at(x, y).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
   }
 
   // Draw percentage
-  display_.draw_string(x + 10, y, change_str, Font::font12(), Color::Black, Color::White);
+  display_.draw(display_.text(change_str)
+                    .at(x + 10, y)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
 }
 
 void DashboardRenderer::render_combined_screen(const CryptoPrice &btc, const CryptoPrice &eth,
@@ -134,8 +177,18 @@ void DashboardRenderer::render_eth_dedicated_screen(const CryptoPrice &eth, cons
 void DashboardRenderer::draw_price_section_single(const CryptoPrice &price, const std::string &label) {
   constexpr size_t section_y = 24;
 
-  display_.draw_string(5, section_y, label, Font::font16(), Color::Black, Color::White);
-  display_.draw_string(50, section_y, format_price(price.price), Font::font16(), Color::Black, Color::White);
+  display_.draw(display_.text(label)
+                    .at(5, section_y)
+                    .font(&Font::font16())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  display_.draw(display_.text(format_price(price.price))
+                    .at(50, section_y)
+                    .font(&Font::font16())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
   draw_price_indicator(180, section_y, price.is_positive_change(), price.change_24h);
 }
 
@@ -147,45 +200,65 @@ void DashboardRenderer::draw_charts_side_by_side(const PriceHistory &btc_history
   constexpr size_t chart_spacing = 12; // 5 (left) + 120 + 12 + 120 + 7 (right) = 264
 
   // BTC chart (left)
-  display_.draw_string(5, chart_y, "BTC 30d", Font::font12(), Color::Black, Color::White);
+  display_.draw(display_.text("BTC 30d")
+                    .at(5, chart_y)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
   if (!btc_history.empty()) {
     draw_line_chart(5, chart_y + 14, chart_width, chart_height, btc_history.prices);
   }
 
   // ETH chart (right)
   const size_t eth_chart_x = 5 + chart_width + chart_spacing;
-  display_.draw_string(eth_chart_x, chart_y, "ETH 30d", Font::font12(), Color::Black, Color::White);
+  display_.draw(display_.text("ETH 30d")
+                    .at(eth_chart_x, chart_y)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
   if (!eth_history.empty()) {
     draw_line_chart(eth_chart_x, chart_y + 14, chart_width, chart_height, eth_history.prices);
   }
 }
 
-void DashboardRenderer::draw_charts_stacked(const PriceHistory &top_history, const PriceHistory &bottom_history) {
-  // Display: 264x176 (pixels 0-175)
-  // Layout: Header (0-20) + Price (24-43) + Charts (44-175)
+void DashboardRenderer::draw_charts_stacked(const PriceHistory &history_30d, const PriceHistory &history_6mo) {
+  // Display: 264x176 (pixels 0-175) in landscape mode
+  // Layout: Header (0-20) + Price section (24-43) + Charts (44-175)
   // Available for charts: 176 - 44 = 132 pixels
-  // Split evenly: 14 (label) + 49 (chart) + 4 (space) + 14 (label) + 49 (chart) + 2 (margin) = 132
+  // Split: 14 (label) + 49 (chart) + 4 (spacing) + 14 (label) + 49 (chart) + 2 (margin) = 132
   // Both charts are 49 pixels tall for visual symmetry
-  // draw_rectangle draws TO (y+height), so y=126 + height=49 draws TO y=175 (last valid pixel)
+  // Rectangle draws TO (y+height), so y=126 + height=49 draws TO y=175 (last valid pixel)
 
   constexpr size_t chart_start_y = 44;
-  constexpr size_t chart_height = 49; // 49 pixels to stay within 0-175 bounds
+  constexpr size_t chart_height = 49; // 49 pixels to stay within 0-175 display bounds
   constexpr size_t chart_width = 254; // 264 - 5 (left) - 5 (right) = 254
   constexpr size_t chart_spacing = 4;
 
   // Top chart (30-day)
   // Label: y=44-57, Chart: y=58-106 (height=49), draws TO y=107
-  display_.draw_string(5, chart_start_y, top_history.symbol + " 30d", Font::font12(), Color::Black, Color::White);
-  if (!top_history.empty()) {
-    draw_line_chart(5, chart_start_y + 14, chart_width, chart_height, top_history.prices);
+  display_.draw(display_.text("30 Days")
+                    .at(5, chart_start_y)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  if (!history_30d.empty()) {
+    draw_line_chart(5, chart_start_y + 14, chart_width, chart_height, history_30d.prices);
   }
 
   // Bottom chart (6-month)
   // Label: y=111-124, Chart: y=126-174 (height=49), draws TO y=175 (safe!)
   const size_t bottom_chart_y = chart_start_y + 14 + chart_height + chart_spacing;
-  display_.draw_string(5, bottom_chart_y, bottom_history.symbol + " 6mo", Font::font12(), Color::Black, Color::White);
-  if (!bottom_history.empty()) {
-    draw_line_chart(5, bottom_chart_y + 14, chart_width, chart_height, bottom_history.prices);
+  display_.draw(display_.text("6 Months")
+                    .at(5, bottom_chart_y)
+                    .font(&Font::font12())
+                    .foreground(Color::Black)
+                    .background(Color::White)
+                    .build());
+  if (!history_6mo.empty()) {
+    draw_line_chart(5, bottom_chart_y + 14, chart_width, chart_height, history_6mo.prices);
   }
 }
 
@@ -196,7 +269,7 @@ void DashboardRenderer::draw_line_chart(size_t x, size_t y, size_t width, size_t
   }
 
   // Draw border
-  display_.draw_rectangle(x, y, x + width, y + height, Color::Black);
+  display_.draw(display_.rectangle().top_left(x, y).bottom_right(x + width, y + height).color(Color::Black).build());
 
   if (data.size() < 2) {
     return;
@@ -210,7 +283,7 @@ void DashboardRenderer::draw_line_chart(size_t x, size_t y, size_t width, size_t
   if (range < 0.0001) {
     // Flat line - draw at middle
     const size_t middle_y = y + height / 2;
-    display_.draw_line(x, middle_y, x + width, middle_y, Color::Black);
+    display_.draw(display_.line().from(x, middle_y).to(x + width, middle_y).color(Color::Black).build());
     return;
   }
 
@@ -223,7 +296,7 @@ void DashboardRenderer::draw_line_chart(size_t x, size_t y, size_t width, size_t
     const size_t y1 = y + height - static_cast<size_t>(((data[i - 1] - min_val) / range) * static_cast<double>(height));
     const size_t y2 = y + height - static_cast<size_t>(((data[i] - min_val) / range) * static_cast<double>(height));
 
-    display_.draw_line(x1, y1, x2, y2, Color::Black);
+    display_.draw(display_.line().from(x1, y1).to(x2, y2).color(Color::Black).build());
   }
 }
 

@@ -52,14 +52,27 @@ cmake --build build --target examples
 // Initialize display
 Device device;
 device.init();
-auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, 
+auto display = create_display<EPD27>(device, DisplayMode::BlackWhite,
                                      Orientation::Landscape90).value();
 
 // Draw your layout
 display.clear(Color::White);
-display.draw_string(10, 10, "Test Layout", Font::font16(), 
-                   Color::Black, Color::White);
-display.draw_rectangle(5, 5, 250, 170, Color::Black, DrawFill::Empty);
+display.draw(
+    display.text("Test Layout")
+        .at(10, 10)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
+display.draw(
+    display.rectangle()
+        .top_left(5, 5)
+        .bottom_right(250, 170)
+        .color(Color::Black)
+        .fill(DrawFill::Empty)
+        .build()
+);
 
 // Export to BMP for instant inspection (no hardware needed!)
 auto result = display.save_framebuffer_to_bmp("debug_layout.bmp");
@@ -114,11 +127,11 @@ The BMP export maps e-paper colors to RGB:
 
 ## Benefits
 
-✅ **Instant feedback**: See layout immediately without hardware  
-✅ **Fast iteration**: Test multiple designs in seconds  
-✅ **Accurate**: Shows exactly what display will show  
-✅ **Universal**: View BMP on any device  
-✅ **Efficient**: Save hours of development time  
+✅ **Instant feedback**: See layout immediately without hardware
+✅ **Fast iteration**: Test multiple designs in seconds
+✅ **Accurate**: Shows exactly what display will show
+✅ **Universal**: View BMP on any device
+✅ **Efficient**: Save hours of development time
 
 ## See Also
 

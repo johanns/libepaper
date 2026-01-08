@@ -40,11 +40,31 @@ int main() {
   // Test 1: Simple text layout
   std::cout << "\nTest 1: Simple text layout\n";
   display.clear(Color::White);
-  display.draw_rectangle(0, 0, display.effective_width() - 1, display.effective_height() - 1, Color::Black,
-                         DotPixel::Pixel1x1, DrawFill::Empty);
-  display.draw_string(10, 10, "BMP Export Test", Font::font24(), Color::Black, Color::White);
-  display.draw_string(10, 40, "This is saved to BMP", Font::font16(), Color::Black, Color::White);
-  display.draw_string(10, 60, "without display refresh!", Font::font12(), Color::Black, Color::White);
+  display.draw(display.rectangle()
+                   .top_left(0, 0)
+                   .bottom_right(display.effective_width() - 1, display.effective_height() - 1)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel1x1)
+                   .fill(DrawFill::Empty)
+                   .build());
+  display.draw(display.text("BMP Export Test")
+                   .at(10, 10)
+                   .font(&Font::font24())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text("This is saved to BMP")
+                   .at(10, 40)
+                   .font(&Font::font16())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text("without display refresh!")
+                   .at(10, 60)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
 
   if (auto result = display.save_framebuffer_to_bmp("test1_text.bmp"); !result) {
     std::cerr << "  Failed to save BMP: " << result.error().what() << "\n";
@@ -55,14 +75,37 @@ int main() {
   // Test 2: Graphics and shapes
   std::cout << "\nTest 2: Graphics and shapes\n";
   display.clear(Color::White);
-  display.draw_string(10, 5, "Shapes Demo", Font::font16(), Color::Black, Color::White);
+  display.draw(display.text("Shapes Demo")
+                   .at(10, 5)
+                   .font(&Font::font16())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
 
   // Draw various shapes
-  display.draw_rectangle(20, 30, 80, 90, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-  display.draw_rectangle(100, 30, 160, 90, Color::Black, DotPixel::Pixel1x1, DrawFill::Full);
-  display.draw_circle(220, 60, 30, Color::Black, DotPixel::Pixel1x1, DrawFill::Empty);
-  display.draw_line(20, 110, 250, 110, Color::Black, DotPixel::Pixel1x1);
-  display.draw_line(20, 120, 250, 150, Color::Black, DotPixel::Pixel2x2);
+  display.draw(display.rectangle()
+                   .top_left(20, 30)
+                   .bottom_right(80, 90)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel1x1)
+                   .fill(DrawFill::Empty)
+                   .build());
+  display.draw(display.rectangle()
+                   .top_left(100, 30)
+                   .bottom_right(160, 90)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel1x1)
+                   .fill(DrawFill::Full)
+                   .build());
+  display.draw(display.circle()
+                   .center(220, 60)
+                   .radius(30)
+                   .color(Color::Black)
+                   .border_width(DotPixel::Pixel1x1)
+                   .fill(DrawFill::Empty)
+                   .build());
+  display.draw(display.line().from(20, 110).to(250, 110).color(Color::Black).width(DotPixel::Pixel1x1).build());
+  display.draw(display.line().from(20, 120).to(250, 150).color(Color::Black).width(DotPixel::Pixel2x2).build());
 
   if (auto result = display.save_framebuffer_to_bmp("test2_shapes.bmp"); !result) {
     std::cerr << "  Failed to save BMP: " << result.error().what() << "\n";
@@ -73,12 +116,38 @@ int main() {
   // Test 3: Font samples
   std::cout << "\nTest 3: Font samples\n";
   display.clear(Color::White);
-  display.draw_string(5, 5, "Font Sizes:", Font::font16(), Color::Black, Color::White);
-  display.draw_string(5, 30, "Font 8", Font::font8(), Color::Black, Color::White);
-  display.draw_string(5, 45, "Font 12", Font::font12(), Color::Black, Color::White);
-  display.draw_string(5, 65, "Font 16", Font::font16(), Color::Black, Color::White);
-  display.draw_string(5, 90, "Font 20", Font::font20(), Color::Black, Color::White);
-  display.draw_string(5, 120, "Font 24", Font::font24(), Color::Black, Color::White);
+  display.draw(display.text("Font Sizes:")
+                   .at(5, 5)
+                   .font(&Font::font16())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(
+      display.text("Font 8").at(5, 30).font(&Font::font8()).foreground(Color::Black).background(Color::White).build());
+  display.draw(display.text("Font 12")
+                   .at(5, 45)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text("Font 16")
+                   .at(5, 65)
+                   .font(&Font::font16())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text("Font 20")
+                   .at(5, 90)
+                   .font(&Font::font20())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text("Font 24")
+                   .at(5, 120)
+                   .font(&Font::font24())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
 
   if (auto result = display.save_framebuffer_to_bmp("test3_fonts.bmp"); !result) {
     std::cerr << "  Failed to save BMP: " << result.error().what() << "\n";
@@ -89,14 +158,49 @@ int main() {
   // Test 4: Numbers and decimals
   std::cout << "\nTest 4: Numbers and decimals\n";
   display.clear(Color::White);
-  display.draw_string(5, 5, "Numbers:", Font::font16(), Color::Black, Color::White);
-  display.draw_string(5, 30, "Integer:", Font::font12(), Color::Black, Color::White);
-  display.draw_number(90, 30, 12345, Font::font12(), Color::Black, Color::White);
-  display.draw_string(5, 50, "Decimal:", Font::font12(), Color::Black, Color::White);
-  display.draw_decimal(90, 50, 3.14159, 3, Font::font12(), Color::Black, Color::White);
-  display.draw_string(5, 70, "Price:", Font::font12(), Color::Black, Color::White);
-  display.draw_string(70, 70, "$", Font::font12(), Color::Black, Color::White);
-  display.draw_decimal(80, 70, 42599.99, 2, Font::font12(), Color::Black, Color::White);
+  display.draw(display.text("Numbers:")
+                   .at(5, 5)
+                   .font(&Font::font16())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text("Integer:")
+                   .at(5, 30)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text()
+                   .number(12345)
+                   .at(90, 30)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text("Decimal:")
+                   .at(5, 50)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(display.text()
+                   .decimal(3.14159, 3)
+                   .at(90, 50)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+  display.draw(
+      display.text("Price:").at(5, 70).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
+  display.draw(
+      display.text("$").at(70, 70).font(&Font::font12()).foreground(Color::Black).background(Color::White).build());
+  display.draw(display.text()
+                   .decimal(42599.99, 2)
+                   .at(80, 70)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
 
   if (auto result = display.save_framebuffer_to_bmp("test4_numbers.bmp"); !result) {
     std::cerr << "  Failed to save BMP: " << result.error().what() << "\n";
