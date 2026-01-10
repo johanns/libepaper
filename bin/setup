@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # E-Paper Library Setup Script
-# 
+#
 # Installs all dependencies and configures the development environment
-# for libepaper2 on Raspberry Pi.
+# for libepaper on Raspberry Pi.
 #
 # Usage:
 #   ./bin/setup
