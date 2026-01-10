@@ -35,8 +35,16 @@ A comprehensive guide to using the libepaper API for e-paper display control.
 using namespace epaper;
 
 int main() {
-    // 1. Initialize hardware device
-    Device device;
+    // 1. Initialize hardware device (with optional custom config)
+    Device device;  // Uses default DeviceConfig
+    // Or customize:
+    // DeviceConfig config{
+    //     .gpio_chip = "/dev/gpiochip0",
+    //     .spi_device = "/dev/spidev0.0",
+    //     .spi_speed_hz = 1953125
+    // };
+    // Device device{config};
+
     if (auto result = device.init(); !result) {
         std::cerr << "Device init failed: " << result.error().what() << "\n";
         return 1;
@@ -55,7 +63,7 @@ int main() {
         return 1;
     }
 
-    // 3. Draw something
+    // 3. Draw something using builder pattern
     display->clear(Color::White);
     display->draw(
         display->text("Hello World!")
@@ -360,7 +368,7 @@ display->draw(
         .build()
 );
 
-// Dotted or dashed lines
+// Dotted lines
 display->draw(
     display->line()
         .from(x1, y1)
@@ -370,22 +378,11 @@ display->draw(
         .style(LineStyle::Dotted)
         .build()
 );
-
-display->draw(
-    display->line()
-        .from(x1, y1)
-        .to(x2, y2)
-        .color(Color::Black)
-        .width(DotPixel::Pixel1x1)
-        .style(LineStyle::Dashed)
-        .build()
-);
 ```
 
 **LineStyle enum:**
 - `Solid`: Continuous line (default)
 - `Dotted`: Dot every 4 pixels
-- `Dashed`: Dash pattern (8 on, 4 off)
 
 **Examples:**
 ```cpp
@@ -625,26 +622,48 @@ display->draw(display->text("Line 3").at(x, y).font(&Font::font16()).foreground(
 ### Numbers
 
 ```cpp
-// Draw an integer
+// Draw an integer using TextBuilder
 int value = 42;
-display->draw_number(x, y, value, Font::font16(),
-                    Color::Black, Color::White);
+display->draw(
+    display->text()
+        .at(x, y)
+        .number(value)
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 
 // Draw a decimal with precision
 double pi = 3.14159;
-display->draw_decimal(x, y, pi, 3, Font::font16(),  // 3 decimal places
-                     Color::Black, Color::White);
+display->draw(
+    display->text()
+        .at(x, y)
+        .decimal(pi, 3)  // 3 decimal places
+        .font(&Font::font16())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 // Displays: "3.141"
 
 // Right-aligned numbers (for tables)
 int price = 199;
-display->draw_number(200, y, price, Font::font12(),
-                    Color::Black, Color::White);
+display->draw(
+    display->text()
+        .at(200, y)
+        .number(price)
+        .font(&Font::font12())
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 ```
 
 **Formatting Examples:**
 ```cpp
 // Display sensor readings
+double temperature = 23.5;
 display->draw(
     display->text("Temperature:")
         .at(10, 10)
@@ -654,7 +673,7 @@ display->draw(
         .build()
 );
 display->draw(
-    display->text("")
+    display->text()
         .at(110, 10)
         .decimal(temperature, 1)
         .font(&Font::font12())
@@ -672,6 +691,7 @@ display->draw(
 );
 
 // Display prices
+double price = 19.99;
 display->draw(
     display->text("$")
         .at(10, 30)
@@ -681,11 +701,14 @@ display->draw(
         .build()
 );
 display->draw(
-    display->text("")
+    display->text()
         .at(20, 30)
         .decimal(price, 2)
         .font(&Font::font16())
-                     Color::Black, Color::White);
+        .foreground(Color::Black)
+        .background(Color::White)
+        .build()
+);
 ```
 
 ### Bitmaps

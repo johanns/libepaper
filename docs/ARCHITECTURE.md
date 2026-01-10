@@ -118,12 +118,20 @@ classDiagram
     class Device {
         -std::atomic~bool~ initialized_
         -std::unique_ptr~Impl~ pimpl_
+        +Device()
+        +Device(config)
         +init() expected~void, Error~
         +cleanup() void
         +write_pin(pin, value) void
         +read_pin(pin) bool
         +spi_transfer(data) void
         +delay_ms(ms) void
+    }
+
+    class DeviceConfig {
+        +string gpio_chip
+        +string spi_device
+        +uint32_t spi_speed_hz
     }
 
     class Impl {
@@ -133,6 +141,24 @@ classDiagram
     }
 
     Device *-- Impl : contains
+    Device ..> DeviceConfig : uses
+```
+
+**DeviceConfig:**
+Flexible configuration for GPIO chip, SPI device, and SPI speed:
+
+```cpp
+// Default configuration
+DeviceConfig default_config;  // Uses /dev/gpiochip0, /dev/spidev0.0, 1953125 Hz
+
+// Custom configuration
+DeviceConfig custom_config{
+    .gpio_chip = "/dev/gpiochip0",
+    .spi_device = "/dev/spidev0.1",  // Different SPI bus
+    .spi_speed_hz = 4000000           // 4 MHz
+};
+
+Device device{custom_config};
 ```
 
 **Key Features:**
@@ -140,11 +166,13 @@ classDiagram
 - **Atomic State**: Thread-safe initialization tracking
 - **PImpl**: Hide libgpiod/SPIdev details from public interface
 - **Error Handling**: Returns `std::expected` for init failures
+- **Configurable**: DeviceConfig allows custom GPIO/SPI paths and speeds
 
 **Why This Design:**
 - **Testability**: Can mock `Device` for unit tests
 - **Encapsulation**: libgpiod/SPIdev details don't leak into headers
 - **Resource Safety**: Automatic cleanup prevents resource leaks
+- **Flexibility**: DeviceConfig enables different hardware setups
 
 ### Driver Interface: Hardware Abstraction
 
@@ -220,6 +248,7 @@ classDiagram
         +draw(PointCommand) void
         +draw(TextCommand) void
         +draw_bitmap(x, y, data, w, h) void
+        +draw_bitmap_from_file(x, y, path) expected~void, Error~
         +clear(color) void
         +refresh() expected~void, Error~
         +sleep() expected~void, Error~

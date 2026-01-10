@@ -5,6 +5,8 @@ A modern C++23 library for controlling Waveshare e-paper displays on Raspberry P
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://en.cppreference.com/w/cpp/23)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+> **See [docs](https://docs.jsg.io/libepaper) for complete documentation.**
+
 ## ✨ Quick Example
 
 ```cpp
@@ -37,7 +39,7 @@ int main() {
 }
 ```
 
-👉 **See [examples/](examples/README.md) for complete applications.**
+> 👉 **See [examples/](examples/README.md) for complete applications.**
 
 ## 🎯 Features
 
@@ -62,26 +64,13 @@ Run the automated setup script to install dependencies (cmake, g++-14, libgpiod,
 ./bin/setup
 ```
 
-### 2. Hardware Connection (EPD27)
-
-| E-Paper Pin | RPi GPIO |
-|-------------|----------|
-| RST | GPIO 17 |
-| DC | GPIO 25 |
-| CS | GPIO 8 |
-| BUSY | GPIO 24 |
-| MOSI | GPIO 10 |
-| SCLK | GPIO 11 |
-| GND | GND |
-| VCC | 3.3V |
-
-### 3. Build & Run
+### 2. Build & Run
 
 ```bash
 ./bin/build
 ```
 
-### 4. Run Example
+### 3. Run Example
 
 ```bash
 # Run crypto dashboard (live prices with charts)
@@ -113,30 +102,12 @@ The abstract driver interface makes it straightforward to add support for other 
 
 ### Requirements
 
+- Raspberry Pi OS, Debian 12 (Bookworm), or Ubuntu 24.04 (Jammy Jellyfish)
 - C++23 capable compiler (GCC 14+ or Clang 18+)
 - CMake 3.25+
 - libgpiod library (user-space GPIO access)
 - Raspberry Pi with SPI enabled
 - User in `gpio` and `spi` groups (no sudo required)
-
-### Project Structure
-
-```
-libepaper/
-├── include/epaper/        # Public API headers
-│   ├── device.hpp         # Hardware abstraction
-│   ├── display.hpp        # High-level display API
-│   ├── drivers/           # Driver interface & implementations
-│   └── font.hpp           # Font rendering
-├── src/                   # Implementation files
-├── examples/              # Example applications
-│   ├── bmp_debug_example/ # BMP export for debugging
-│   └── crypto_dashboard/  # Real-time crypto price dashboard
-├── tests/                 # Test suite
-├── docs/                  # Comprehensive documentation
-└── bin/                   # Build and setup scripts
-```
-
 
 ## 📄 License
 
