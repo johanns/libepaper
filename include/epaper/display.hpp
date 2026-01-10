@@ -288,10 +288,11 @@ public:
    * This method manually puts the display into sleep mode. It's useful when
    * auto-sleep is disabled and you want to control when the display sleeps.
    *
+   * @return void on success, Error on failure
    * @note This is automatically called after refresh() if auto-sleep is enabled.
    * @note Exception Safety: Basic guarantee - display remains in valid state.
    */
-  auto sleep() -> void;
+  [[nodiscard]] auto sleep() -> std::expected<void, Error>;
 
   /**
    * @brief Wake display from sleep mode.
@@ -524,8 +525,8 @@ public:
    * @param pixel_size Point size (default: 1x1)
    * @note Exception Safety: Nothrow guarantee - never throws.
    */
-  auto draw_point(std::size_t x, std::size_t y, Color color = Color::Black,
-                  DotPixel pixel_size = DotPixel::Pixel1x1) -> void;
+  auto draw_point(std::size_t x, std::size_t y, Color color = Color::Black, DotPixel pixel_size = DotPixel::Pixel1x1)
+      -> void;
 
   /**
    * @brief Draw a line between two points.

@@ -203,12 +203,14 @@ auto Display::refresh() -> std::expected<void, Error> {
     return result;
   }
   if (auto_sleep_enabled_) {
-    driver_->sleep();
+    // Note: Ignoring sleep errors in auto-sleep mode to not break refresh
+    // Users can manually call sleep() if they need error handling
+    (void)driver_->sleep();
   }
   return {};
 }
 
-auto Display::sleep() -> void { driver_->sleep(); }
+auto Display::sleep() -> std::expected<void, Error> { return driver_->sleep(); }
 
 auto Display::wake() -> std::expected<void, Error> { return driver_->wake(); }
 
@@ -260,8 +262,8 @@ auto Display::draw_point(std::size_t x, std::size_t y, Color color, DotPixel pix
   }
 }
 
-auto Display::draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
-                         Color color, DotPixel line_width, LineStyle style) -> void {
+auto Display::draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color,
+                        DotPixel line_width, LineStyle style) -> void {
   // Bresenham's line algorithm
   const auto dx = static_cast<std::int32_t>(x_end > x_start ? x_end - x_start : x_start - x_end);
   const auto dy = static_cast<std::int32_t>(y_end > y_start ? y_end - y_start : y_start - y_end);
@@ -300,7 +302,7 @@ auto Display::draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_
 }
 
 auto Display::draw_rectangle(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
-                              Color color, DotPixel border_width, DrawFill fill) -> void {
+                             Color color, DotPixel border_width, DrawFill fill) -> void {
   if (x_start > x_end) {
     std::swap(x_start, x_end);
   }
@@ -325,7 +327,7 @@ auto Display::draw_rectangle(std::size_t x_start, std::size_t y_start, std::size
 }
 
 auto Display::draw_circle(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color,
-                           DotPixel border_width, DrawFill fill) -> void {
+                          DotPixel border_width, DrawFill fill) -> void {
   if (radius == 0) {
     return;
   }
@@ -731,8 +733,8 @@ auto Display::draw(const LineCommand &cmd) -> void {
 }
 
 auto Display::draw(const RectangleCommand &cmd) -> void {
-  draw_rectangle(cmd.top_left.x, cmd.top_left.y, cmd.bottom_right.x, cmd.bottom_right.y, cmd.color,
-                 cmd.border_width, cmd.fill);
+  draw_rectangle(cmd.top_left.x, cmd.top_left.y, cmd.bottom_right.x, cmd.bottom_right.y, cmd.color, cmd.border_width,
+                 cmd.fill);
 }
 
 auto Display::draw(const CircleCommand &cmd) -> void {
