@@ -1,7 +1,6 @@
 #include "epaper/display.hpp"
 #include "epaper/draw/builders.hpp"
 #include "epaper/draw/commands.hpp"
-#include "epaper/draw/styles.hpp"
 #include "epaper/geometry.hpp"
 #include <algorithm>
 #include <cmath>
@@ -251,7 +250,7 @@ auto Display::draw_vertical_line(std::size_t x, std::size_t y_start, std::size_t
   }
 }
 
-auto Display::draw_point_impl(std::size_t x, std::size_t y, Color color, DotPixel pixel_size) -> void {
+auto Display::draw_point(std::size_t x, std::size_t y, Color color, DotPixel pixel_size) -> void {
   const auto size = static_cast<std::size_t>(pixel_size);
 
   for (std::size_t dy = 0; dy < size; ++dy) {
@@ -261,8 +260,8 @@ auto Display::draw_point_impl(std::size_t x, std::size_t y, Color color, DotPixe
   }
 }
 
-auto Display::draw_line_impl(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
-                             Color color, DotPixel line_width, LineStyle style) -> void {
+auto Display::draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
+                         Color color, DotPixel line_width, LineStyle style) -> void {
   // Bresenham's line algorithm
   const auto dx = static_cast<std::int32_t>(x_end > x_start ? x_end - x_start : x_start - x_end);
   const auto dy = static_cast<std::int32_t>(y_end > y_start ? y_end - y_start : y_start - y_end);
@@ -280,7 +279,7 @@ auto Display::draw_line_impl(std::size_t x_start, std::size_t y_start, std::size
     const bool should_draw = (style == LineStyle::Solid) || ((dot_count % 6) < 3);
 
     if (should_draw) {
-      draw_point_impl(static_cast<std::size_t>(x), static_cast<std::size_t>(y), color, line_width);
+      draw_point(static_cast<std::size_t>(x), static_cast<std::size_t>(y), color, line_width);
     }
     ++dot_count;
 
@@ -300,8 +299,8 @@ auto Display::draw_line_impl(std::size_t x_start, std::size_t y_start, std::size
   }
 }
 
-auto Display::draw_rectangle_impl(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
-                                  Color color, DotPixel line_width, DrawFill fill) -> void {
+auto Display::draw_rectangle(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
+                              Color color, DotPixel border_width, DrawFill fill) -> void {
   if (x_start > x_end) {
     std::swap(x_start, x_end);
   }
@@ -318,15 +317,15 @@ auto Display::draw_rectangle_impl(std::size_t x_start, std::size_t y_start, std:
     }
   } else {
     // Hollow rectangle - draw four lines
-    draw_horizontal_line(x_start, x_end, y_start, color, line_width);
-    draw_horizontal_line(x_start, x_end, y_end, color, line_width);
-    draw_vertical_line(x_start, y_start, y_end, color, line_width);
-    draw_vertical_line(x_end, y_start, y_end, color, line_width);
+    draw_horizontal_line(x_start, x_end, y_start, color, border_width);
+    draw_horizontal_line(x_start, x_end, y_end, color, border_width);
+    draw_vertical_line(x_start, y_start, y_end, color, border_width);
+    draw_vertical_line(x_end, y_start, y_end, color, border_width);
   }
 }
 
-auto Display::draw_circle_impl(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color,
-                               DotPixel line_width, DrawFill fill) -> void {
+auto Display::draw_circle(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color,
+                           DotPixel border_width, DrawFill fill) -> void {
   if (radius == 0) {
     return;
   }
@@ -343,19 +342,19 @@ auto Display::draw_circle_impl(std::size_t x_center, std::size_t y_center, std::
     if (fill == DrawFill::Full) {
       // Draw horizontal lines to fill
       draw_horizontal_line(static_cast<std::size_t>(std::max(0, cx - px)), static_cast<std::size_t>(cx + px),
-                           static_cast<std::size_t>(cy + py), color, line_width);
+                           static_cast<std::size_t>(cy + py), color, border_width);
       draw_horizontal_line(static_cast<std::size_t>(std::max(0, cx - px)), static_cast<std::size_t>(cx + px),
-                           static_cast<std::size_t>(cy - py), color, line_width);
+                           static_cast<std::size_t>(cy - py), color, border_width);
     } else {
       // Draw 8 symmetric points
-      draw_point_impl(static_cast<std::size_t>(cx + px), static_cast<std::size_t>(cy + py), color, line_width);
-      draw_point_impl(static_cast<std::size_t>(cx - px), static_cast<std::size_t>(cy + py), color, line_width);
-      draw_point_impl(static_cast<std::size_t>(cx + px), static_cast<std::size_t>(cy - py), color, line_width);
-      draw_point_impl(static_cast<std::size_t>(cx - px), static_cast<std::size_t>(cy - py), color, line_width);
-      draw_point_impl(static_cast<std::size_t>(cx + py), static_cast<std::size_t>(cy + px), color, line_width);
-      draw_point_impl(static_cast<std::size_t>(cx - py), static_cast<std::size_t>(cy + px), color, line_width);
-      draw_point_impl(static_cast<std::size_t>(cx + py), static_cast<std::size_t>(cy - px), color, line_width);
-      draw_point_impl(static_cast<std::size_t>(cx - py), static_cast<std::size_t>(cy - px), color, line_width);
+      draw_point(static_cast<std::size_t>(cx + px), static_cast<std::size_t>(cy + py), color, border_width);
+      draw_point(static_cast<std::size_t>(cx - px), static_cast<std::size_t>(cy + py), color, border_width);
+      draw_point(static_cast<std::size_t>(cx + px), static_cast<std::size_t>(cy - py), color, border_width);
+      draw_point(static_cast<std::size_t>(cx - px), static_cast<std::size_t>(cy - py), color, border_width);
+      draw_point(static_cast<std::size_t>(cx + py), static_cast<std::size_t>(cy + px), color, border_width);
+      draw_point(static_cast<std::size_t>(cx - py), static_cast<std::size_t>(cy + px), color, border_width);
+      draw_point(static_cast<std::size_t>(cx + py), static_cast<std::size_t>(cy - px), color, border_width);
+      draw_point(static_cast<std::size_t>(cx - py), static_cast<std::size_t>(cy - px), color, border_width);
     }
   };
 
@@ -728,20 +727,20 @@ auto Display::text(std::string_view content) -> TextBuilder { return TextBuilder
 // ========== Draw Command Overloads ==========
 
 auto Display::draw(const LineCommand &cmd) -> void {
-  draw_line_impl(cmd.from.x, cmd.from.y, cmd.to.x, cmd.to.y, cmd.color, cmd.width, cmd.style);
+  draw_line(cmd.from.x, cmd.from.y, cmd.to.x, cmd.to.y, cmd.color, cmd.width, cmd.style);
 }
 
 auto Display::draw(const RectangleCommand &cmd) -> void {
-  draw_rectangle_impl(cmd.top_left.x, cmd.top_left.y, cmd.bottom_right.x, cmd.bottom_right.y, cmd.color,
-                      cmd.border_width, cmd.fill);
+  draw_rectangle(cmd.top_left.x, cmd.top_left.y, cmd.bottom_right.x, cmd.bottom_right.y, cmd.color,
+                 cmd.border_width, cmd.fill);
 }
 
 auto Display::draw(const CircleCommand &cmd) -> void {
-  draw_circle_impl(cmd.center.x, cmd.center.y, cmd.radius, cmd.color, cmd.border_width, cmd.fill);
+  draw_circle(cmd.center.x, cmd.center.y, cmd.radius, cmd.color, cmd.border_width, cmd.fill);
 }
 
 auto Display::draw(const PointCommand &cmd) -> void {
-  draw_point_impl(cmd.position.x, cmd.position.y, cmd.color, cmd.pixel_size);
+  draw_point(cmd.position.x, cmd.position.y, cmd.color, cmd.pixel_size);
 }
 
 auto Display::draw(const TextCommand &cmd) -> void {

@@ -4,7 +4,6 @@
 #include "epaper/drivers/driver.hpp"
 #include "epaper/errors.hpp"
 #include "epaper/font.hpp"
-#include "epaper/geometry.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <expected>
@@ -510,6 +509,74 @@ public:
    */
   auto draw(const TextCommand &cmd) -> void;
 
+  // ========== Direct Drawing Methods ==========
+  //
+  // Convenience methods for direct drawing without using the builder pattern.
+  // These methods delegate to the internal implementation functions.
+  //
+
+  /**
+   * @brief Draw a point at the specified coordinates.
+   *
+   * @param x X coordinate
+   * @param y Y coordinate
+   * @param color Point color (default: Black)
+   * @param pixel_size Point size (default: 1x1)
+   * @note Exception Safety: Nothrow guarantee - never throws.
+   */
+  auto draw_point(std::size_t x, std::size_t y, Color color = Color::Black,
+                  DotPixel pixel_size = DotPixel::Pixel1x1) -> void;
+
+  /**
+   * @brief Draw a line between two points.
+   *
+   * Uses Bresenham's line algorithm for efficient rendering.
+   *
+   * @param x_start Starting X coordinate
+   * @param y_start Starting Y coordinate
+   * @param x_end Ending X coordinate
+   * @param y_end Ending Y coordinate
+   * @param color Line color (default: Black)
+   * @param line_width Line width (default: 1x1)
+   * @param style Line style (default: Solid)
+   * @note Exception Safety: Nothrow guarantee - never throws.
+   */
+  auto draw_line(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
+                 Color color = Color::Black, DotPixel line_width = DotPixel::Pixel1x1,
+                 LineStyle style = LineStyle::Solid) -> void;
+
+  /**
+   * @brief Draw a rectangle.
+   *
+   * @param x_start Starting X coordinate (top-left)
+   * @param y_start Starting Y coordinate (top-left)
+   * @param x_end Ending X coordinate (bottom-right)
+   * @param y_end Ending Y coordinate (bottom-right)
+   * @param color Rectangle color (default: Black)
+   * @param border_width Border width (default: 1x1)
+   * @param fill Fill mode (default: Empty)
+   * @note Exception Safety: Nothrow guarantee - never throws.
+   */
+  auto draw_rectangle(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end,
+                      Color color = Color::Black, DotPixel border_width = DotPixel::Pixel1x1,
+                      DrawFill fill = DrawFill::Empty) -> void;
+
+  /**
+   * @brief Draw a circle.
+   *
+   * Uses midpoint circle algorithm for efficient rendering.
+   *
+   * @param x_center Center X coordinate
+   * @param y_center Center Y coordinate
+   * @param radius Circle radius in pixels
+   * @param color Circle color (default: Black)
+   * @param border_width Border width (default: 1x1)
+   * @param fill Fill mode (default: Empty)
+   * @note Exception Safety: Nothrow guarantee - never throws.
+   */
+  auto draw_circle(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color = Color::Black,
+                   DotPixel border_width = DotPixel::Pixel1x1, DrawFill fill = DrawFill::Empty) -> void;
+
   // ========== Bitmap Operations ==========
 
   /**
@@ -606,14 +673,7 @@ private:
 
   // ========== Internal Drawing Implementations ==========
 
-  // Internal implementations used by draw() overloads
-  auto draw_point_impl(std::size_t x, std::size_t y, Color color, DotPixel pixel_size) -> void;
-  auto draw_line_impl(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color,
-                      DotPixel line_width, LineStyle style) -> void;
-  auto draw_rectangle_impl(std::size_t x_start, std::size_t y_start, std::size_t x_end, std::size_t y_end, Color color,
-                           DotPixel line_width, DrawFill fill) -> void;
-  auto draw_circle_impl(std::size_t x_center, std::size_t y_center, std::size_t radius, Color color,
-                        DotPixel line_width, DrawFill fill) -> void;
+  // Internal implementations for text drawing (used by draw() overloads)
   auto draw_char_impl(std::size_t x, std::size_t y, char character, const Font &font, Color foreground,
                       Color background) -> void;
   auto draw_string_impl(std::size_t x, std::size_t y, std::string_view text, const Font &font, Color foreground,
