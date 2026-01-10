@@ -326,6 +326,23 @@ display->draw(
 
 All drawing operations are **noexcept** and never fail. Out-of-bounds coordinates are silently clipped.
 
+### Framebuffered Drawing (Atomic Updates)
+
+All drawing happens off-screen in an in-memory framebuffer. Calls like `draw(...)` only update this buffer; nothing is sent to the panel until you call `refresh()`. This gives:
+- Tear/flicker-free updates (no incremental drawing on-screen)
+- Batched SPI transfers for performance
+- Fewer panel updates, reducing ghosting and wear
+
+```cpp
+// Compose the frame in memory
+display->clear(Color::White);
+display->draw(display->rect(10, 10, 80, 40).fill(Color::Black).build());
+display->draw(display->text("Hello").at(20, 70).build());
+
+// Paint it once, atomically
+display->refresh();
+```
+
 ### Points
 
 ```cpp
