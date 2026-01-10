@@ -5,6 +5,7 @@
 #include <expected>
 #include <memory>
 #include <span>
+#include <string>
 
 namespace epaper {
 
@@ -28,6 +29,33 @@ constexpr Pin BUSY{24}; // GPIO 24
 constexpr Pin PWR{18};  // GPIO 18 (optional power control)
 } // namespace pins
 
+/**
+ * @brief Configuration for device initialization.
+ *
+ * Allows customization of GPIO chip path, SPI device path, and SPI speed.
+ * Provides default values matching typical Raspberry Pi configuration.
+ *
+ * @example
+ * @code{.cpp}
+ * // Use default configuration
+ * DeviceConfig config{};
+ * Device device{config};
+ *
+ * // Or customize
+ * DeviceConfig config{
+ *     .gpio_chip = "/dev/gpiochip0",
+ *     .spi_device = "/dev/spidev0.0",
+ *     .spi_speed_hz = 4000000
+ * };
+ * Device device{config};
+ * @endcode
+ */
+struct DeviceConfig {
+  std::string gpio_chip = "/dev/gpiochip0";  ///< Path to GPIO chip device
+  std::string spi_device = "/dev/spidev0.0"; ///< Path to SPI device
+  std::uint32_t spi_speed_hz = 1953125;      ///< SPI clock speed in Hz (~1.95MHz)
+};
+
 // Forward declaration for PImpl
 struct DeviceImpl;
 
@@ -49,7 +77,22 @@ struct DeviceImpl;
  */
 class Device {
 public:
+  /**
+   * @brief Construct a Device with default configuration.
+   *
+   * Uses default DeviceConfig values:
+   * - GPIO chip: "/dev/gpiochip0"
+   * - SPI device: "/dev/spidev0.0"
+   * - SPI speed: 1953125 Hz (~1.95MHz)
+   */
   Device();
+
+  /**
+   * @brief Construct a Device with custom configuration.
+   *
+   * @param config Device configuration specifying paths and settings
+   */
+  explicit Device(const DeviceConfig &config);
 
   /**
    * @brief Destructor. Cleans up GPIO and SPI resources.

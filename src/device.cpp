@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <gpiod.h>
 #include <linux/spi/spidev.h>
+#include <string>
 #include <sys/ioctl.h>
 #include <thread>
 #include <unistd.h>
@@ -35,6 +36,7 @@ struct DeviceImpl {
   int spi_fd = INVALID_FILE_DESCRIPTOR;
   bool initialized = false;
   bool spi_initialized = false;
+  DeviceConfig config; // Store configuration for initialization
 
   // Delete copy operations (can't safely copy file descriptors and GPIO resources)
   DeviceImpl(const DeviceImpl &) = delete;
@@ -134,7 +136,12 @@ struct DeviceImpl {
   }
 };
 
-Device::Device() : pimpl_(std::make_unique<DeviceImpl>()) {}
+Device::Device() : Device(DeviceConfig{}) {}
+
+Device::Device(const DeviceConfig &config) : pimpl_(std::make_unique<DeviceImpl>()) {
+  // Store config for use in init()
+  pimpl_->config = config;
+}
 
 Device::~Device() noexcept = default;
 
@@ -155,18 +162,20 @@ auto Device::init() -> std::expected<void, Error> {
     return {};
   }
 
-  // Initialize GPIO chip (libgpiod v2)
-  pimpl_->chip = gpiod_chip_open("/dev/gpiochip0");
+  // Initialize GPIO chip (libgpiod v2) using config
+  pimpl_->chip = gpiod_chip_open(pimpl_->config.gpio_chip.c_str());
   if (pimpl_->chip == nullptr) {
-    return std::unexpected(Error(ErrorCode::GPIOInitFailed, "Failed to open /dev/gpiochip0"));
+    return std::unexpected(Error(ErrorCode::GPIOInitFailed,
+                                 std::string("Failed to open ") + pimpl_->config.gpio_chip));
   }
   pimpl_->initialized = true;
 
-  // Initialize SPI device (Linux SPIdev)
-  pimpl_->spi_fd = open("/dev/spidev0.0", O_RDWR);
+  // Initialize SPI device (Linux SPIdev) using config
+  pimpl_->spi_fd = open(pimpl_->config.spi_device.c_str(), O_RDWR);
   if (pimpl_->spi_fd < 0) {
     pimpl_->cleanup();
-    return std::unexpected(Error(ErrorCode::SPIDeviceOpenFailed, "Failed to open /dev/spidev0.0"));
+    return std::unexpected(Error(ErrorCode::SPIDeviceOpenFailed,
+                                 std::string("Failed to open ") + pimpl_->config.spi_device));
   }
 
   // Configure SPI mode (SPI_MODE_0: CPOL=0, CPHA=0)
@@ -176,8 +185,9 @@ auto Device::init() -> std::expected<void, Error> {
     return std::unexpected(Error(ErrorCode::SPIConfigFailed, "Failed to set SPI mode"));
   }
 
-  // Configure SPI speed
-  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &SPI_SPEED_HZ) < 0) {
+  // Configure SPI speed using config
+  const auto spi_speed = pimpl_->config.spi_speed_hz;
+  if (ioctl(pimpl_->spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed) < 0) {
     pimpl_->cleanup();
     return std::unexpected(Error(ErrorCode::SPIConfigFailed, "Failed to set SPI speed"));
   }
@@ -282,7 +292,7 @@ auto Device::spi_transfer(std::uint8_t value) -> std::uint8_t {
   transfer.tx_buf = reinterpret_cast<std::uintptr_t>(&tx_buf);
   transfer.rx_buf = reinterpret_cast<std::uintptr_t>(&rx_buf);
   transfer.len = SPI_SINGLE_TRANSFER_LENGTH;
-  transfer.speed_hz = SPI_SPEED_HZ;
+  transfer.speed_hz = pimpl_->config.spi_speed_hz;
   transfer.bits_per_word = SPI_BITS_PER_WORD;
 
   if (ioctl(pimpl_->spi_fd, SPI_IOC_MESSAGE(1), &transfer) < 0) {
@@ -309,7 +319,7 @@ auto Device::spi_write(std::span<const std::byte> data) -> void {
   transfer.tx_buf = reinterpret_cast<std::uintptr_t>(tx_buf.data());
   transfer.rx_buf = reinterpret_cast<std::uintptr_t>(rx_buf.data());
   transfer.len = static_cast<std::uint32_t>(data.size());
-  transfer.speed_hz = SPI_SPEED_HZ;
+  transfer.speed_hz = pimpl_->config.spi_speed_hz;
   transfer.bits_per_word = SPI_BITS_PER_WORD;
 
   ioctl(pimpl_->spi_fd, SPI_IOC_MESSAGE(1), &transfer);
