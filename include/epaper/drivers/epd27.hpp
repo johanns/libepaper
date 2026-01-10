@@ -176,9 +176,9 @@ public:
 
   // Driver interface implementation
   [[nodiscard]] auto init(DisplayMode mode) -> std::expected<void, Error> override;
-  auto clear() -> void override;
+  [[nodiscard]] auto clear() -> std::expected<void, Error> override;
   [[nodiscard]] auto display(std::span<const std::byte> buffer) -> std::expected<void, Error> override;
-  auto sleep() -> void override;
+  [[nodiscard]] auto sleep() -> std::expected<void, Error> override;
   [[nodiscard]] auto wake() -> std::expected<void, Error> override;
   [[nodiscard]] auto power_off() -> std::expected<void, Error> override;
   [[nodiscard]] auto power_on() -> std::expected<void, Error> override;

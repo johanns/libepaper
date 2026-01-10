@@ -40,10 +40,10 @@ public:
   /**
    * @brief Clear the display (typically to white).
    *
+   * @return void on success, Error on failure
    * @note Exception Safety: Basic guarantee - display remains in valid state.
-   *       This operation is benign and does not fail.
    */
-  virtual auto clear() -> void = 0;
+  [[nodiscard]] virtual auto clear() -> std::expected<void, Error> = 0;
 
   /**
    * @brief Send buffer data to display and refresh.
@@ -57,10 +57,10 @@ public:
   /**
    * @brief Put display into low-power sleep mode.
    *
+   * @return void on success, Error on failure
    * @note Exception Safety: Basic guarantee - display remains in valid state.
-   *       This operation is benign and does not fail.
    */
-  virtual auto sleep() -> void = 0;
+  [[nodiscard]] virtual auto sleep() -> std::expected<void, Error> = 0;
 
   /**
    * @brief Wake display from sleep mode.

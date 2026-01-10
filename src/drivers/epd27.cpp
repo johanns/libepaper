@@ -331,7 +331,19 @@ auto EPD27::init(DisplayMode mode) -> std::expected<void, Error> {
   return {};
 }
 
-auto EPD27::clear() -> void {
+auto EPD27::clear() -> std::expected<void, Error> {
+  if (!initialized_) {
+    return std::unexpected(Error(ErrorCode::DriverNotInitialized));
+  }
+
+  // Auto-wake if asleep
+  if (is_asleep_) {
+    auto wake_result = wake();
+    if (!wake_result) {
+      return wake_result;
+    }
+  }
+
   const auto width_bytes = (WIDTH % 8 == 0) ? (WIDTH / 8) : ((WIDTH / 8) + 1);
 
   send_command(Command::DATA_START_TRANSMISSION_1);
@@ -350,6 +362,7 @@ auto EPD27::clear() -> void {
 
   send_command(Command::DISPLAY_REFRESH);
   wait_busy();
+  return {};
 }
 
 auto EPD27::display(std::span<const std::byte> buffer) -> std::expected<void, Error> {
@@ -406,9 +419,13 @@ auto EPD27::display(std::span<const std::byte> buffer) -> std::expected<void, Er
   return {};
 }
 
-auto EPD27::sleep() -> void {
+auto EPD27::sleep() -> std::expected<void, Error> {
   if (is_asleep_) {
-    return; // Already asleep, no-op
+    return {}; // Already asleep, no-op
+  }
+
+  if (!initialized_) {
+    return std::unexpected(Error(ErrorCode::DriverNotInitialized));
   }
 
   send_command(Command::VCOM_DATA_INTERVAL);
@@ -418,6 +435,7 @@ auto EPD27::sleep() -> void {
   send_data(DisplayOps::DEEP_SLEEP_MAGIC);
 
   is_asleep_ = true; // Track sleep state
+  return {};
 }
 
 auto EPD27::wake() -> std::expected<void, Error> {

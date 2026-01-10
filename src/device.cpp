@@ -165,8 +165,7 @@ auto Device::init() -> std::expected<void, Error> {
   // Initialize GPIO chip (libgpiod v2) using config
   pimpl_->chip = gpiod_chip_open(pimpl_->config.gpio_chip.c_str());
   if (pimpl_->chip == nullptr) {
-    return std::unexpected(Error(ErrorCode::GPIOInitFailed,
-                                 std::string("Failed to open ") + pimpl_->config.gpio_chip));
+    return std::unexpected(Error(ErrorCode::GPIOInitFailed, std::string("Failed to open ") + pimpl_->config.gpio_chip));
   }
   pimpl_->initialized = true;
 
@@ -174,8 +173,8 @@ auto Device::init() -> std::expected<void, Error> {
   pimpl_->spi_fd = open(pimpl_->config.spi_device.c_str(), O_RDWR);
   if (pimpl_->spi_fd < 0) {
     pimpl_->cleanup();
-    return std::unexpected(Error(ErrorCode::SPIDeviceOpenFailed,
-                                 std::string("Failed to open ") + pimpl_->config.spi_device));
+    return std::unexpected(
+        Error(ErrorCode::SPIDeviceOpenFailed, std::string("Failed to open ") + pimpl_->config.spi_device));
   }
 
   // Configure SPI mode (SPI_MODE_0: CPOL=0, CPHA=0)
