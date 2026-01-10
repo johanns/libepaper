@@ -194,6 +194,7 @@ public:
     // display doesn't respond to commands during power transitions.
     return true;
   }
+  [[nodiscard]] auto supports_wake() const noexcept -> bool override { return false; }
 
 private:
   // Hardware reset

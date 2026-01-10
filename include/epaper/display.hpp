@@ -330,12 +330,13 @@ public:
   /**
    * @brief Check if wake from sleep is supported.
    *
-   * Note: With transparent sleep/wake management, all displays effectively
-   * support wake (the library handles re-initialization if needed).
+   * Proxies the capability from the underlying driver. Some displays
+   * (like EPD27) require full re-initialization after sleep rather than
+   * a simple wake command.
    *
-   * @return true (always - transparent wake is handled internally)
+   * @return true if the driver supports wake from sleep without re-initialization
    */
-  [[nodiscard]] static auto supports_wake() noexcept -> bool { return true; }
+  [[nodiscard]] auto supports_wake() const noexcept -> bool;
 
   /**
    * @brief Check if power control is supported.

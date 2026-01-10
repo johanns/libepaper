@@ -99,6 +99,7 @@ public:
   // Driver capabilities (query at runtime)
   [[nodiscard]] virtual auto supports_partial_refresh() const noexcept -> bool = 0;
   [[nodiscard]] virtual auto supports_power_control() const noexcept -> bool = 0;
+  [[nodiscard]] virtual auto supports_wake() const noexcept -> bool = 0;
 
 protected:
   Driver() = default;

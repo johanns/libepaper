@@ -221,6 +221,8 @@ auto Display::power_on() -> std::expected<void, Error> { return driver_->power_o
 
 auto Display::supports_power_control() const noexcept -> bool { return driver_->supports_power_control(); }
 
+auto Display::supports_wake() const noexcept -> bool { return driver_->supports_wake(); }
+
 auto Display::draw_horizontal_line(std::size_t x_start, std::size_t x_end, std::size_t y, Color color, DotPixel width)
     -> void {
   if (x_start > x_end) {
