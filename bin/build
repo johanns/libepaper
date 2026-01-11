@@ -5,12 +5,14 @@
 # Configures and builds the libepaper2 library, examples, and tests.
 #
 # Usage:
-#   ./bin/build                    # Build everything
-#   ./bin/build [target]           # Build specific target
+#   ./bin/build                              # Build everything (Release by default)
+#   ./bin/build [target]                     # Build specific target (Release)
+#   ./bin/build [target] --type Debug        # Build specific target with Debug config
+#   BUILD_TYPE=Debug ./bin/build examples    # Alternative via env var
 #
 # Available targets:
 #   all                - Build library, examples, and tests (default)
-#   epaper            - Build library only
+#   libepaper         - Build library only
 #   examples          - Build all examples
 #   crypto_dashboard  - Build crypto dashboard example
 #   tests             - Build all tests
@@ -43,11 +45,31 @@ echo ""
 echo "Remember to run this command from the root directory of the project."
 echo ""
 
-# Check if a specific target was requested
-TARGET="${1:-all}"
+# Defaults
+TARGET="all"
+BUILD_TYPE="${BUILD_TYPE:-Release}"
 
-echo "Configuring build..."
-cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER=g++-14
+# Parse args
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --type)
+      BUILD_TYPE="$2"; shift 2 ;;
+    -t)
+      BUILD_TYPE="$2"; shift 2 ;;
+    --type=*)
+      BUILD_TYPE="${1#*=}"; shift ;;
+    all|libepaper|epaper|examples|crypto_dashboard|tests|test_auto_sleep)
+      TARGET="$1"; shift ;;
+    *)
+      echo "Unknown argument: $1" >&2; exit 1 ;;
+  esac
+done
+
+echo "Configuring build (type: ${BUILD_TYPE})..."
+cmake -S . -B build \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  -DCMAKE_CXX_COMPILER=g++-14 \
+  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}"
 
 echo ""
 echo "Building target: ${TARGET}..."
