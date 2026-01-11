@@ -8,5 +8,5 @@ add_executable(bmp_debug_example
 )
 
 target_link_libraries(bmp_debug_example PRIVATE
-  epaper
+  libepaper
 )

@@ -36,7 +36,7 @@ target_include_directories(crypto_dashboard
 # Link libraries
 target_link_libraries(crypto_dashboard
     PRIVATE
-        epaper
+    libepaper
         CURL::libcurl
         nlohmann_json::nlohmann_json
 )

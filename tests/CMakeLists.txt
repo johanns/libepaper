@@ -22,7 +22,7 @@ foreach(TEST_PROGRAM ${TEST_PROGRAMS})
 
     target_link_libraries(${TEST_PROGRAM}
         PRIVATE
-            epaper
+            libepaper
     )
 
     # Install test executables (optional)

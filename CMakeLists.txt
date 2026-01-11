@@ -50,12 +50,12 @@ set(FONT_SOURCES
 )
 
 # Create static library
-add_library(epaper STATIC
+add_library(libepaper STATIC
     ${EPAPER_SOURCES}
     ${FONT_SOURCES}
 )
 
-target_include_directories(epaper
+target_include_directories(libepaper
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
@@ -65,7 +65,7 @@ target_include_directories(epaper
         ${LIBGPIOD_INCLUDE_DIRS}
 )
 
-target_link_libraries(epaper
+target_link_libraries(libepaper
     PUBLIC
         ${LIBGPIOD_LIBRARIES}
         m
@@ -78,10 +78,12 @@ set(EPAPER_PUBLIC_HEADERS
 )
 
 # Set library properties
-set_target_properties(epaper PROPERTIES
+# Keep output artifact name as libepaper.* even though target is libepaper
+set_target_properties(libepaper PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
     PUBLIC_HEADER "${EPAPER_PUBLIC_HEADERS}"
+    OUTPUT_NAME epaper
 )
 
 # Add examples subdirectory
@@ -91,7 +93,7 @@ add_subdirectory(tests)
 # Installation rules
 include(GNUInstallDirs)
 
-install(TARGETS epaper
+install(TARGETS libepaper
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/epaper
