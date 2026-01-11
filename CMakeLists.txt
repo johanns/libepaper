@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
-project(epaper VERSION 1.0.0 LANGUAGES CXX C)
+project(libepaper VERSION 1.0.0 LANGUAGES CXX C)
+
+# Export compile commands for IntelliSense
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # C++23 standard
 set(CMAKE_CXX_STANDARD 23)
