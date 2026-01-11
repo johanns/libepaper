@@ -1,6 +1,6 @@
 # Modern C++ E-Paper Display Library
 
-A modern C++23 library for controlling Waveshare e-paper displays on Raspberry Pi with transparent sleep/wake management and a fluent builder API.
+A modern C++23 library for controlling Waveshare e-paper displays on Raspberry Pi, featuring transparent sleep/wake management and a fluent builder API.
 
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://en.cppreference.com/w/cpp/23)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -50,31 +50,109 @@ int main() {
 - **Automatic Color Conversion**: RGB images automatically converted to grayscale with intelligent quantization
 - **Multiple Display Modes**: Black/white (1-bit) and 4-level grayscale (2-bit)
 - **Display Orientation**: Rotate 0°, 90°, 180°, 270° with automatic coordinate transformation
-- **Extensible Drivers**: Abstract driver interface for easy addition of new displays
+- **Extensible Drivers**: Abstract driver interface for easy support of new displays
 - **Type Safety**: Strong typing with `std::expected` error handling
 - **Zero-Cost Abstractions**: Modern C++ with no runtime overhead
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### Use as a dependency in your CMake project
 
-Run the automated setup script to install dependencies (cmake, g++-14, libgpiod, etc.):
+Link the `libepaper` target via CMake FetchContent:
+
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+     epaper
+     GIT_REPOSITORY https://github.com/johanns/libepaper
+     GIT_TAG        main
+)
+FetchContent_MakeAvailable(epaper)
+
+add_executable(my_app src/main.cpp)
+target_link_libraries(my_app PRIVATE libepaper)
+```
+
+Then build your project as usual (Debug or Release mode).
+
+### Run examples from the repository
+
+1. Install dependencies and set up the system:
+
+    ```bash
+    ./bin/setup
+    ```
+
+2. Build the library (Release by default, use `--type Debug` for debug builds):
+
+    ```bash
+    ./bin/build
+    # ./bin/build --type Debug
+    ```
+
+3. Run an example:
+
+    ```bash
+    ./build/examples/crypto_dashboard/crypto_dashboard
+    ```
+
+## 🧩 Alternative Integration Options
+
+For other integration methods:
+
+### Option A — Vendored submodule with add_subdirectory
 
 ```bash
+git submodule add https://github.com/johanns/libepaper external/libepaper
+git submodule update --init --recursive
+```
+
+```cmake
+add_subdirectory(external/libepaper)
+add_executable(my_app src/main.cpp)
+target_link_libraries(my_app PRIVATE libepaper)
+```
+
+### Option B — System-wide installation
+
+```bash
+cd libepaper
 ./bin/setup
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+sudo cmake --install build
 ```
 
-### 2. Build & Run
+```cmake
+find_path(EPAPER_INCLUDE_DIR epaper/display.hpp PATH_SUFFIXES epaper)
+find_library(EPAPER_LIBRARY NAMES epaper)
 
-```bash
-./bin/build
+add_executable(my_app src/main.cpp)
+target_include_directories(my_app PRIVATE ${EPAPER_INCLUDE_DIR})
+target_link_libraries(my_app PRIVATE ${EPAPER_LIBRARY} gpiod m)
 ```
 
-### 3. Run Example
+## ⚙️ Build Configuration
+
+Build with Release (default) or Debug optimization:
+
+Using our script:
 
 ```bash
-# Run crypto dashboard (live prices with charts)
-./build/examples/crypto_dashboard/crypto_dashboard
+./bin/build                      # Release (default)
+./bin/build --type Debug         # Debug
+./bin/build examples --type Release
+```
+
+Using raw CMake:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j
+
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
 ```
 
 ## 📚 Documentation
@@ -96,7 +174,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for our 
 - Waveshare 2.7" e-Paper Display (176×264 pixels)
 
 **Easy to Extend:**
-The abstract driver interface makes it straightforward to add support for other displays. See [docs/DRIVER.md](docs/DRIVER.md) for a guide to writing new drivers.
+The abstract driver interface makes adding support for additional displays straightforward. See [docs/DRIVER.md](docs/DRIVER.md) for a guide to writing new drivers.
 
 ## 🔧 Development
 
