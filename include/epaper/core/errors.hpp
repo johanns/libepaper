@@ -101,7 +101,41 @@ enum class ErrorCode {
  * @brief Unified error type containing code and optional message.
  *
  * This struct provides a consistent error representation across the library,
- * combining an error code with an optional detailed message.
+ * combining an error code with an optional detailed message. Designed for
+ * use with std::expected<T, Error> return types.
+ *
+ * @note The what() method returns the detailed message if available,
+ *       otherwise returns the error code's string representation.
+ *
+ * @example
+ * ```cpp
+ * // Function returning std::expected
+ * auto initialize_display() -> std::expected<Display, Error> {
+ *   Device device{};
+ *   if (auto result = device.init(); !result) {
+ *     // Forward error with context
+ *     return std::unexpected(result.error());
+ *   }
+ *   // ... create display
+ * }
+ *
+ * // Error handling at call site
+ * auto display_result = initialize_display();
+ * if (!display_result) {
+ *   std::cerr << "Initialization failed: "
+ *             << display_result.error().what() << std::endl;
+ *   return EXIT_FAILURE;
+ * }
+ * auto display = std::move(*display_result);
+ *
+ * // Explicit error creation
+ * if (width == 0) {
+ *   return std::unexpected(Error(ErrorCode::InvalidDimensions,
+ *                                "Width cannot be zero"));
+ * }
+ * ```
+ *
+ * @see ErrorCode, make_error(), std::expected
  */
 struct Error {
   ErrorCode code;      ///< Error code
@@ -142,10 +176,30 @@ struct Error {
  * @brief Create an error with optional context.
  *
  * Convenience function to create errors with additional context information.
+ * Automatically appends context to the error code's string representation.
  *
- * @param code Error code
- * @param context Optional context string to append to error message
+ * @param code Error code identifying the error type
+ * @param context Optional context string to append (e.g., filename, pin number)
  * @return Error object with combined message
+ *
+ * @example
+ * ```cpp
+ * // Simple error without context
+ * return std::unexpected(make_error(ErrorCode::DeviceNotInitialized));
+ *
+ * // Error with contextual information
+ * if (pin_number > 27) {
+ *   return std::unexpected(make_error(ErrorCode::InvalidPin,
+ *                                     "Pin " + std::to_string(pin_number)));
+ * }
+ *
+ * // File operation error with filename
+ * if (!file_exists) {
+ *   return std::unexpected(make_error(ErrorCode::FileNotFound, filename));
+ * }
+ * ```
+ *
+ * @see Error, ErrorCode
  */
 [[nodiscard]] inline auto make_error(ErrorCode code, std::string_view context = {}) -> Error {
   if (context.empty()) {

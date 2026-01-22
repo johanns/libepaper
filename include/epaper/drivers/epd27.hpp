@@ -1,19 +1,21 @@
 #pragma once
 
-#include "epaper/device.hpp"
+#include "epaper/core/device.hpp"
 #include "epaper/drivers/capabilities.hpp"
 #include "epaper/drivers/driver.hpp"
+#include "epaper/drivers/driver_concepts.hpp"
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <expected>
+#include <optional>
+#include <span>
+#include <utility>
 
 namespace epaper {
 
 /**
  * @brief E-paper display command codes for EPD27.
- *
- * Command codes sent to the display controller to control various operations.
  */
 enum class Command : std::uint8_t {
   BOOSTER_SOFT_START = 0x06,        ///< Booster soft start control
@@ -165,62 +167,400 @@ constexpr std::uint8_t DEEP_SLEEP_MAGIC = 0xA5;             ///< Magic value for
 constexpr std::uint8_t VCOM_DATA_INTERVAL_GRAYSCALE = 0x97; ///< VCOM interval for grayscale
 } // namespace DisplayOps
 
-// 2.7 inch e-paper display driver (176x264 pixels)
-class EPD27 : public Driver {
+/**
+ * @brief Pin configuration for standard Raspberry Pi HATs.
+ */
+struct EPD27PinConfig {
+  Pin rst{0};
+  Pin dc{0};
+  Pin cs{0};
+  Pin busy{0};
+  std::optional<Pin> pwr;
+
+  static constexpr auto waveshare_hat() -> EPD27PinConfig {
+    return EPD27PinConfig{.rst = Pin{17}, .dc = Pin{25}, .cs = Pin{8}, .busy = Pin{24}, .pwr = Pin{18}};
+  }
+};
+
+/**
+ * @brief 2.7 inch e-paper display driver (176x264 pixels).
+ *
+ * 2.7 inch e-paper display driver for Linux (Raspberry Pi).
+ */
+class EPD27 {
 public:
   static constexpr std::size_t WIDTH = 176;
   static constexpr std::size_t HEIGHT = 264;
 
-  explicit EPD27(Device &device);
-  ~EPD27() override = default;
+  /**
+   * @brief Construct EPD27 driver with direct hardware resources.
+   *
+   * @param spi SPI bus instance
+   * @param cs Chip Select pin
+   * @param dc Data/Command pin
+   * @param rst Reset pin
+   * @param busy Busy signal pin
+   * @param pwr Optional power control pin
+   */
+  EPD27(Device::HalSpi spi, Device::HalOutput cs, Device::HalOutput dc, Device::HalOutput rst, Device::HalInput busy,
+        std::optional<Device::HalOutput> pwr = std::nullopt)
+      : spi_(spi), cs_(cs), dc_(dc), rst_(rst), busy_(busy), pwr_(std::move(pwr)) {}
+
+  /**
+   * @brief Construct using custom pin configuration.
+   *
+   * @param device Initialized Linux device
+   * @param pins Pin map
+   */
+  EPD27(Device &device, EPD27PinConfig pins)
+      : EPD27(device.get_spi(), device.get_output(pins.cs), device.get_output(pins.dc), device.get_output(pins.rst),
+              device.get_input(pins.busy), pins.pwr ? std::make_optional(device.get_output(*pins.pwr)) : std::nullopt) {
+  }
+
+  /**
+   * @brief Construct using default Waveshare HAT pins.
+   *
+   * @param device Initialized Linux device
+   */
+  explicit EPD27(Device &device) : EPD27(device, EPD27PinConfig::waveshare_hat()) {}
+
+  ~EPD27() = default;
 
   // Driver interface implementation
-  [[nodiscard]] auto init(DisplayMode mode) -> std::expected<void, Error> override;
-  [[nodiscard]] auto clear() -> std::expected<void, Error> override;
-  [[nodiscard]] auto display(std::span<const std::byte> buffer) -> std::expected<void, Error> override;
-  [[nodiscard]] auto sleep() -> std::expected<void, Error> override;
-  [[nodiscard]] auto wake() -> std::expected<void, Error> override;
-  [[nodiscard]] auto power_off() -> std::expected<void, Error> override;
-  [[nodiscard]] auto power_on() -> std::expected<void, Error> override;
+  [[nodiscard]] auto init(DisplayMode mode) -> std::expected<void, Error> {
+    if (is_color_mode(mode)) {
+      return std::unexpected(
+          Error(ErrorCode::InvalidMode, "Color modes not supported by this EPD27 driver configuration"));
+    }
 
-  [[nodiscard]] auto width() const noexcept -> std::size_t override { return WIDTH; }
-  [[nodiscard]] auto height() const noexcept -> std::size_t override { return HEIGHT; }
-  [[nodiscard]] auto mode() const noexcept -> DisplayMode override { return current_mode_; }
-  [[nodiscard]] auto buffer_size() const noexcept -> std::size_t override;
-  [[nodiscard]] auto supports_partial_refresh() const noexcept -> bool override { return false; }
-  [[nodiscard]] auto supports_power_control() const noexcept -> bool override {
-    // EPD27 supports POWER_OFF/POWER_ON commands.
-    // Note: These commands use simple BUSY polling (no GET_STATUS) as the
-    // display doesn't respond to commands during power transitions.
-    return true;
+    current_mode_ = mode;
+    reset();
+
+    if (pwr_.has_value()) {
+      pwr_->write(true); // Turn on potential power switch
+    }
+
+    if (mode == DisplayMode::BlackWhite) {
+      init_bw();
+    } else {
+      init_grayscale();
+    }
+
+    initialized_ = true;
+    is_asleep_ = false;
+    return {};
   }
-  [[nodiscard]] auto supports_wake() const noexcept -> bool override { return false; }
+
+  [[nodiscard]] auto clear() -> std::expected<void, Error> {
+    if (!initialized_) {
+      return std::unexpected(Error(ErrorCode::DriverNotInitialized));
+    }
+    if (is_asleep_) {
+      if (auto res = wake(); !res) {
+        return res;
+      }
+    }
+
+    const auto width_bytes = (WIDTH + 7) / 8;
+
+    send_command(Command::DATA_START_TRANSMISSION_1);
+    for (std::size_t j = 0; j < HEIGHT; ++j) {
+      for (std::size_t i = 0; i < width_bytes; ++i) {
+        send_data(DisplayOps::CLEAR_FILL_VALUE);
+      }
+    }
+
+    send_command(Command::DATA_START_TRANSMISSION_2);
+    for (std::size_t j = 0; j < HEIGHT; ++j) {
+      for (std::size_t i = 0; i < width_bytes; ++i) {
+        send_data(DisplayOps::CLEAR_FILL_VALUE);
+      }
+    }
+
+    send_command(Command::DISPLAY_REFRESH);
+    wait_busy();
+    return {};
+  }
+
+  [[nodiscard]] auto display(std::span<const std::byte> buffer) -> std::expected<void, Error> {
+    if (is_asleep_) {
+      if (auto res = wake(); !res) {
+        return res;
+      }
+    }
+
+    if (current_mode_ == DisplayMode::BlackWhite) {
+      const auto width_bytes = (WIDTH + 7) / 8;
+      send_command(Command::DATA_START_TRANSMISSION_2);
+      for (std::size_t j = 0; j < HEIGHT; ++j) {
+        for (std::size_t i = 0; i < width_bytes; ++i) {
+          const auto index = i + (j * width_bytes);
+          send_data(static_cast<std::uint8_t>(buffer[index]));
+        }
+      }
+      send_command(Command::DISPLAY_REFRESH);
+      wait_busy();
+      return {};
+    } // Grayscale
+    const auto total_pixels = Grayscale::TOTAL_PIXELS;
+
+    send_command(Command::DATA_START_TRANSMISSION_1);
+    for (std::size_t i = 0; i < total_pixels; ++i) {
+      std::size_t src_idx = i * 2;
+      auto b1 = static_cast<std::uint8_t>(buffer[src_idx]);
+      auto b2 = static_cast<std::uint8_t>(buffer[src_idx + 1]);
+      send_data(convert_grayscale_pixel(b1, b2, true));
+    }
+
+    send_command(Command::DATA_START_TRANSMISSION_2);
+    for (std::size_t i = 0; i < total_pixels; ++i) {
+      std::size_t src_idx = i * 2;
+      auto b1 = static_cast<std::uint8_t>(buffer[src_idx]);
+      auto b2 = static_cast<std::uint8_t>(buffer[src_idx + 1]);
+      send_data(convert_grayscale_pixel(b1, b2, false));
+    }
+
+    set_lut_grayscale();
+    send_command(Command::DISPLAY_REFRESH);
+    Device::Delay::delay_ms(Timing::DISPLAY_REFRESH_DELAY_MS);
+    wait_busy();
+    return {};
+  }
+
+  [[nodiscard]] auto display_planes(std::span<const std::span<const std::byte>> planes) -> std::expected<void, Error> {
+    if (!initialized_) {
+      return std::unexpected(Error(ErrorCode::DriverNotInitialized));
+    }
+    if (is_asleep_) {
+      if (auto res = wake(); !res) {
+        return res;
+      }
+    }
+    if (planes.empty()) {
+      return std::unexpected(Error(ErrorCode::InvalidDimensions, "No planes provided"));
+    }
+    if (current_mode_ == DisplayMode::BlackWhite || current_mode_ == DisplayMode::Grayscale4) {
+      return display(planes[0]);
+    }
+    return std::unexpected(Error(ErrorCode::InvalidMode, "Color planes not supported"));
+  }
+
+  [[nodiscard]] auto sleep() -> std::expected<void, Error> {
+    if (is_asleep_) {
+      return {};
+    }
+    if (!initialized_) {
+      return std::unexpected(Error(ErrorCode::DriverNotInitialized));
+    }
+
+    send_command(Command::VCOM_DATA_INTERVAL);
+    send_data(DisplayOps::SLEEP_VCOM_DATA_INTERVAL);
+    send_command(Command::POWER_OFF);
+    send_command(Command::DEEP_SLEEP);
+    send_data(DisplayOps::DEEP_SLEEP_MAGIC);
+
+    is_asleep_ = true;
+    return {};
+  }
+
+  [[nodiscard]] auto wake() -> std::expected<void, Error> {
+    if (!is_asleep_) {
+      return {};
+    }
+    return init(current_mode_);
+  }
+
+  [[nodiscard]] auto power_off() -> std::expected<void, Error> {
+    if (!initialized_) {
+      return std::unexpected(Error(ErrorCode::DriverNotInitialized));
+    }
+    send_command(Command::POWER_OFF);
+    wait_busy_simple();
+    return {};
+  }
+
+  [[nodiscard]] auto power_on() -> std::expected<void, Error> {
+    if (!initialized_) {
+      return std::unexpected(Error(ErrorCode::DriverNotInitialized));
+    }
+    send_command(Command::POWER_ON);
+    wait_busy_simple();
+    return {};
+  }
+
+  [[nodiscard]] static auto width() noexcept -> std::size_t { return WIDTH; }
+  [[nodiscard]] static auto height() noexcept -> std::size_t { return HEIGHT; }
+  [[nodiscard]] auto mode() const noexcept -> DisplayMode { return current_mode_; }
+
+  [[nodiscard]] auto buffer_size() const noexcept -> std::size_t {
+    if (current_mode_ == DisplayMode::BlackWhite) {
+      return ((WIDTH + 7) / 8) * HEIGHT;
+    }
+    return ((WIDTH + 3) / 4) * HEIGHT;
+  }
+
+  [[nodiscard]] static auto supports_partial_refresh() noexcept -> bool { return false; }
+  [[nodiscard]] static auto supports_power_control() noexcept -> bool { return true; }
+  [[nodiscard]] static auto supports_wake() noexcept -> bool { return false; }
 
 private:
-  // Hardware reset
-  auto reset() -> void;
-
-  // Low-level command/data transmission
-  auto send_command(Command command) -> void;
-  auto send_data(std::uint8_t data) -> void;
-
-  // Wait for display to be ready
-  auto wait_busy() -> void;
-  auto wait_busy_simple() -> void; // Simple wait without sending commands
-
-  // LUT (Look-Up Table) initialization
-  auto set_lut_bw() -> void;
-  auto set_lut_grayscale() -> void;
-
-  // Helper function for grayscale pixel format conversion
-  static auto convert_grayscale_pixel(std::uint8_t byte1, std::uint8_t byte2, bool is_old_data) -> std::uint8_t;
-
-  Device &device_;
+  Device::HalSpi spi_;
+  Device::HalOutput cs_;
+  Device::HalOutput dc_;
+  Device::HalOutput rst_;
+  Device::HalInput busy_;
+  std::optional<Device::HalOutput> pwr_;
   DisplayMode current_mode_ = DisplayMode::BlackWhite;
   bool initialized_ = false;
-  bool is_asleep_ = false; // Track sleep state for transparent wake management
+  bool is_asleep_ = false;
 
-  // LUT tables for black/white mode
+  void reset() {
+    rst_.write(true);
+    Device::Delay::delay_ms(Timing::RESET_DELAY_MS);
+    rst_.write(false);
+    Device::Delay::delay_ms(Timing::RESET_PULSE_MS);
+    rst_.write(true);
+    Device::Delay::delay_ms(Timing::RESET_DELAY_MS);
+  }
+
+  void send_command(Command command) {
+    dc_.write(false);
+    cs_.write(false);
+    spi_.transfer(static_cast<std::uint8_t>(command));
+    cs_.write(true);
+  }
+
+  void send_data(std::uint8_t data) {
+    dc_.write(true);
+    cs_.write(false);
+    spi_.transfer(data);
+    cs_.write(true);
+  }
+
+  void wait_busy() {
+    // Advanced wait with GET_STATUS could go here, but omitted for brevity/reliability
+    // Falling back to simple wait which is safer during transitions
+    wait_busy_simple();
+  }
+
+  void wait_busy_simple() {
+    int iterations = 0;
+    while (busy_.read() && iterations < 100) {
+      Device::Delay::delay_ms(Timing::BUSY_POLL_DELAY_MS);
+      iterations++;
+    }
+    iterations = 0;
+    while (!busy_.read() && iterations < 1000) {
+      Device::Delay::delay_ms(Timing::BUSY_POLL_DELAY_MS);
+      iterations++;
+    }
+    Device::Delay::delay_ms(Timing::BUSY_WAIT_DELAY_MS);
+  }
+
+  void init_bw() {
+    send_command(Command::POWER_SETTING);
+    send_data(POWER_CONFIG_BW.vds_en_vdg_en);
+    send_data(POWER_CONFIG_BW.vcom_hv_vghl_lv);
+    send_data(POWER_CONFIG_BW.vdh);
+    send_data(POWER_CONFIG_BW.vdl);
+    send_data(POWER_CONFIG_BW.vdhr);
+
+    send_command(Command::BOOSTER_SOFT_START);
+    send_data(BOOSTER_CONFIG.phase1);
+    send_data(BOOSTER_CONFIG.phase2);
+    send_data(BOOSTER_CONFIG.phase3);
+
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG1);
+    send_data(PowerOptimization::VAL1);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG2);
+    send_data(PowerOptimization::VAL2);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG3);
+    send_data(PowerOptimization::VAL3);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG4);
+    send_data(PowerOptimization::VAL4);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG5);
+    send_data(PowerOptimization::VAL5);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG6);
+    send_data(PowerOptimization::VAL6);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG7);
+    send_data(PowerOptimization::VAL7);
+
+    send_command(Command::PARTIAL_DISPLAY_REFRESH);
+    send_data(DisplayOps::PARTIAL_REFRESH_DISABLE);
+
+    send_command(Command::POWER_ON);
+    wait_busy();
+
+    send_command(Command::PANEL_SETTING);
+    send_data(PanelConfig::PANEL_SETTING_BW);
+    send_command(Command::PLL_CONTROL);
+    send_data(PanelConfig::PLL_SETTING_BW);
+    send_command(Command::VCM_DC_SETTING);
+    send_data(PanelConfig::VCM_DC_SETTING_VALUE);
+    set_lut_bw();
+  }
+
+  void init_grayscale() {
+    send_command(Command::POWER_SETTING);
+    send_data(POWER_CONFIG_GRAYSCALE.vds_en_vdg_en);
+    send_data(POWER_CONFIG_GRAYSCALE.vcom_hv_vghl_lv);
+    send_data(POWER_CONFIG_GRAYSCALE.vdh);
+    send_data(POWER_CONFIG_GRAYSCALE.vdl);
+    send_command(Command::BOOSTER_SOFT_START);
+    send_data(BOOSTER_CONFIG.phase1);
+    send_data(BOOSTER_CONFIG.phase2);
+    send_data(BOOSTER_CONFIG.phase3);
+
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG1);
+    send_data(PowerOptimization::VAL1);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG2);
+    send_data(PowerOptimization::VAL2);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG3);
+    send_data(PowerOptimization::VAL3);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG4);
+    send_data(PowerOptimization::VAL4);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG5);
+    send_data(PowerOptimization::VAL5);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG6);
+    send_data(PowerOptimization::VAL6);
+    send_command(Command::POWER_OPTIMIZATION);
+    send_data(PowerOptimization::REG7);
+    send_data(PowerOptimization::VAL7);
+
+    send_command(Command::PARTIAL_DISPLAY_REFRESH);
+    send_data(DisplayOps::PARTIAL_REFRESH_DISABLE);
+
+    send_command(Command::POWER_ON);
+    wait_busy();
+
+    send_command(Command::PANEL_SETTING);
+    send_data(PanelConfig::PANEL_SETTING_GRAYSCALE);
+    send_command(Command::PLL_CONTROL);
+    send_data(PanelConfig::PLL_SETTING_GRAYSCALE);
+    send_command(Command::RESOLUTION_SETTING);
+    send_data(Resolution::WIDTH_HIGH);
+    send_data(Resolution::WIDTH_LOW);
+    send_data(Resolution::HEIGHT_HIGH);
+    send_data(Resolution::HEIGHT_LOW);
+    send_command(Command::VCM_DC_SETTING);
+    send_data(PanelConfig::VCM_DC_SETTING_VALUE);
+    send_command(Command::VCOM_DATA_INTERVAL);
+    send_data(DisplayOps::VCOM_DATA_INTERVAL_GRAYSCALE);
+  }
+
   static constexpr std::array<std::uint8_t, 44> LUT_VCOM_DC = {
       0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x02, 0x60, 0x28, 0x28, 0x00, 0x00, 0x01, 0x00,
       0x14, 0x00, 0x00, 0x00, 0x01, 0x00, 0x12, 0x12, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
@@ -271,22 +611,90 @@ private:
       0x80, 0x0A, 0x00, 0x00, 0x00, 0x01, 0x90, 0x14, 0x14, 0x00, 0x00, 0x01, 0x20, 0x14,
       0x0A, 0x00, 0x00, 0x01, 0x50, 0x13, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+  void set_lut_bw() {
+    send_command(Command::LUT_VCOM);
+    for (auto b : LUT_VCOM_DC) {
+      send_data(b);
+    }
+    send_command(Command::LUT_WW);
+    for (auto b : LUT_WW) {
+      send_data(b);
+    }
+    send_command(Command::LUT_BW);
+    for (auto b : LUT_BW) {
+      send_data(b);
+    }
+    send_command(Command::LUT_WB);
+    for (auto b : LUT_BB) { // Original code behavior preserved
+      send_data(b);
+    }
+    send_command(Command::LUT_BB);
+    for (auto b : LUT_WB) { // Original code behavior preserved
+      send_data(b);
+    }
+  }
+
+  void set_lut_grayscale() {
+    send_command(Command::LUT_VCOM);
+    for (auto b : LUT_VCOM_GRAY) {
+      send_data(b);
+    }
+    send_command(Command::LUT_WW);
+    for (auto b : LUT_WW_GRAY) {
+      send_data(b);
+    }
+    send_command(Command::LUT_BW);
+    for (auto b : LUT_BW_GRAY) {
+      send_data(b);
+    }
+    send_command(Command::LUT_WB);
+    for (auto b : LUT_WB_GRAY) {
+      send_data(b);
+    }
+    send_command(Command::LUT_BB);
+    for (auto b : LUT_BB_GRAY) {
+      send_data(b);
+    }
+    send_command(Command::LUT_WW2);
+    for (auto b : LUT_WW_GRAY) {
+      send_data(b);
+    }
+  }
+
+  static auto convert_grayscale_pixel(std::uint8_t byte1, std::uint8_t byte2, bool is_old_data) -> std::uint8_t {
+    std::uint8_t result = 0;
+    for (std::size_t j = 0; j < 2; ++j) {
+      auto temp1 = (j == 0) ? byte1 : byte2;
+      for (std::size_t k = 0; k < 4; ++k) {
+        const std::uint8_t temp2 = temp1 & Grayscale::PIXEL_MASK;
+        result <<= 1;
+        if (is_old_data) {
+          if (temp2 == Grayscale::WHITE_MASK || temp2 == Grayscale::GRAY1_MASK) {
+            result |= 0x01;
+          }
+        } else {
+          if (temp2 == Grayscale::WHITE_MASK || temp2 == Grayscale::GRAY2_MASK) {
+            result |= 0x01;
+          }
+        }
+        temp1 <<= Grayscale::BIT_SHIFT;
+      }
+    }
+    return result;
+  }
 };
 
-/**
- * @brief Capability specialization for EPD27 driver.
- *
- * EPD27 is a 2.7" e-paper display supporting both 1-bit black/white
- * and 2-bit 4-level grayscale modes.
- */
-template <> struct driver_capabilities<EPD27> {
-  static constexpr ColorDepth color_depth = ColorDepth::Bits2; ///< Supports 2-bit grayscale
-  static constexpr bool supports_grayscale = true;             ///< Grayscale capable
-  static constexpr bool supports_partial_refresh = true;       ///< Partial refresh capable
-  static constexpr bool supports_power_control = true;         ///< Power control capable
-  static constexpr bool supports_wake_from_sleep = false;      ///< Requires re-init after sleep
-  static constexpr std::size_t max_width = 176;                ///< Maximum width in pixels
-  static constexpr std::size_t max_height = 264;               ///< Maximum height in pixels
+template <> struct driver_traits<EPD27> {
+  static constexpr DisplayMode max_mode = DisplayMode::Grayscale4;
+  static constexpr bool supports_grayscale = true;
+  static constexpr bool supports_partial_refresh = true;
+  static constexpr bool supports_power_control = true;
+  static constexpr bool supports_wake_from_sleep = false;
+  static constexpr std::size_t max_width = 176;
+  static constexpr std::size_t max_height = 264;
 };
+
+static_assert(Driver<EPD27>, "EPD27 must satisfy Driver concept");
 
 } // namespace epaper

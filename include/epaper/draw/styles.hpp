@@ -1,7 +1,55 @@
 #pragma once
 
-#include "epaper/display.hpp"
-#include "epaper/font.hpp"
+/**
+ * @file styles.hpp
+ * @brief Reusable style specifications for drawing commands.
+ *
+ * Provides style bundle structs that encapsulate related visual properties.
+ * Styles can be defined once and applied to multiple commands via `with_style()`
+ * for consistent visual appearance.
+ *
+ * **Design Pattern:**
+ * ```
+ * Style Bundle Pattern
+ * ├─ Encapsulation: Group related visual properties (color, width, fill)
+ * ├─ Reusability: Define once, apply to many commands
+ * ├─ Consistency: Ensure related elements share visual style
+ * └─ Maintainability: Change style in one place, affects all uses
+ * ```
+ *
+ * **Benefits:**
+ * - **DRY Principle**: Don't repeat color/width/fill across similar commands
+ * - **Theming**: Define visual themes (e.g., "accent", "warning", "disabled")
+ * - **Readability**: Named styles communicate intent (e.g., `thick_border` vs `DotPixel::Pixel3x3`)
+ * - **Compile-Time**: All constexpr - zero runtime overhead
+ *
+ * **Usage Patterns:**
+ * ```cpp
+ * // Define reusable styles
+ * constexpr LineStyleSpec grid_lines{Color::Gray1, DotPixel::Pixel1x1, LineStyle::Dotted};
+ * constexpr ShapeStyleSpec highlight{Color::Red, DotPixel::Pixel2x2, DrawFill::Empty};
+ * constexpr TextStyleSpec header{&font20, Color::Black, Color::White};
+ *
+ * // Apply to multiple commands
+ * display.draw(display.line().from({0,0}).to({100,0}).with_style(grid_lines).build());
+ * display.draw(display.line().from({0,10}).to({100,10}).with_style(grid_lines).build());
+ * display.draw(display.rectangle().at({10,10}).size({80,60}).with_style(highlight).build());
+ * display.draw(display.text("Title").at({10,10}).with_style(header).build());
+ * ```
+ *
+ * **Style Composition:**
+ * - Styles can be stored in config files/structs and loaded at runtime
+ * - Individual properties can be overridden after `with_style()`:
+ *   ```cpp
+ *   display.line().from(a).to(b).with_style(grid_lines).color(Color::Red).build();
+ *   //                                                   ^^^^^^^^^^^^^^^^^^^ override
+ *   ```
+ *
+ * @see builders.hpp, LineBuilder::with_style(), RectangleBuilder::with_style()
+ */
+
+#include "epaper/core/types.hpp"
+#include "epaper/graphics/font.hpp"
 
 namespace epaper {
 

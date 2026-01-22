@@ -1,114 +1,111 @@
 #pragma once
 
-#include "epaper/errors.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <expected>
-#include <span>
-#include <string_view>
 
 namespace epaper {
 
-// Display modes
-enum class DisplayMode {
-  BlackWhite, // 1-bit black and white
-  Grayscale4  // 2-bit 4-level grayscale
+/**
+ * @brief Display mode enumeration.
+ *
+ * Defines the color/grayscale mode a display can operate in.
+ * Each mode implies specific bits-per-pixel, color capability, and
+ * hardware buffer requirements.
+ *
+ * **Mode Characteristics:**
+ * - BlackWhite: 1 bpp, 2 colors, single buffer
+ * - Grayscale4: 2 bpp, 4 gray levels, single buffer
+ * - BWR/BWY: 2 bpp, 3 colors, dual-buffer (black/white + red/yellow)
+ * - Spectra6: 3 bpp, 6 colors, single 3-bit buffer
+ *
+ * **Mode Selection Guidelines:**
+ * - Use BlackWhite for fastest refresh and maximum contrast
+ * - Use Grayscale4 for anti-aliased text or smooth gradients
+ * - Use BWR/BWY for highlights, warnings, or accent colors
+ * - Use Spectra6 for colorful diagrams or illustrations (slower refresh)
+ *
+ * @note Not all modes are supported by all drivers. Check driver_traits<Driver>::max_mode
+ *       and driver_traits<Driver>::supports_grayscale before creating display.
+ *
+ * @example
+ * ```cpp
+ * // Query mode capabilities
+ * DisplayMode mode = DisplayMode::BWR;
+ * auto bpp = bits_per_pixel(mode);      // Returns 2
+ * bool has_color = is_color_mode(mode); // Returns true
+ * auto planes = num_planes(mode);       // Returns 2
+ *
+ * // Mode-specific display creation
+ * if (driver_traits<EPD27>::max_mode >= DisplayMode::BWR) {
+ *   auto display = create_display<EPD27>(device, DisplayMode::BWR);
+ * }
+ * ```
+ *
+ * @see bits_per_pixel(), is_color_mode(), num_planes(), driver_traits
+ */
+enum class DisplayMode : std::uint8_t {
+  BlackWhite, ///< 1-bit black and white (2 colors)
+  Grayscale4, ///< 2-bit 4-level grayscale
+  BWR,        ///< Black, White, Red (3 colors, typically 2-bit)
+  BWY,        ///< Black, White, Yellow (3 colors, typically 2-bit)
+  Spectra6    ///< 6-color: Black, White, Red, Yellow, Blue, Green (3-bit)
 };
 
 /**
- * @brief Abstract driver interface for e-paper displays.
+ * @brief Get bits per pixel for a display mode.
  *
- * Defines the interface that all e-paper display drivers must implement.
- * Provides hardware abstraction for different display models.
- *
- * @note Exception Safety: All virtual methods provide basic exception safety.
- *       Derived classes must maintain object validity even if operations fail.
+ * @param mode Display mode
+ * @return Bits per pixel required for this mode
  */
-class Driver {
-public:
-  virtual ~Driver() = default;
+[[nodiscard]] constexpr auto bits_per_pixel(DisplayMode mode) noexcept -> std::uint8_t {
+  switch (mode) {
+  case DisplayMode::BlackWhite:
+    return 1;
+  case DisplayMode::Grayscale4:
+  case DisplayMode::BWR:
+  case DisplayMode::BWY:
+    return 2;
+  case DisplayMode::Spectra6:
+    return 3;
+  }
+  return 1; // Default fallback
+}
 
-  /**
-   * @brief Initialize the display with specified mode.
-   *
-   * @param mode Display mode (BlackWhite or Grayscale4)
-   * @return void on success, Error on failure
-   * @note Exception Safety: Strong guarantee - display remains uninitialized on failure.
-   */
-  [[nodiscard]] virtual auto init(DisplayMode mode) -> std::expected<void, Error> = 0;
+/**
+ * @brief Check if mode supports color (non-grayscale).
+ *
+ * @param mode Display mode
+ * @return true if mode supports color
+ */
+[[nodiscard]] constexpr auto is_color_mode(DisplayMode mode) noexcept -> bool {
+  switch (mode) {
+  case DisplayMode::BWR:
+  case DisplayMode::BWY:
+  case DisplayMode::Spectra6:
+    return true;
+  default:
+    return false;
+  }
+}
 
-  /**
-   * @brief Clear the display (typically to white).
-   *
-   * @return void on success, Error on failure
-   * @note Exception Safety: Basic guarantee - display remains in valid state.
-   */
-  [[nodiscard]] virtual auto clear() -> std::expected<void, Error> = 0;
-
-  /**
-   * @brief Send buffer data to display and refresh.
-   *
-   * @param buffer Framebuffer data to display
-   * @return void on success, Error on failure
-   * @note Exception Safety: Basic guarantee - display remains in valid state.
-   */
-  [[nodiscard]] virtual auto display(std::span<const std::byte> buffer) -> std::expected<void, Error> = 0;
-
-  /**
-   * @brief Put display into low-power sleep mode.
-   *
-   * @return void on success, Error on failure
-   * @note Exception Safety: Basic guarantee - display remains in valid state.
-   */
-  [[nodiscard]] virtual auto sleep() -> std::expected<void, Error> = 0;
-
-  /**
-   * @brief Wake display from sleep mode.
-   *
-   * @return void on success, Error if wake is not supported or fails
-   * @note Exception Safety: Basic guarantee - display remains in valid state.
-   */
-  [[nodiscard]] virtual auto wake() -> std::expected<void, Error> = 0;
-
-  /**
-   * @brief Turn display power completely off (hardware power down).
-   *
-   * @return void on success, Error if power off is not supported or fails
-   * @note Exception Safety: Basic guarantee - display remains in valid state.
-   */
-  [[nodiscard]] virtual auto power_off() -> std::expected<void, Error> = 0;
-
-  /**
-   * @brief Turn display power on (hardware power up).
-   *
-   * @return void on success, Error if power on is not supported or fails
-   * @note Exception Safety: Basic guarantee - display remains in valid state.
-   */
-  [[nodiscard]] virtual auto power_on() -> std::expected<void, Error> = 0;
-
-  // Get display dimensions
-  [[nodiscard]] virtual auto width() const noexcept -> std::size_t = 0;
-  [[nodiscard]] virtual auto height() const noexcept -> std::size_t = 0;
-
-  // Get current display mode
-  [[nodiscard]] virtual auto mode() const noexcept -> DisplayMode = 0;
-
-  // Calculate required buffer size for current mode
-  [[nodiscard]] virtual auto buffer_size() const noexcept -> std::size_t = 0;
-
-  // Driver capabilities (query at runtime)
-  [[nodiscard]] virtual auto supports_partial_refresh() const noexcept -> bool = 0;
-  [[nodiscard]] virtual auto supports_power_control() const noexcept -> bool = 0;
-  [[nodiscard]] virtual auto supports_wake() const noexcept -> bool = 0;
-
-protected:
-  Driver() = default;
-
-  // Non-copyable, movable
-  Driver(const Driver &) = delete;
-  Driver &operator=(const Driver &) = delete;
-  Driver(Driver &&) noexcept = default;
-  Driver &operator=(Driver &&) noexcept = default;
-};
+/**
+ * @brief Get number of color planes required for a display mode.
+ *
+ * @param mode Display mode
+ * @return Number of planes (1 for monochrome/grayscale, 2+ for color)
+ */
+[[nodiscard]] constexpr auto num_planes(DisplayMode mode) noexcept -> std::size_t {
+  switch (mode) {
+  case DisplayMode::BlackWhite:
+  case DisplayMode::Grayscale4:
+    return 1;
+  case DisplayMode::BWR:
+  case DisplayMode::BWY:
+    return 2;
+  case DisplayMode::Spectra6:
+    return 1; // Spectra6 uses single 3-bit buffer
+  }
+  return 1;
+}
 
 } // namespace epaper
