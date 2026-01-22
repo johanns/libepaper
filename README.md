@@ -10,10 +10,10 @@ A modern C++23 library for controlling Waveshare e-paper displays on Raspberry P
 ## ✨ Quick Example
 
 ```cpp
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/drivers/epd27.hpp>  // Use your driver
+#include <epaper/graphics/font.hpp>
 
 using namespace epaper;
 
@@ -21,7 +21,8 @@ int main() {
     Device device;
     device.init().value();
 
-    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite,
+    // Replace EPD27 with your driver (EPD27, MockDriver, etc.)
+    auto display = create_display<EPD27, MonoFramebuffer>(device, DisplayMode::BlackWhite,
                                          Orientation::Landscape90).value();
 
     display->clear(Color::White);
@@ -43,18 +44,43 @@ int main() {
 
 ## 🎯 Features
 
-- **Modern C++23**: `std::expected`, `std::span`, concepts, and ranges
-- **Transparent Sleep/Wake**: Auto-sleep prevents burn-in, auto-wake on refresh—no manual management
-- **Clean Architecture**: Modular design with RAII and composition over inheritance
-- **Full Drawing API**: Points, lines, rectangles, circles, text, bitmaps with PNG/JPEG support
-- **Automatic Color Conversion**: RGB images automatically converted to grayscale with intelligent quantization
-- **Multiple Display Modes**: Black/white (1-bit) and 4-level grayscale (2-bit)
-- **Display Orientation**: Rotate 0°, 90°, 180°, 270° with automatic coordinate transformation
-- **Extensible Drivers**: Abstract driver interface for easy support of new displays
-- **Type Safety**: Strong typing with `std::expected` error handling
-- **Zero-Cost Abstractions**: Modern C++ with no runtime overhead
+- **Multiple Display Modes**: Black/white, 4-level grayscale, and color displays (BWR, BWY, Spectra 6-color)
+- **Complete Drawing API**: Points, lines, rectangles, circles, text rendering with multiple font sizes
+- **Image Support**: Load and display PNG/JPEG images with automatic color conversion and dithering
+- **Flexible Orientation**: Rotate display 0°, 90°, 180°, 270° with automatic coordinate transformation
+- **Transparent Power Management**: Auto-sleep prevents burn-in, auto-wake on refresh—zero manual intervention
+- **Hardware Abstraction**: Compile-time driver selection with MockDriver for testing without physical hardware
+- **Multiple Framebuffer Types**: Single-plane (mono/grayscale) and multi-plane (color) with automatic color mapping
+- **Builder Pattern API**: Fluent, chainable drawing commands with sensible defaults
+- **Comprehensive Error Handling**: Type-safe error propagation with `std::expected` (no exceptions)
+- **Modern C++23**: Built with concepts, `std::span`, ranges, and zero-cost abstractions
 
-## 🚀 Quick Start
+## �️ Driver Selection
+
+All drivers are compiled into the library. To use a driver:
+
+1. **Include the driver header** for your display:
+   ```cpp
+   #include <epaper/drivers/epd27.hpp>       // Waveshare 2.7" B/W
+   #include <epaper/drivers/mock_driver.hpp> // Software-only testing
+   ```
+
+2. **Use the driver class** in `create_display<>()`:
+   ```cpp
+    auto display = create_display<EPD27, MonoFramebuffer>(device, DisplayMode::BlackWhite,
+                                        Orientation::Landscape90).value();
+   ```
+
+### Available Drivers
+
+| Driver | Hardware | Dimensions | Color Support |
+|--------|----------|------------|---------------|
+| **EPD27** | Waveshare 2.7" | 176×264 | B/W, Grayscale4 |
+| **MockDriver** | Software only | Configurable | B/W (outputs PNG) |
+
+> 📖 See [Doxygen documentation](doxygen/html/index.html) for detailed driver API specifications
+
+## �🚀 Quick Start
 
 ### Use as a dependency in your CMake project
 
@@ -140,41 +166,107 @@ Build with Release (default) or Debug optimization:
 Using our script:
 
 ```bash
-./bin/build                      # Release (default)
-./bin/build --type Debug         # Debug
+./bin/build                      # Release (default, EPD27 driver)
+./bin/build --type Debug         # Debug build
+./bin/build --driver Mock tests  # Build tests with MockDriver (no hardware)
 ./bin/build examples --type Release
 ```
 
 Using raw CMake:
 
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build -j
-
+# Standard build
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
+
+# Build with MockDriver for testing without hardware
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DLIBEPAPER_DRIVER=Mock
+cmake --build build -j
+./build/tests/test_drawing_primitives  # Outputs PNG to mock_output/
 ```
 
 ## 📚 Documentation
 
+The library provides multiple documentation resources:
+
+### 📖 API Documentation
+
+- **[Doxygen Reference](https://docs.jsg.io/libepaper/)** - Comprehensive API documentation with:
+  - Detailed class and function documentation
+  - Usage examples for major APIs
+  - Type reference (enums, structs, concepts)
+  - Implementation notes and algorithm details
+
+  Generate locally with: `doxygen` (outputs to `doxygen/html/`)
+
+### 📘 Guides
+
 | Document | Description |
 |----------|-------------|
-| **[API Reference](docs/API.md)** | Complete API guide with usage patterns |
-| **[Architecture Guide](docs/ARCHITECTURE.md)** | Deep dive into design and implementation |
-| **[Driver Development](docs/DRIVER.md)** | Guide to writing new display drivers |
 | **[Examples](examples/README.md)** | Tutorials and working examples |
+| **[Contributing Guide](CONTRIBUTING.md)** | Commit format and PR process |
+
+### 💡 Quick Reference
+
+**Core Concepts:**
+- **Display**: Unified interface coordinating driver and framebuffer ([epaper::Display](include/epaper/core/display.hpp))
+- **Driver**: Hardware abstraction (SPI/GPIO communication) ([Driver concept](include/epaper/drivers/driver_concepts.hpp))
+- **Framebuffer**: Pixel buffer with color encoding ([MonoFramebuffer](include/epaper/core/framebuffer.hpp))
+- **Builder API**: Fluent drawing commands ([Builders](include/epaper/draw/builders.hpp))
+
+**Essential Headers:**
+```cpp
+#include <epaper/core/device.hpp>      // Device initialization
+#include <epaper/core/display.hpp>     // Display interface
+#include <epaper/drivers/epd27.hpp>    // Hardware driver (replace with your driver)
+#include <epaper/graphics/font.hpp>    // Bitmap fonts (font8-font24)
+#include <epaper/io/image_io.hpp>      // PNG/JPEG loading
+```
+
+**Common Patterns:**
+```cpp
+// 1. Initialize device
+Device device;
+device.init().value();
+
+// 2. Create display with driver
+auto display = create_display<EPD27>(device, DisplayMode::BlackWhite).value();
+
+// 3. Drawing operations
+display->clear(Color::White);
+display->line({0, 0}, {100, 100}).color(Color::Black).draw();
+display->rectangle({10, 10}, {50, 50}).fill(DrawFill::Full).draw();
+
+// 4. Refresh to hardware
+display->refresh();
+
+// 5. Power management (optional - auto-sleep enabled by default)
+display->sleep();  // Manual sleep
+display->wake();   // Manual wake
+```
 
 ## 🤝 Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for our commit format and PR process.
 
-## 🏗️ Supported Hardware
+## 🏗️ Adding New Display Support
 
-**Currently Implemented:**
-- Waveshare 2.7" e-Paper Display (176×264 pixels)
+The abstract driver interface makes adding new displays straightforward:
 
-**Easy to Extend:**
-The abstract driver interface makes adding support for additional displays straightforward. See [docs/DRIVER.md](docs/DRIVER.md) for a guide to writing new drivers.
+1. Implement the `Driver` concept (see [driver_concepts.hpp](include/epaper/drivers/driver_concepts.hpp))
+2. Create driver-specific pin configuration struct
+3. Implement display protocol (init, refresh, sleep/wake)
+4. Add comprehensive Doxygen documentation
+
+**Reference Implementation:** See [EPD27 driver](include/epaper/drivers/epd27.hpp) for a complete example.
+
+**Driver Interface Requirements:**
+- Satisfy `Driver` concept constraints (width(), height(), init(), display(), etc.)
+- Define `driver_traits` specialization for capability advertisement
+- Use `std::expected<T, Error>` for all fallible operations
+- Follow RAII patterns for resource management
+
+**Testing:** Use [MockDriver](include/epaper/drivers/mock_driver.hpp) for development without hardware.
 
 ## 🔧 Development
 
