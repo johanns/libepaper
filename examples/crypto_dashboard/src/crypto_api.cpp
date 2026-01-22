@@ -11,10 +11,12 @@ namespace crypto_dashboard {
 // ============================================================================
 
 auto CoinGeckoAPI::symbol_to_coingecko_id(const std::string &symbol) -> std::string {
-  if (symbol == "BTC")
+  if (symbol == "BTC") {
     return "bitcoin";
-  if (symbol == "ETH")
+  }
+  if (symbol == "ETH") {
     return "ethereum";
+  }
   return symbol;
 }
 

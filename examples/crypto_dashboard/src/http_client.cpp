@@ -8,9 +8,9 @@ namespace crypto_dashboard {
 struct HTTPClient::Impl {
   CURL *curl = nullptr;
 
-  Impl() {
-    curl = curl_easy_init();
-    if (curl) {
+  Impl() : curl(curl_easy_init()) {
+
+    if (curl != nullptr) {
       // Set common options
       curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
       curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L); // 10 second timeout for faster shutdown
@@ -19,21 +19,21 @@ struct HTTPClient::Impl {
   }
 
   ~Impl() {
-    if (curl) {
+    if (curl != nullptr) {
       curl_easy_cleanup(curl);
     }
   }
 
   // Non-copyable
   Impl(const Impl &) = delete;
-  Impl &operator=(const Impl &) = delete;
+  auto operator=(const Impl &) -> Impl & = delete;
 
   // Movable
   Impl(Impl &&other) noexcept : curl(other.curl) { other.curl = nullptr; }
 
-  Impl &operator=(Impl &&other) noexcept {
+  auto operator=(Impl &&other) noexcept -> Impl & {
     if (this != &other) {
-      if (curl) {
+      if (curl != nullptr) {
         curl_easy_cleanup(curl);
       }
       curl = other.curl;
@@ -51,7 +51,7 @@ struct HTTPClient::Impl {
 };
 
 HTTPClient::HTTPClient() : impl_(std::make_unique<Impl>()) {
-  if (!impl_->curl) {
+  if (impl_->curl == nullptr) {
     throw std::runtime_error("Failed to initialize cURL");
   }
 }
@@ -59,10 +59,10 @@ HTTPClient::HTTPClient() : impl_(std::make_unique<Impl>()) {
 HTTPClient::~HTTPClient() = default;
 
 HTTPClient::HTTPClient(HTTPClient &&) noexcept = default;
-HTTPClient &HTTPClient::operator=(HTTPClient &&) noexcept = default;
+auto HTTPClient::operator=(HTTPClient &&) noexcept -> HTTPClient & = default;
 
 auto HTTPClient::get(const std::string &url) const -> std::expected<std::string, std::string> {
-  if (!impl_->curl) {
+  if (impl_->curl == nullptr) {
     return std::unexpected("cURL not initialized");
   }
 

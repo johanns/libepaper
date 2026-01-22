@@ -1,7 +1,7 @@
 #pragma once
 
 #include "types.hpp"
-#include <epaper/display.hpp>
+#include <epaper/core/display.hpp>
 #include <string>
 
 namespace crypto_dashboard {
@@ -15,9 +15,9 @@ enum class ScreenType {
 
 /// Renders the cryptocurrency dashboard to an e-Paper display
 /// Uses composition to hold drawing context
-class DashboardRenderer {
+template <typename DisplayT> class DashboardRenderer {
 public:
-  DashboardRenderer(epaper::Display &display);
+  explicit DashboardRenderer(DisplayT &display) : display_(display) {}
 
   /// Render the dashboard based on screen type
   void render(ScreenType screen_type, const CryptoPrice &btc, const CryptoPrice &eth, const PriceHistory &btc_30d,
@@ -42,14 +42,14 @@ private:
   void draw_price_section_single(const CryptoPrice &price, const std::string &label);
   void draw_price_indicator(size_t x, size_t y, bool positive, double change);
   void draw_charts_side_by_side(const PriceHistory &btc_history, const PriceHistory &eth_history);
-  void draw_charts_stacked(const PriceHistory &top_history, const PriceHistory &bottom_history);
+  void draw_charts_stacked(const PriceHistory &history_30d, const PriceHistory &history_6mo);
   void draw_line_chart(size_t x, size_t y, size_t width, size_t height, const std::vector<double> &data);
 
   // Formatting helpers
   [[nodiscard]] static auto format_price(double price) -> std::string;
   [[nodiscard]] static auto format_change(double change) -> std::string;
 
-  epaper::Display &display_;
+  DisplayT &display_;
 };
 
 } // namespace crypto_dashboard

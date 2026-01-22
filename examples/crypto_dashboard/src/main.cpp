@@ -3,21 +3,27 @@
 #include "http_client.hpp"
 #include "types.hpp"
 
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/drivers/epd27.hpp> // NOTE: Dashboard layout optimized for 2.7" display (264x176 landscape)
+
+#include <CLI/CLI.hpp>
 
 #include <atomic>
 #include <chrono>
 #include <csignal>
 #include <iostream>
+#include <span>
 #include <thread>
 
 using namespace epaper;
 using namespace crypto_dashboard;
 
-// Global state for signal handling
+namespace {
+// Global state for signal handling (anonymous namespace limits visibility to this TU)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::atomic<bool> g_running{true};
+} // namespace
 
 void signal_handler(int signal) {
   std::cout << "\nReceived signal " << signal << ", shutting down gracefully...\n";
@@ -26,50 +32,24 @@ void signal_handler(int signal) {
   // Note: If stuck in display refresh or HTTP request, will exit after operation completes
 }
 
-void print_usage(const char *program_name) {
-  std::cout << "Usage: " << program_name << " [options]\n\n";
-  std::cout << "Options:\n";
-  std::cout << "  --screen-flip-interval=SECONDS  Interval between screen rotations (default: 60)\n";
-  std::cout << "  --data-fetch-interval=SECONDS   Interval between data fetches (default: 900)\n";
-  std::cout << "  --help, -h                       Show this help message\n\n";
-}
+auto parse_arguments(std::span<char *> args) -> AppConfig {
+  CLI::App app{"Crypto Dashboard - E-paper cryptocurrency display"};
 
-auto parse_arguments(int argc, char *argv[]) -> AppConfig {
   AppConfig config;
 
-  for (int i = 1; i < argc; ++i) {
-    std::string arg = argv[i];
+  app.add_option("--screen-flip-interval", config.screen_flip_interval_seconds,
+                 "Interval between screen rotations (seconds)")
+      ->check(CLI::PositiveNumber)
+      ->default_val(60);
 
-    if (arg == "--help" || arg == "-h") {
-      print_usage(argv[0]);
-      std::exit(EXIT_SUCCESS);
-    } else if (arg.rfind("--screen-flip-interval=", 0) == 0) {
-      try {
-        config.screen_flip_interval_seconds = std::stoi(arg.substr(23));
-        if (config.screen_flip_interval_seconds <= 0) {
-          std::cerr << "Screen flip interval must be positive\n";
-          std::exit(EXIT_FAILURE);
-        }
-      } catch (...) {
-        std::cerr << "Invalid screen flip interval value\n";
-        std::exit(EXIT_FAILURE);
-      }
-    } else if (arg.rfind("--data-fetch-interval=", 0) == 0) {
-      try {
-        config.data_fetch_interval_seconds = std::stoi(arg.substr(22));
-        if (config.data_fetch_interval_seconds <= 0) {
-          std::cerr << "Data fetch interval must be positive\n";
-          std::exit(EXIT_FAILURE);
-        }
-      } catch (...) {
-        std::cerr << "Invalid data fetch interval value\n";
-        std::exit(EXIT_FAILURE);
-      }
-    } else {
-      std::cerr << "Unknown option: " << arg << "\n";
-      print_usage(argv[0]);
-      std::exit(EXIT_FAILURE);
-    }
+  app.add_option("--data-fetch-interval", config.data_fetch_interval_seconds, "Interval between data fetches (seconds)")
+      ->check(CLI::PositiveNumber)
+      ->default_val(900);
+
+  try {
+    app.parse(static_cast<int>(args.size()), args.data());
+  } catch (const CLI::ParseError &e) {
+    std::exit(app.exit(e));
   }
 
   return config;
@@ -82,7 +62,7 @@ auto main(int argc, char *argv[]) -> int {
     std::cout << "Press Ctrl+C to stop gracefully\n\n";
 
     // Parse command line arguments and load configuration
-    auto config = parse_arguments(argc, argv);
+    auto config = parse_arguments(std::span(argv, static_cast<std::size_t>(argc)));
 
     // Display configuration
     std::cout << "Screen flip interval: " << config.screen_flip_interval_seconds << " seconds\n";
@@ -102,8 +82,10 @@ auto main(int argc, char *argv[]) -> int {
     }
 
     // Create display using factory function in landscape mode
+    // NOTE: Dashboard layout is currently optimized for 2.7" display (264x176 pixels in Landscape270)
     // Auto-sleep enabled - transparent wake management handles multiple refreshes automatically
-    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape270, true);
+    auto display =
+        create_display<EPD27, MonoFramebuffer>(device, DisplayMode::BlackWhite, Orientation::Landscape270, true);
     if (!display) {
       std::cerr << "Failed to initialize display: " << display.error().what() << "\n";
       return EXIT_FAILURE;
@@ -116,12 +98,16 @@ auto main(int argc, char *argv[]) -> int {
     HTTPClient http_client;
     CryptoDataFetcher data_fetcher(http_client);
 
-    // Create renderer
+    // Create renderer using template argument deduction
     DashboardRenderer renderer(*display);
 
     // Cached data (updated periodically, used for all screen rotations)
-    CryptoPrice btc_price, eth_price;
-    PriceHistory btc_30d, eth_30d, btc_6mo, eth_6mo;
+    CryptoPrice btc_price;
+    CryptoPrice eth_price;
+    PriceHistory btc_30d;
+    PriceHistory eth_30d;
+    PriceHistory btc_6mo;
+    PriceHistory eth_6mo;
     bool data_valid = false;
 
     // Screen rotation state

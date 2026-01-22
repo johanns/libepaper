@@ -10,6 +10,15 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Fetch CLI11 for argument parsing
+include(FetchContent)
+FetchContent_Declare(
+  cli11
+  GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+  GIT_TAG v2.6.1
+)
+FetchContent_MakeAvailable(cli11)
+
 # Find required dependencies
 find_package(CURL REQUIRED)
 find_package(nlohmann_json 3.0.0 REQUIRED)
@@ -36,9 +45,10 @@ target_include_directories(crypto_dashboard
 # Link libraries
 target_link_libraries(crypto_dashboard
     PRIVATE
-    libepaper
+        libepaper
         CURL::libcurl
         nlohmann_json::nlohmann_json
+        CLI11::CLI11
 )
 
 # Compiler warnings

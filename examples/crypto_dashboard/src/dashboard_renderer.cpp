@@ -1,7 +1,9 @@
 #include "dashboard_renderer.hpp"
 #include <algorithm>
-#include <epaper/display.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/core/framebuffer.hpp>
+#include <epaper/drivers/epd27.hpp>
+#include <epaper/graphics/font.hpp>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -10,11 +12,10 @@ using namespace epaper;
 
 namespace crypto_dashboard {
 
-DashboardRenderer::DashboardRenderer(Display &display) : display_(display) {}
-
-void DashboardRenderer::render(ScreenType screen_type, const CryptoPrice &btc, const CryptoPrice &eth,
-                               const PriceHistory &btc_30d, const PriceHistory &eth_30d, const PriceHistory &btc_6mo,
-                               const PriceHistory &eth_6mo) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::render(ScreenType screen_type, const CryptoPrice &btc, const CryptoPrice &eth,
+                                         const PriceHistory &btc_30d, const PriceHistory &eth_30d,
+                                         const PriceHistory &btc_6mo, const PriceHistory &eth_6mo) -> void {
   // No need to manually wake - library handles it transparently
   std::cout << "  [Renderer] Clearing display...\n";
   std::cout.flush();
@@ -48,7 +49,7 @@ void DashboardRenderer::render(ScreenType screen_type, const CryptoPrice &btc, c
   }
 }
 
-void DashboardRenderer::render_error(const std::string &error_message) {
+template <typename DisplayT> auto DashboardRenderer<DisplayT>::render_error(const std::string &error_message) -> void {
   display_.clear();
 
   // Draw error title
@@ -76,14 +77,14 @@ void DashboardRenderer::render_error(const std::string &error_message) {
   }
 }
 
-void DashboardRenderer::clear() {
+template <typename DisplayT> auto DashboardRenderer<DisplayT>::clear() -> void {
   display_.clear();
   if (auto result = display_.refresh(); !result) {
     std::cerr << "Warning: Failed to refresh display: " << result.error().what() << "\n";
   }
 }
 
-void DashboardRenderer::draw_header() {
+template <typename DisplayT> auto DashboardRenderer<DisplayT>::draw_header() -> void {
   // Title
   display_.draw(display_.text("CRYPTO DASHBOARD")
                     .at(5, 2)
@@ -96,7 +97,8 @@ void DashboardRenderer::draw_header() {
   display_.draw(display_.line().from(0, 20).to(display_.effective_width(), 20).color(Color::Black).build());
 }
 
-void DashboardRenderer::draw_price_section(const CryptoPrice &btc, const CryptoPrice &eth) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::draw_price_section(const CryptoPrice &btc, const CryptoPrice &eth) -> void {
   constexpr size_t section_y = 24;
 
   // Bitcoin price
@@ -130,7 +132,8 @@ void DashboardRenderer::draw_price_section(const CryptoPrice &btc, const CryptoP
   draw_price_indicator(120, section_y + 14, eth.is_positive_change(), eth.change_24h);
 }
 
-void DashboardRenderer::draw_price_indicator(size_t x, size_t y, bool positive, double change) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::draw_price_indicator(size_t x, size_t y, bool positive, double change) -> void {
   const std::string change_str = format_change(change);
 
   // Draw arrow indicator
@@ -153,28 +156,34 @@ void DashboardRenderer::draw_price_indicator(size_t x, size_t y, bool positive, 
                     .build());
 }
 
-void DashboardRenderer::render_combined_screen(const CryptoPrice &btc, const CryptoPrice &eth,
-                                               const PriceHistory &btc_30d, const PriceHistory &eth_30d) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::render_combined_screen(const CryptoPrice &btc, const CryptoPrice &eth,
+                                                         const PriceHistory &btc_30d, const PriceHistory &eth_30d)
+    -> void {
   draw_header();
   draw_price_section(btc, eth);
   draw_charts_side_by_side(btc_30d, eth_30d);
 }
 
-void DashboardRenderer::render_btc_dedicated_screen(const CryptoPrice &btc, const PriceHistory &btc_30d,
-                                                    const PriceHistory &btc_6mo) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::render_btc_dedicated_screen(const CryptoPrice &btc, const PriceHistory &btc_30d,
+                                                              const PriceHistory &btc_6mo) -> void {
   draw_header();
   draw_price_section_single(btc, "BTC");
   draw_charts_stacked(btc_30d, btc_6mo);
 }
 
-void DashboardRenderer::render_eth_dedicated_screen(const CryptoPrice &eth, const PriceHistory &eth_30d,
-                                                    const PriceHistory &eth_6mo) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::render_eth_dedicated_screen(const CryptoPrice &eth, const PriceHistory &eth_30d,
+                                                              const PriceHistory &eth_6mo) -> void {
   draw_header();
   draw_price_section_single(eth, "ETH");
   draw_charts_stacked(eth_30d, eth_6mo);
 }
 
-void DashboardRenderer::draw_price_section_single(const CryptoPrice &price, const std::string &label) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::draw_price_section_single(const CryptoPrice &price, const std::string &label)
+    -> void {
   constexpr size_t section_y = 24;
 
   display_.draw(display_.text(label)
@@ -192,7 +201,10 @@ void DashboardRenderer::draw_price_section_single(const CryptoPrice &price, cons
   draw_price_indicator(180, section_y, price.is_positive_change(), price.change_24h);
 }
 
-void DashboardRenderer::draw_charts_side_by_side(const PriceHistory &btc_history, const PriceHistory &eth_history) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::draw_charts_side_by_side(const PriceHistory &btc_history,
+                                                           const PriceHistory &eth_history) -> void {
+  // NOTE: Layout calculations below are specific to 2.7" display (264x176 landscape)
   // Display: 264x176, available space after header (y=20) and prices (y=24-52)
   constexpr size_t chart_y = 52;
   constexpr size_t chart_height = 106; // 176 - 52 - 14 (label) - 4 (margin) = 106
@@ -223,7 +235,10 @@ void DashboardRenderer::draw_charts_side_by_side(const PriceHistory &btc_history
   }
 }
 
-void DashboardRenderer::draw_charts_stacked(const PriceHistory &history_30d, const PriceHistory &history_6mo) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::draw_charts_stacked(const PriceHistory &history_30d, const PriceHistory &history_6mo)
+    -> void {
+  // NOTE: Layout calculations below are specific to 2.7" display (264x176 landscape)
   // Display: 264x176 (pixels 0-175) in landscape mode
   // Layout: Header (0-20) + Price section (24-43) + Charts (44-175)
   // Available for charts: 176 - 44 = 132 pixels
@@ -262,8 +277,9 @@ void DashboardRenderer::draw_charts_stacked(const PriceHistory &history_30d, con
   }
 }
 
-void DashboardRenderer::draw_line_chart(size_t x, size_t y, size_t width, size_t height,
-                                        const std::vector<double> &data) {
+template <typename DisplayT>
+auto DashboardRenderer<DisplayT>::draw_line_chart(size_t x, size_t y, size_t width, size_t height,
+                                                  const std::vector<double> &data) -> void {
   if (data.empty()) {
     return;
   }
@@ -282,7 +298,7 @@ void DashboardRenderer::draw_line_chart(size_t x, size_t y, size_t width, size_t
 
   if (range < 0.0001) {
     // Flat line - draw at middle
-    const size_t middle_y = y + height / 2;
+    const size_t middle_y = y + (height / 2);
     display_.draw(display_.line().from(x, middle_y).to(x + width, middle_y).color(Color::Black).build());
     return;
   }
@@ -300,13 +316,13 @@ void DashboardRenderer::draw_line_chart(size_t x, size_t y, size_t width, size_t
   }
 }
 
-auto DashboardRenderer::format_price(double price) -> std::string {
+template <typename DisplayT> auto DashboardRenderer<DisplayT>::format_price(double price) -> std::string {
   std::ostringstream oss;
   oss << std::fixed << std::setprecision(2) << "$" << price;
   return oss.str();
 }
 
-auto DashboardRenderer::format_change(double change) -> std::string {
+template <typename DisplayT> auto DashboardRenderer<DisplayT>::format_change(double change) -> std::string {
   std::ostringstream oss;
   oss << std::fixed << std::setprecision(2);
   if (change > 0) {
@@ -315,5 +331,8 @@ auto DashboardRenderer::format_change(double change) -> std::string {
   oss << change << "%";
   return oss.str();
 }
+
+// Explicit template instantiations for the types used in main.cpp
+template class DashboardRenderer<Display<EPD27, MonoFramebuffer>>;
 
 } // namespace crypto_dashboard

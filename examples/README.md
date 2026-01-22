@@ -28,8 +28,8 @@ This directory contains complete, working examples that demonstrate various feat
 The simplest possible e-paper program:
 
 ```cpp
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
 #include <epaper/drivers/epd27.hpp>
 #include <epaper/font.hpp>
 #include <iostream>
@@ -45,7 +45,7 @@ int main() {
     }
 
     // 2. Create display
-    auto display = create_display<EPD27>(
+    auto display = create_display<EPD27, MonoFramebuffer>(
         device,
         DisplayMode::BlackWhite,
         Orientation::Landscape90,
@@ -173,8 +173,8 @@ display.draw(
         .build()
 );
 
-// Export to BMP (instant!)
-display.save_framebuffer_to_bmp("debug.bmp");
+// Export to PNG (instant!)
+display.save_framebuffer_to_png("debug.png");
 
 // Optional: refresh to display (slow)
 display.refresh();

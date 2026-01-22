@@ -5,7 +5,7 @@
 #include <string>
 
 // Forward declare CURL to avoid including curl.h in header
-typedef void CURL;
+using CURL = void;
 
 namespace crypto_dashboard {
 
@@ -18,9 +18,9 @@ public:
 
   // Non-copyable but movable
   HTTPClient(const HTTPClient &) = delete;
-  HTTPClient &operator=(const HTTPClient &) = delete;
+  auto operator=(const HTTPClient &) -> HTTPClient & = delete;
   HTTPClient(HTTPClient &&) noexcept;
-  HTTPClient &operator=(HTTPClient &&) noexcept;
+  auto operator=(HTTPClient &&) noexcept -> HTTPClient &;
 
   /// Perform HTTP GET request
   /// @param url The URL to fetch
