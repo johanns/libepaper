@@ -1,9 +1,9 @@
+#include "test_config.hpp"
 #include <chrono>
 #include <cstdlib>
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/graphics/font.hpp>
 #include <iostream>
 #include <thread>
 
@@ -25,7 +25,7 @@ auto main() -> int {
     }
 
     // Create display
-    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite);
+    auto display = create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite);
     if (!display) {
       std::cerr << "Display initialization failed: " << display.error().what() << "\n";
       return EXIT_FAILURE;

@@ -1,9 +1,9 @@
+#include "test_config.hpp"
 #include <chrono>
 #include <cstdlib>
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/graphics/font.hpp>
 #include <iostream>
 #include <thread>
 
@@ -27,7 +27,7 @@ auto main() -> int {
     // Test 1: Verify auto-sleep is enabled by default
     std::cout << "\n=== Test 1: Auto-Sleep Enabled by Default ===\n";
 
-    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite);
+    auto display = create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite);
     if (!display) {
       std::cerr << "Display initialization failed: " << display.error().what() << "\n";
       return EXIT_FAILURE;
@@ -418,7 +418,8 @@ auto main() -> int {
     // Test 6: Transparent wake (multiple renders with auto-sleep enabled)
     std::cout << "\n=== Test 6: Transparent Wake Management ===\n";
     std::cout << "Testing multiple refreshes with auto-sleep enabled...\n";
-    auto display2 = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Portrait0, true);
+    auto display2 =
+        create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite, Orientation::Portrait0, true);
 
     if (!display2) {
       std::cerr << "Failed to create display for transparent wake test: " << display2.error().what() << "\n";

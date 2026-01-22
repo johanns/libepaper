@@ -1,9 +1,9 @@
+#include "test_config.hpp"
 #include <chrono>
 #include <cstdlib>
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/graphics/font.hpp>
 #include <iostream>
 #include <thread>
 
@@ -13,20 +13,26 @@ auto main() -> int {
   std::cout << "=======================================\n";
   std::cout << "  Final Test: Clear & Power Off\n";
   std::cout << "=======================================\n";
+  std::cout << "Driver: " << TEST_DRIVER_NAME << "\n";
   std::cout << "This test clears the screen and powers off the display.\n\n";
 
   try {
-    // Initialize device
+    // Initialize device (skip for MockDriver since it doesn't use hardware)
     std::cout << "Initializing device...\n";
     Device device;
+
+#if TEST_DRIVER == DRIVER_EPD27
     if (auto result = device.init(); !result) {
       std::cerr << "Device initialization failed: " << result.error().what() << "\n";
       return EXIT_FAILURE;
     }
+#else
+    std::cout << "Skipping device init for MockDriver (no hardware needed)\n";
+#endif
 
     // Create display
     std::cout << "Creating display...\n";
-    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite);
+    auto display = create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite);
     if (!display) {
       std::cerr << "Display initialization failed: " << display.error().what() << "\n";
       return EXIT_FAILURE;

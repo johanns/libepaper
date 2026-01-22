@@ -1,9 +1,10 @@
+#include "test_config.hpp"
 #include <cstdlib>
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/graphics/font.hpp>
 #include <iostream>
+#include <numbers>
 
 using namespace epaper;
 
@@ -23,7 +24,8 @@ auto main() -> int {
     }
 
     // Create display in landscape mode for more space
-    auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape90);
+    auto display =
+        create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite, Orientation::Landscape90);
     if (!display) {
       std::cerr << "Display initialization failed: " << display.error().what() << "\n";
       return EXIT_FAILURE;
@@ -260,7 +262,7 @@ auto main() -> int {
                       .background(Color::White)
                       .build());
     display->draw(display->text()
-                      .decimal(3.14159, 2)
+                      .decimal(std::numbers::pi, 2)
                       .at(150, 95)
                       .font(&Font::font12())
                       .foreground(Color::Black)

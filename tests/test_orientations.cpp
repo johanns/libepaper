@@ -1,9 +1,9 @@
+#include "test_config.hpp"
 #include <chrono>
 #include <cstdlib>
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/graphics/font.hpp>
 #include <iostream>
 #include <thread>
 
@@ -12,7 +12,7 @@ using namespace epaper;
 auto test_orientation(Device &device, Orientation orientation, std::string_view name) -> bool {
   std::cout << "\n=== Testing " << name << " ===\n";
 
-  auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, orientation);
+  auto display = create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite, orientation);
   if (!display) {
     std::cerr << "Failed to create display: " << display.error().what() << "\n";
     return false;

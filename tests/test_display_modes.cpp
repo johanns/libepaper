@@ -1,18 +1,20 @@
+#include "test_config.hpp"
+#include <array>
 #include <chrono>
 #include <cstdlib>
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/graphics/font.hpp>
 #include <iostream>
 #include <thread>
+#include <utility>
 
 using namespace epaper;
 
 auto test_blackwhite_mode(Device &device) -> bool {
   std::cout << "\n=== Testing Black & White Mode ===\n";
 
-  auto display = create_display<EPD27>(device, DisplayMode::BlackWhite);
+  auto display = create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite);
   if (!display) {
     std::cerr << "Failed to create B/W display: " << display.error().what() << "\n";
     return false;
@@ -150,7 +152,7 @@ auto test_blackwhite_mode(Device &device) -> bool {
 auto test_grayscale_mode(Device &device) -> bool {
   std::cout << "\n=== Testing 4-Level Grayscale Mode ===\n";
 
-  auto display = create_display<EPD27>(device, DisplayMode::Grayscale4);
+  auto display = create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::Grayscale4);
   if (!display) {
     std::cerr << "Failed to create grayscale display: " << display.error().what() << "\n";
     return false;
@@ -255,7 +257,7 @@ auto test_grayscale_mode(Device &device) -> bool {
   const std::size_t segment_width = gradient_width / 4;
 
   for (std::size_t i = 0; i < 4; ++i) {
-    Color color;
+    Color color{};
     switch (i) {
     case 0:
       color = Color::White;
@@ -272,8 +274,8 @@ auto test_grayscale_mode(Device &device) -> bool {
     }
 
     display->draw(display->rectangle()
-                      .top_left(10 + i * segment_width, 115)
-                      .bottom_right(10 + (i + 1) * segment_width, 115 + gradient_height)
+                      .top_left(10 + (i * segment_width), 115)
+                      .bottom_right(10 + ((i + 1) * segment_width), 115 + gradient_height)
                       .color(color)
                       .border_width(DotPixel::Pixel1x1)
                       .fill(DrawFill::Full)
@@ -329,11 +331,252 @@ auto test_grayscale_mode(Device &device) -> bool {
   return true;
 }
 
+template <typename DisplayT> auto run_color_mode_test(DisplayT &display, const char *mode_name) -> bool {
+  std::cout << "Display mode: " << mode_name << "\n";
+  std::cout << "Dimensions: " << display.width() << "x" << display.height() << " pixels\n";
+  std::cout << "Is color mode: " << (display.is_color() ? "Yes" : "No") << "\n";
+  std::cout << "Number of planes: " << display.get_num_planes() << "\n";
+
+  // Get available colors
+  auto colors = display.available_colors();
+  std::cout << "Available colors (" << colors.size() << "): ";
+  for (const auto &color : colors) {
+    switch (color) {
+    case Color::White:
+      std::cout << "White ";
+      break;
+    case Color::Black:
+      std::cout << "Black ";
+      break;
+    case Color::Red:
+      std::cout << "Red ";
+      break;
+    case Color::Yellow:
+      std::cout << "Yellow ";
+      break;
+    case Color::Blue:
+      std::cout << "Blue ";
+      break;
+    case Color::Green:
+      std::cout << "Green ";
+      break;
+    default:
+      std::cout << "? ";
+      break;
+    }
+  }
+  std::cout << "\n";
+
+  // Clear to white
+  display.clear(Color::White);
+
+  // Title
+  std::string title = std::string(mode_name) + " MODE";
+  display.draw(
+      display.text(title).at(5, 5).font(&Font::font16()).foreground(Color::Black).background(Color::White).build());
+
+  // Display color swatches
+  const std::size_t box_size = 40;
+  const std::size_t start_y = 30;
+  const std::size_t spacing = 5;
+  std::size_t current_x = 5;
+
+  for (const auto &color : colors) {
+    // Draw filled box
+    display.draw(display.rectangle()
+                     .top_left(current_x, start_y)
+                     .bottom_right(current_x + box_size, start_y + box_size)
+                     .color(color)
+                     .border_width(DotPixel::Pixel1x1)
+                     .fill(DrawFill::Full)
+                     .build());
+
+    // Draw border if not black
+    if (color != Color::Black) {
+      display.draw(display.rectangle()
+                       .top_left(current_x, start_y)
+                       .bottom_right(current_x + box_size, start_y + box_size)
+                       .color(Color::Black)
+                       .border_width(DotPixel::Pixel1x1)
+                       .fill(DrawFill::Empty)
+                       .build());
+    }
+
+    // Label the color
+    const char *label = "";
+    switch (color) {
+    case Color::White:
+      label = "White";
+      break;
+    case Color::Black:
+      label = "Black";
+      break;
+    case Color::Red:
+      label = "Red";
+      break;
+    case Color::Yellow:
+      label = "Yellow";
+      break;
+    case Color::Blue:
+      label = "Blue";
+      break;
+    case Color::Green:
+      label = "Green";
+      break;
+    default:
+      label = "?";
+      break;
+    }
+
+    display.draw(display.text(label)
+                     .at(current_x + 2, start_y + box_size + 3)
+                     .font(&Font::font8())
+                     .foreground(Color::Black)
+                     .background(Color::White)
+                     .build());
+
+    current_x += box_size + spacing;
+
+    // Wrap to next row if needed
+    if (current_x > 120) {
+      current_x = 5;
+    }
+  }
+
+  // Test pattern: circles in different colors
+  const std::size_t pattern_y = 90;
+  display.draw(display.text("Shapes:")
+                   .at(5, pattern_y)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+
+  std::size_t shape_x = 10;
+  const std::size_t shape_y = pattern_y + 20;
+  const std::size_t radius = 12;
+
+  for (std::size_t i = 1; i < colors.size() && i < 4; ++i) {
+    // Draw filled circle
+    display.draw(display.circle()
+                     .center(shape_x + radius, shape_y + radius)
+                     .radius(radius)
+                     .color(colors[i])
+                     .border_width(DotPixel::Pixel1x1)
+                     .fill(DrawFill::Full)
+                     .build());
+
+    // Draw outline
+    display.draw(display.circle()
+                     .center(shape_x + radius, shape_y + radius)
+                     .radius(radius)
+                     .color(Color::Black)
+                     .border_width(DotPixel::Pixel1x1)
+                     .fill(DrawFill::Empty)
+                     .build());
+
+    shape_x += (radius * 2) + 10;
+  }
+
+  // Test pattern: lines in different colors
+  const std::size_t line_y = pattern_y + 50;
+  std::size_t line_x = 10;
+
+  for (std::size_t i = 1; i < colors.size() && i < 6; ++i) {
+    display.draw(display.line()
+                     .from(line_x, line_y)
+                     .to(line_x + 20, line_y + 20)
+                     .color(colors[i])
+                     .width(DotPixel::Pixel2x2)
+                     .style(LineStyle::Solid)
+                     .build());
+
+    line_x += 25;
+  }
+
+  // Test text in colors
+  const std::size_t text_y = 180;
+  display.draw(display.text("Text Test:")
+                   .at(5, text_y)
+                   .font(&Font::font12())
+                   .foreground(Color::Black)
+                   .background(Color::White)
+                   .build());
+
+  std::size_t text_line_y = text_y + 15;
+  for (std::size_t i = 0; i < colors.size() && text_line_y < 250; ++i) {
+    const char *label = "";
+    switch (colors[i]) {
+    case Color::White:
+      label = "White Text";
+      break;
+    case Color::Black:
+      label = "Black Text";
+      break;
+    case Color::Red:
+      label = "Red Text";
+      break;
+    case Color::Yellow:
+      label = "Yellow Text";
+      break;
+    case Color::Blue:
+      label = "Blue Text";
+      break;
+    case Color::Green:
+      label = "Green Text";
+      break;
+    default:
+      continue;
+    }
+
+    display.draw(display.text(label)
+                     .at(5, text_line_y)
+                     .font(&Font::font12())
+                     .foreground(colors[i])
+                     .background(Color::White)
+                     .build());
+
+    text_line_y += 15;
+  }
+
+  // Refresh display
+  std::cout << "Refreshing display...\n";
+  if (auto result = display.refresh(); !result) {
+    std::cerr << "Refresh failed: " << result.error().what() << "\n";
+    return false;
+  }
+
+  std::cout << mode_name << " mode test complete.\n";
+  std::cout << "Visual verification: Check that all " << colors.size() << " colors are distinct and correct.\n";
+
+  return true;
+}
+
+auto test_color_mode(Device &device, DisplayMode mode, const char *mode_name) -> bool {
+  std::cout << "\n=== Testing " << mode_name << " Mode ===\n";
+
+  if (mode == DisplayMode::BWR || mode == DisplayMode::BWY) {
+    auto display = create_display<TestDriver, TwoPlaneFramebuffer>(device, mode);
+    if (!display) {
+      std::cerr << "Failed to create " << mode_name << " display: " << display.error().what() << "\n";
+      return false;
+    }
+    return run_color_mode_test(*display, mode_name);
+  }
+
+  auto display = create_display<TestDriver, MonoFramebuffer>(device, mode);
+  if (!display) {
+    std::cerr << "Failed to create " << mode_name << " display: " << display.error().what() << "\n";
+    return false;
+  }
+  return run_color_mode_test(*display, mode_name);
+}
+
 auto main() -> int {
   std::cout << "=======================================\n";
   std::cout << "  Display Modes Test\n";
   std::cout << "=======================================\n";
-  std::cout << "This test verifies both BlackWhite and Grayscale4 display modes.\n\n";
+  std::cout << "This test verifies all supported display modes.\n\n";
 
   try {
     // Initialize device
@@ -357,6 +600,22 @@ auto main() -> int {
     // Test Grayscale mode
     if (!test_grayscale_mode(device)) {
       return EXIT_FAILURE;
+    }
+
+    // Test color modes
+    const std::array<std::pair<DisplayMode, const char *>, 3> color_modes = {
+        {{DisplayMode::BWR, "Black-White-Red"},
+         {DisplayMode::BWY, "Black-White-Yellow"},
+         {DisplayMode::Spectra6, "Spectra 6-Color"}}};
+
+    for (const auto &[mode, name] : color_modes) {
+      std::cout << "\nWaiting 3 seconds before next test...\n";
+      std::this_thread::sleep_for(std::chrono::seconds(3));
+
+      if (!test_color_mode(device, mode, name)) {
+        std::cerr << "WARNING: " << name << " mode test failed (may not be supported by hardware)\n";
+        // Continue with other tests even if one fails
+      }
     }
 
     std::cout << "\n=======================================\n";

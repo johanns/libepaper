@@ -1,15 +1,16 @@
-#include <chrono>
+#include "test_config.hpp"
+#include <cmath>
 #include <cstdlib>
-#include <epaper/device.hpp>
-#include <epaper/display.hpp>
-#include <epaper/drivers/epd27.hpp>
-#include <epaper/font.hpp>
+#include <epaper/core/device.hpp>
+#include <epaper/core/display.hpp>
+#include <epaper/graphics/font.hpp>
 #include <iostream>
 #include <thread>
 
 using namespace epaper;
 
-auto test_corner_markers(Display &display, std::string_view orientation_name) -> void {
+template <typename DisplayType>
+auto test_corner_markers(DisplayType &display, std::string_view orientation_name) -> void {
   const auto width = display.effective_width();
   const auto height = display.effective_height();
 
@@ -199,7 +200,8 @@ auto main() -> int {
     // Test Portrait 0°
     std::cout << "\n=== Test 1: Portrait 0° ===\n";
     {
-      auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Portrait0);
+      auto display =
+          create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite, Orientation::Portrait0);
       if (!display) {
         std::cerr << "Display creation failed: " << display.error().what() << "\n";
         return EXIT_FAILURE;
@@ -222,7 +224,8 @@ auto main() -> int {
     // Test Landscape 90°
     std::cout << "\n=== Test 2: Landscape 90° ===\n";
     {
-      auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape90);
+      auto display =
+          create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite, Orientation::Landscape90);
       if (!display) {
         std::cerr << "Display creation failed: " << display.error().what() << "\n";
         return EXIT_FAILURE;
@@ -245,7 +248,8 @@ auto main() -> int {
     // Test Portrait 180°
     std::cout << "\n=== Test 3: Portrait 180° ===\n";
     {
-      auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Portrait180);
+      auto display =
+          create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite, Orientation::Portrait180);
       if (!display) {
         std::cerr << "Display creation failed: " << display.error().what() << "\n";
         return EXIT_FAILURE;
@@ -268,7 +272,8 @@ auto main() -> int {
     // Test Landscape 270°
     std::cout << "\n=== Test 4: Landscape 270° ===\n";
     {
-      auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Landscape270);
+      auto display =
+          create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite, Orientation::Landscape270);
       if (!display) {
         std::cerr << "Display creation failed: " << display.error().what() << "\n";
         return EXIT_FAILURE;
@@ -291,7 +296,8 @@ auto main() -> int {
     // Boundary stress test
     std::cout << "\n=== Test 5: Boundary Stress Test ===\n";
     {
-      auto display = create_display<EPD27>(device, DisplayMode::BlackWhite, Orientation::Portrait0);
+      auto display =
+          create_display<TestDriver, MonoFramebuffer>(device, DisplayMode::BlackWhite, Orientation::Portrait0);
       if (!display) {
         std::cerr << "Display creation failed: " << display.error().what() << "\n";
         return EXIT_FAILURE;
