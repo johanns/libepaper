@@ -1,6 +1,6 @@
-# Modern C++ E-Paper Display Library
+# C++23 E-Paper Display Library
 
-A modern C++23 library for controlling Waveshare e-paper displays on Raspberry Pi, featuring transparent sleep/wake management and a fluent builder API.
+A C++23 library for controlling Waveshare e-paper displays on Raspberry Pi, featuring transparent sleep/wake management and a fluent builder API.
 
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://en.cppreference.com/w/cpp/23)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -53,7 +53,7 @@ int main() {
 - **Multiple Framebuffer Types**: Single-plane (mono/grayscale) and multi-plane (color) with automatic color mapping
 - **Builder Pattern API**: Fluent, chainable drawing commands with sensible defaults
 - **Comprehensive Error Handling**: Type-safe error propagation with `std::expected` (no exceptions)
-- **Modern C++23**: Built with concepts, `std::span`, ranges, and zero-cost abstractions
+- **C++23**: Built with concepts, `std::span`, ranges, and zero-cost abstractions
 
 ## �️ Driver Selection
 
