@@ -48,6 +48,7 @@ echo ""
 # Defaults
 TARGET="all"
 BUILD_TYPE="${BUILD_TYPE:-Release}"
+DRIVER="${LIBEPAPER_DRIVER:-EPD27}"
 
 # Parse args
 while [[ $# -gt 0 ]]; do
@@ -58,6 +59,10 @@ while [[ $# -gt 0 ]]; do
       BUILD_TYPE="$2"; shift 2 ;;
     --type=*)
       BUILD_TYPE="${1#*=}"; shift ;;
+    --driver)
+      DRIVER="$2"; shift 2 ;;
+    --driver=*)
+      DRIVER="${1#*=}"; shift ;;
     all|libepaper|epaper|examples|crypto_dashboard|tests|test_auto_sleep)
       TARGET="$1"; shift ;;
     *)
@@ -65,11 +70,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-echo "Configuring build (type: ${BUILD_TYPE})..."
+echo "Configuring build (type: ${BUILD_TYPE}, driver: ${DRIVER})..."
 cmake -S . -B build \
   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
   -DCMAKE_CXX_COMPILER=g++-14 \
-  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}"
+  -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+  -DLIBEPAPER_DRIVER="${DRIVER}"
 
 echo ""
 echo "Building target: ${TARGET}..."
