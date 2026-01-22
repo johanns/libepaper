@@ -463,3 +463,5 @@ examples/images/*.png
 examples/wallets.json
 
 doxygen/
+mock_output/
+tmp/
