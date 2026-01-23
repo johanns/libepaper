@@ -55,7 +55,7 @@ int main() {
 - **Comprehensive Error Handling**: Type-safe error propagation with `std::expected` (no exceptions)
 - **C++23**: Built with concepts, `std::span`, ranges, and zero-cost abstractions
 
-## �️ Driver Selection
+## Driver Selection
 
 All drivers are compiled into the library. To use a driver:
 
@@ -80,7 +80,7 @@ All drivers are compiled into the library. To use a driver:
 
 > 📖 See [Doxygen documentation](doxygen/html/index.html) for detailed driver API specifications
 
-## �🚀 Quick Start
+## 🚀 Quick Start
 
 ### Use as a dependency in your CMake project
 
